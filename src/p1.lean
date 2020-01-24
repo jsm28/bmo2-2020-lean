@@ -51,7 +51,7 @@ begin
   have h2bpos: 0 < 2 * b,
   { rw ← gt,
     rw ← gt at hbpos,
-    exact mul_pos (show (2 : ℤ) > 0, by norm_num) hbpos, },
+    exact mul_pos dec_trivial hbpos, },
   have hn2blower: 0 ≤ n % (2 * b),
   { apply mod_nonneg,
     intro h2b0,
@@ -63,7 +63,7 @@ end
 
 -- Powers of 2 are positive.
 theorem power_of_2_pos (k : ℕ): 0 < (2^k : ℤ) :=
-pow_pos (show 0 < (2 : ℤ), by norm_num) k
+pow_pos dec_trivial k
 
 -- The main part of the induction step in the proof.  If two
 -- consecutive terms are 3 mod 2^m, the first must be 3 mod 2^(m+1).
@@ -196,7 +196,7 @@ begin
   unfold odd at ha hb,
   rw (show (2^2 : ℤ) = 2 * 2, by norm_num),
   have hcases: a % (2 * 2) = 1 ∨ a % (2 * 2) = 1 + 2,
-  { exact mod_mul_2 _ _ _ (show (2 * 2 : ℤ) > 0, by norm_num) ha },
+  { exact mod_mul_2 _ _ _ dec_trivial ha },
   cases hcases with hc1 hc2,
   { exfalso,
     unfold p1_seq_next at hb,
@@ -224,7 +224,7 @@ begin
     end,
     rw [mul_comm, mul_assoc, mul_assoc] at hb,
     have hbm : 2 * (2 * (d * (1 + 2 * 2 * d))) / 2 = 2 * (d * (1 + 2 * 2 * d)),
-      by exact int.mul_div_cancel_left _ (show (2 : ℤ) ≠ 0, by norm_num),
+      by exact int.mul_div_cancel_left _ dec_trivial,
     rw [hbm, mul_mod_right] at hb,
     norm_num at hb },
   { rw hc2, norm_num, },
@@ -344,7 +344,7 @@ begin
   { have ha : 2^a ∣ a := h a,
     have h2pself : ∀ n : ℕ, n < 2^n,
     { intro n,
-      exact nat.lt_pow_self (show 1 < 2, by norm_num) n, },
+      exact nat.lt_pow_self dec_trivial n, },
     exfalso,
     have h2aself: a < 2^a := h2pself a,
     have hapos : a > 0 := nat.pos_of_ne_zero haeq0,
