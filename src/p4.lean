@@ -7,6 +7,8 @@ import topology.instances.real
 
 noncomputable theory
 
+open real
+
 -- Next term in sequence.
 def p4_seq_next (x y : ℝ) : ℝ := (y * y - 1) / x
 
@@ -65,12 +67,84 @@ begin
   linarith,
 end
 
--- TODO 2: expression with sum of squares.
+-- Rearranged expression using invariant, in form more suited to
+-- inequalities.
+theorem invar_rearranged (x y : ℝ) (hx : x ≠ 0) (hy : y ≠ 0) :
+  (1 + (p4_invar x y) / 4) * ((x - y) * (x - y)) + (-((p4_invar x y) / 4)) * ((x + y) * (x + y)) = 1 :=
+begin
+  unfold p4_invar,
+  field_simp [hx, hy, mul_ne_zero hx hy, (show (4 : ℝ) ≠ 0, by norm_num)],
+  ring,
+end
 
--- TODO 3: bounds on |x-y| and |x+y|.
+-- Bounds on two variables, given such a sum of squares.
+theorem square_bounds_1 (a b x y : ℝ) (ha : 0 < a) (hb : 0 < b)
+  (hs : a * (x * x) + b * (y * y) = 1) : abs x ≤ sqrt (1 / a) :=
+begin
+  apply le_sqrt_of_sqr_le,
+  rw [(show abs x ^ 2 = abs x * abs x, by ring), abs_mul_abs_self],
+  have hb2: 0 ≤ b * (y * y) := mul_nonneg (le_of_lt hb) (mul_self_nonneg y),
+  have hs2: a * (x * x) ≤ 1, {linarith},
+  rw mul_comm at hs2,
+  rw le_div_iff ha,
+  exact hs2,
+end
 
--- TODO 4: bounds on x.
+theorem square_bounds_2 (a b x y : ℝ) (ha : 0 < a) (hb : 0 < b)
+  (hs : a * (x * x) + b * (y * y) = 1) : abs y ≤ sqrt (1 / b) :=
+begin
+  rw add_comm at hs,
+  exact square_bounds_1 b a y x hb ha hs,
+end
 
--- TODO 5: thus, first part of problem.
+-- Bounds on x, given the invariant.
+theorem bounds_using_invar_1 (x y : ℝ) (hx : x ≠ 0) (hy : y ≠ 0)
+  (ha : 0 < (1 + (p4_invar x y) / 4)) (hb : 0 < (-((p4_invar x y) / 4))):
+  abs x ≤ (sqrt (1 / (1 + (p4_invar x y) / 4)) + sqrt (1 / (-((p4_invar x y) / 4)))) / 2 :=
+begin
+  have hi : (1 + (p4_invar x y) / 4) * ((x - y) * (x - y)) + (-((p4_invar x y) / 4)) * ((x + y) * (x + y)) = 1 := invar_rearranged x y hx hy,
+  have haxmy : abs (x - y) ≤ sqrt (1 / (1 + (p4_invar x y) / 4)) := square_bounds_1 _ _ _ _ ha hb hi,
+  have haxpy : abs (x + y) ≤ sqrt (1 / (-((p4_invar x y) / 4))) := square_bounds_2 _ _ _ _ ha hb hi,
+  have hxmy : (x - y) ≤ sqrt (1 / (1 + (p4_invar x y) / 4)) := le_trans (le_abs_self _) haxmy,
+  have hxpy : (x + y) ≤ sqrt (1 / (-((p4_invar x y) / 4))) := le_trans (le_abs_self _) haxpy,
+  apply abs_le_of_le_of_neg_le,
+  { linarith },
+  rw ← abs_neg at haxmy,
+  have hmxmy : -(x - y) ≤ sqrt (1 / (1 + (p4_invar x y) / 4)) := le_trans (le_abs_self _) haxmy,
+  rw ← abs_neg at haxpy,
+  have hmxpy : -(x + y) ≤ sqrt (1 / (-((p4_invar x y) / 4))) := le_trans (le_abs_self _) haxpy,
+  linarith,
+end
+
+-- The first part of the problem.
+theorem p4_part_1  (b : ℕ → ℝ) (hrec : p4_recurrence b) (hnz : p4_nonzero b)
+  (k : ℝ) (h1 : 1 < k) (h2 : k < 2) (hb0 : b 0 = 1) (hb1 : b 1 = k) :
+  ∃ B : ℝ, ∀ n : ℕ, -B ≤ b n ∧ b n ≤ B :=
+begin
+  have habs: ∃ B : ℝ, ∀ n : ℕ, abs (b n) ≤ B,
+    { use (sqrt (1 / (1 + (p4_invar 1 k) / 4)) + sqrt (1 / (-((p4_invar 1 k) / 4)))) / 2,
+      intro n,
+      have hinvar: p4_invar (b n) (b (n + 1)) = p4_invar (b 0) (b 1) := p4_is_invar b hrec hnz n,
+      rw [hb0, hb1] at hinvar,
+      rw ←hinvar,
+      have ha: 0 < (1 + (p4_invar (b n) (b (n + 1))) / 4),
+      { rw hinvar,
+        have hgt: -1 < p4_invar 1 k := invar_gt_m1 k h1 h2,
+        linarith, },
+      have hb: 0 < (-((p4_invar (b n) (b (n + 1)) / 4))),
+      { rw hinvar,
+        have hlt: p4_invar 1 k < 0 := invar_lt_zero k h1 h2,
+        linarith, },
+      exact bounds_using_invar_1 (b n) (b (n + 1)) (hnz n) (hnz (n + 1)) ha hb, },
+  cases habs with B hB,
+  use B,
+  intro n,
+  have hBb : abs (b n) ≤ B := hB n,
+  split,
+  { rw ← abs_neg at hBb,
+    have hBb2 : -b n ≤ B := le_trans (le_abs_self _) hBb,
+    linarith, },
+  { exact le_trans (le_abs_self _) hBb },
+end
 
 -- TODO 6: continuity and deduce second part of problem.
