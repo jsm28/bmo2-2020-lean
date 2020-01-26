@@ -117,7 +117,7 @@ begin
 end
 
 -- The first part of the problem.
-theorem p4_part_1  (b : ℕ → ℝ) (hrec : p4_recurrence b) (hnz : p4_nonzero b)
+theorem p4_part_1 (b : ℕ → ℝ) (hrec : p4_recurrence b) (hnz : p4_nonzero b)
   (k : ℝ) (h1 : 1 < k) (h2 : k < 2) (hb0 : b 0 = 1) (hb1 : b 1 = k) :
   ∃ B : ℝ, ∀ n : ℕ, -B ≤ b n ∧ b n ≤ B :=
 begin
@@ -145,6 +145,27 @@ begin
     have hBb2 : -b n ≤ B := le_trans (le_abs_self _) hBb,
     linarith, },
   { exact le_trans (le_abs_self _) hBb },
+end
+
+-- Terms of the sequence, as functions of k.
+noncomputable def p4_term : ℕ → ℝ → ℝ
+| 0 k := 1
+| 1 k := k
+| (nat.succ (nat.succ n)) k := p4_seq_next (p4_term n k) (p4_term (nat.succ n) k)
+
+-- These functions do give the terms.
+theorem p4_terms (b : ℕ → ℝ) (hrec : p4_recurrence b) (k : ℝ)
+  (hb0 : b 0 = 1) (hb1 : b 1 = k) : ∀ n : ℕ, b n = p4_term n k :=
+begin
+  intro n,
+  induction n using nat.case_strong_induction_on with m hm,
+  { exact hb0 },
+  { cases m,
+    { exact hb1 },
+    { unfold p4_term,
+      rw [nat.succ_eq_add_one, nat.succ_eq_add_one, add_assoc,
+          (show 1 + 1 = 2, by norm_num), hrec m, hm m (nat.le_succ _),
+          hm (m + 1) (show m + 1 ≤ nat.succ m, by rw nat.succ_eq_add_one)] } }
 end
 
 -- TODO 6: continuity and deduce second part of problem.
