@@ -149,9 +149,9 @@ end
 
 -- Terms of the sequence, as functions of k.
 noncomputable def p4_term : ℕ → ℝ → ℝ
-| 0 k := 1
-| 1 k := k
-| (nat.succ (nat.succ n)) k := p4_seq_next (p4_term n k) (p4_term (nat.succ n) k)
+| 0 := λ k, 1
+| 1 := λ k, k
+| (nat.succ (nat.succ n)) := λ k, p4_seq_next (p4_term n k) (p4_term (nat.succ n) k)
 
 -- These functions do give the terms.
 theorem p4_terms (b : ℕ → ℝ) (hrec : p4_recurrence b) (k : ℝ)
@@ -166,6 +166,58 @@ begin
       rw [nat.succ_eq_add_one, nat.succ_eq_add_one, add_assoc,
           (show 1 + 1 = 2, by norm_num), hrec m, hm m (nat.le_succ _),
           hm (m + 1) (show m + 1 ≤ nat.succ m, by rw nat.succ_eq_add_one)] } }
+end
+
+-- These functions have the expected value for k = 2.
+theorem p4_terms_at_2 : ∀ n : ℕ, p4_term n 2 = n + 1 :=
+begin
+  intro n,
+  induction n using nat.case_strong_induction_on with m hm,
+  { unfold p4_term,
+    norm_num },
+  { cases m,
+    { unfold p4_term,
+      norm_num },
+    { unfold p4_term,
+      rw [nat.succ_eq_add_one, nat.succ_eq_add_one, hm m (nat.le_succ _),
+          hm (m + 1) (show m + 1 ≤ nat.succ m, by rw nat.succ_eq_add_one),
+          p4_seq_next],
+      push_cast,
+      have hm1: 1 + (↑m : ℝ) ≠ 0,
+      { norm_cast,
+        rw add_comm,
+        exact dec_trivial },
+      field_simp [hm1],
+      ring } }
+end
+
+-- These functions are continuous at k = 2.
+theorem p4_terms_continuous : ∀ n : ℕ, continuous_at (p4_term n) 2 :=
+begin
+  intro n,
+  induction n using nat.case_strong_induction_on with m hm,
+  { unfold p4_term,
+    exact continuous_at_const },
+  { cases m,
+    { unfold p4_term,
+      exact continuous_at_id },
+    { unfold p4_term,
+      unfold p4_seq_next,
+      conv
+      begin
+        congr,
+        funext,
+        rw div_eq_mul_one_div,
+        rw one_div_eq_inv
+      end,
+      apply @continuous_at.comp ℝ (ℝ × ℝ) ℝ _ _ _ (λ p : ℝ × ℝ, p.1 * p.2)
+            (λ k : ℝ, ⟨(p4_term (nat.succ m) k * p4_term (nat.succ m) k - 1), (p4_term m k)⁻¹⟩)
+            2 _ _,
+      { exact continuous_mul.continuous_at },
+      { apply continuous_at.prod,
+        -- TODO
+        { sorry },
+        { sorry } } } }
 end
 
 -- TODO 6: continuity and deduce second part of problem.
