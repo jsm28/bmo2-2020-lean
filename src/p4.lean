@@ -210,14 +210,13 @@ begin
         rw div_eq_mul_one_div,
         rw one_div_eq_inv
       end,
-      apply @continuous_at.comp ℝ (ℝ × ℝ) ℝ _ _ _ (λ p : ℝ × ℝ, p.1 * p.2)
-            (λ k : ℝ, ⟨(p4_term (nat.succ m) k * p4_term (nat.succ m) k - 1), (p4_term m k)⁻¹⟩)
-            2 _ _,
-      { exact continuous_mul.continuous_at },
-      { apply continuous_at.prod,
-        -- TODO
-        { sorry },
-        { sorry } } } }
+      apply continuous_at.mul,
+      { apply continuous_at.add,
+        { apply continuous_at.mul,
+          { exact hm (nat.succ m) (by refl), },
+          { exact hm (nat.succ m) (by refl), } },
+        { exact continuous_at_const } },
+      { sorry, } } }
 end
 
 -- TODO 6: continuity and deduce second part of problem.
