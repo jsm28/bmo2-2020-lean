@@ -216,7 +216,68 @@ begin
           { exact hm (nat.succ m) (by refl), },
           { exact hm (nat.succ m) (by refl), } },
         { exact continuous_at_const } },
-      { sorry, } } }
+      { apply continuous_at.comp,
+        { apply tendsto_inv,
+          { rw p4_terms_at_2 m,
+            norm_cast,
+            exact dec_trivial, } },
+        { exact hm m (nat.le_succ m) } } } }
 end
 
--- TODO 6: continuity and deduce second part of problem.
+-- These functions have values close to n + 1 near k = 2.
+theorem p4_terms_close : ∀ n : ℕ, ∀ ε > 0, ∃ δ > 0, ∀ x : ℝ, abs (x - 2) < δ → abs (p4_term n x - p4_term n 2) < ε :=
+begin
+  intro n,
+  have h : continuous_at (p4_term n) 2 := p4_terms_continuous n,
+  unfold continuous_at at h,
+  rw metric.tendsto_nhds_nhds at h,
+  exact h,
+end
+
+-- The second part of the problem, in terms of p4_term rather than the
+-- original recurrence and with an explicit term number.
+
+theorem p4_part_2_terms : ∃ (k : ℝ) (h1 : 1 < k) (h2 : k < 2), 2020 < (p4_term 2020) k :=
+begin
+  have h : ∃ δ > 0, ∀ x : ℝ, abs (x - 2) < δ → abs (p4_term 2020 x - p4_term 2020 2) < 1 := p4_terms_close 2020 1 (by norm_num),
+  cases h with d hd,
+  cases hd with hd hh,
+  have he: ∃ (e : ℝ) (heg0 : e > 0) (hel1 : e < 1), ∀ x : ℝ, abs (x - 2) < e → abs (p4_term 2020 x - p4_term 2020 2) < 1,
+  { by_cases hdlt : d < 1,
+    { use d,
+      use hd,
+      use hdlt,
+      exact hh },
+    { use 0.5,
+      use (show (1 : ℝ) / 2 > 0, by norm_num),
+      use (show (1 : ℝ) / 2 < 1, by norm_num),
+      intro x,
+      intro h12,
+      apply hh x,
+      linarith } },
+  cases he with e he,
+  cases he with heg0 he,
+  cases he with hel1 he,
+  use 2 - (e / 2),
+  use (by linarith),
+  use (by linarith),
+  have hex: abs (p4_term 2020 (2 - e / 2) - p4_term 2020 2) < 1,
+  { apply he (2 - e / 2),
+    have hx : 2 - e / 2 - 2 = - (e / 2), {ring},
+    rw hx,
+    rw abs_neg (e / 2),
+    have he2 : 0 < e / 2, {linarith},
+    rw abs_of_pos he2,
+    linarith },
+  rw p4_terms_at_2 2020 at hex,
+  norm_cast at hex,
+  rw (show 2020 + 1 = 2021, by norm_num) at hex,
+  rw ←abs_neg at hex,
+  have hc: -(p4_term 2020 (2 - e / 2) - ↑2021) ≤ abs (-(p4_term 2020 (2 - e / 2) - ↑2021)) := le_abs_self _,
+  have hcc : -(p4_term 2020 (2 - e / 2) - ↑2021) < 1, {linarith},
+  rw neg_sub at hcc,
+  norm_cast at hcc,
+  linarith,
+end
+
+-- TODO: the original statement of part 2 of the problem.
