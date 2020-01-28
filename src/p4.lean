@@ -203,13 +203,6 @@ begin
       exact continuous_at_id },
     { unfold p4_term,
       unfold p4_seq_next,
-      conv
-      begin
-        congr,
-        funext,
-        rw div_eq_mul_one_div,
-        rw one_div_eq_inv
-      end,
       apply continuous_at.mul,
       { apply continuous_at.add,
         { apply continuous_at.mul,
