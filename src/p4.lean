@@ -235,7 +235,10 @@ begin
 end
 
 -- The second part of the problem, in terms of p4_term rather than the
--- original recurrence and with an explicit term number.
+-- original recurrence and with an explicit term number.  Remark: we
+-- haven't actually shown the existence of k subject to the additional
+-- constraint of all the terms being nonzero, but neither did any of
+-- the official solutions.
 
 theorem p4_part_2_terms : ∃ (k : ℝ) (h1 : 1 < k) (h2 : k < 2), 2020 < (p4_term 2020) k :=
 begin
@@ -280,4 +283,23 @@ begin
   linarith,
 end
 
--- TODO: the original statement of part 2 of the problem.
+-- The second part of the original problem.  Same remark as above
+-- applies about not showing all terms nonzero.
+theorem p4_part_2 : ∃ (k : ℝ) (h1 : 1 < k) (h2 : k < 2) (n : ℕ),
+  ∀ b : ℕ → ℝ, b 0 = 1 → b 1 = k → (p4_recurrence b) → 2020 < b n :=
+begin
+  have hterms: ∃ (k : ℝ) (h1 : 1 < k) (h2 : k < 2), 2020 < (p4_term 2020) k := p4_part_2_terms,
+  cases hterms with k hterms,
+  cases hterms with h1 hterms,
+  cases hterms with h2 hterms,
+  use k,
+  use h1,
+  use h2,
+  use 2020,
+  intro b,
+  intro hb0,
+  intro hb1,
+  intro hrec,
+  rw p4_terms b hrec k hb0 hb1 2020,
+  exact hterms,
+end
