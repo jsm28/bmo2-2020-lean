@@ -227,26 +227,25 @@ begin
   exact h,
 end
 
--- The second part of the problem, in terms of p4_term rather than the
--- original recurrence and with an explicit term number.  Remark: we
--- haven't actually shown the existence of k subject to the additional
--- constraint of all the terms being nonzero, but neither did any of
--- the official solutions.
 
-theorem p4_part_2_terms : ∃ (k : ℝ) (h1 : 1 < k) (h2 : k < 2), 2020 < (p4_term 2020) k :=
+-- The second part of the problem, in terms of p4_term rather than the
+-- original recurrence, finding an interval of values and with an
+-- explicit term number.
+
+theorem p4_part_2_terms_interval : ∃ (kb : ℝ) (h1 : 1 ≤ kb) (h2 : kb < 2), ∀ k : ℝ, kb < k → k < 2 → 2020 < (p4_term 2020) k :=
 begin
   have h : ∃ δ > 0, ∀ x : ℝ, abs (x - 2) < δ → abs (p4_term 2020 x - p4_term 2020 2) < 1 := p4_terms_close 2020 1 (by norm_num),
   cases h with d hd,
   cases hd with hd hh,
-  have he: ∃ (e : ℝ) (heg0 : e > 0) (hel1 : e < 1), ∀ x : ℝ, abs (x - 2) < e → abs (p4_term 2020 x - p4_term 2020 2) < 1,
-  { by_cases hdlt : d < 1,
+  have he: ∃ (e : ℝ) (heg0 : e > 0) (hel1 : e ≤ 1), ∀ x : ℝ, abs (x - 2) < e → abs (p4_term 2020 x - p4_term 2020 2) < 1,
+  { by_cases hdlt : d ≤ 1,
     { use d,
       use hd,
       use hdlt,
       exact hh },
-    { use 0.5,
-      use (show (1 : ℝ) / 2 > 0, by norm_num),
-      use (show (1 : ℝ) / 2 < 1, by norm_num),
+    { use 1,
+      use (show (1 : ℝ) > 0, by norm_num),
+      use (show (1 : ℝ) ≤ 1, by norm_num),
       intro x,
       intro h12,
       apply hh x,
@@ -254,26 +253,45 @@ begin
   cases he with e he,
   cases he with heg0 he,
   cases he with hel1 he,
-  use 2 - (e / 2),
+  use 2 - e,
   use (by linarith),
   use (by linarith),
-  have hex: abs (p4_term 2020 (2 - e / 2) - p4_term 2020 2) < 1,
-  { apply he (2 - e / 2),
-    have hx : 2 - e / 2 - 2 = - (e / 2), {ring},
-    rw hx,
-    rw abs_neg (e / 2),
-    have he2 : 0 < e / 2, {linarith},
-    rw abs_of_pos he2,
+  intros k hklb hkub,
+  have hkx: abs (p4_term 2020 k - p4_term 2020 2) < 1,
+  { apply he k,
+    rw [← abs_neg _, neg_sub, abs_of_pos (show 2 - k > 0, by linarith)],
     linarith },
-  rw p4_terms_at_2 2020 at hex,
-  norm_cast at hex,
-  rw (show 2020 + 1 = 2021, by norm_num) at hex,
-  rw ←abs_neg at hex,
-  have hc: -(p4_term 2020 (2 - e / 2) - ↑2021) ≤ abs (-(p4_term 2020 (2 - e / 2) - ↑2021)) := le_abs_self _,
-  have hcc : -(p4_term 2020 (2 - e / 2) - ↑2021) < 1, {linarith},
+  rw p4_terms_at_2 2020 at hkx,
+  norm_cast at hkx,
+  rw (show 2020 + 1 = 2021, by norm_num) at hkx,
+  rw ←abs_neg at hkx,
+  have hc: -(p4_term 2020 k - ↑2021) ≤ abs (-(p4_term 2020 k - ↑2021)) := le_abs_self _,
+  have hcc : -(p4_term 2020 k - ↑2021) < 1, {linarith},
   rw neg_sub at hcc,
   norm_cast at hcc,
   linarith,
+end
+
+-- The second part of the problem, in terms of p4_term rather than the
+-- original recurrence and with an explicit term number.  Remark: we
+-- haven't actually shown the existence of k subject to the additional
+-- constraint of all the terms being nonzero, but neither did any of
+-- the official solutions.  However, the structure with the above
+-- result is designed so that only choosing a different value in the
+-- given interval, that has been shown to have all terms nonzero,
+-- would suffice to prove the full result.
+
+theorem p4_part_2_terms : ∃ (k : ℝ) (h1 : 1 < k) (h2 : k < 2), 2020 < (p4_term 2020) k :=
+begin
+  cases p4_part_2_terms_interval with kb hkb,
+  cases hkb with h1 hkb,
+  cases hkb with h2 hkb,
+  use 1 + kb / 2,
+  use (by linarith),
+  use (by linarith),
+  apply hkb,
+  { linarith },
+  { linarith }
 end
 
 -- The second part of the original problem.  Same remark as above
