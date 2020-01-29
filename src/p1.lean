@@ -5,6 +5,7 @@ import tactic.basic
 import tactic.linarith
 import tactic.norm_num
 import tactic.ring
+import tactic.ring_exp
 
 open int
 
@@ -87,28 +88,9 @@ begin
     have hc2m: a = 3 + 2^m + 2 * 2^m * d,
     { rw ← hc2,
       simp, },
-    conv at hc2m
-    begin
-      to_rhs,
-      congr,
-      congr,
-      skip,
-      rw ← mul_one (2^m : ℤ),
-      skip,
-      rw [mul_comm 2 (2^m : ℤ), mul_assoc],
-    end,
-    rw [add_assoc, ← left_distrib] at hc2m,
-    rw hc2m at hb,
-    conv at hb
-    begin
-      to_lhs,
-      congr,
-      congr,
-      congr,
-      skip,
-      rw [add_comm, add_sub_assoc],
-      norm_num,
-    end,
+    have hc2mm: a = 3 + 2 ^ m * (1 + 2 * d),
+    { rw hc2m,
+      ring },
     have hm1: ∃ m1 : ℕ, m = 1 + m1,
     { have hm2: ∃ m2 : ℕ, m = 2 + m2 := nat.exists_eq_add_of_le hm,
       cases hm2 with m2 hm2_h,
@@ -116,53 +98,10 @@ begin
       rw hm2_h,
       simp },
     cases hm1 with m1 hmm1,
-    conv at hb
-    begin
-      to_lhs,
-      congr,
-      congr,
-      congr,
-      skip,
-      rw [hmm1, add_comm 1 m1, pow_succ (2 : ℤ) m1],
-    end,
-    have hbb: (2 + 2 * 2 ^ m1 * (1 + 2 * d)) = 2 * (1 + 2^m1 * (1 + 2 * d)), {ring},
-    rw [hbb, ← mul_assoc] at hb,
-    conv at hb
-    begin
-      to_lhs,
-      congr,
-      congr,
-      congr,
-      rw mul_comm,
-    end,
-    rw [mul_assoc, int.mul_div_cancel_left _ (show (2 : ℤ) ≠ 0, by norm_num),
-        right_distrib, ←add_mod_mod, mul_assoc, mul_mod_right, add_zero] at hb,
-    conv at hb
-    begin
-      to_lhs,
-      congr,
-      congr,
-      skip,
-     rw [left_distrib, mul_one, ← mul_assoc],
-     congr,
-     skip,
-     congr,
-     skip,
-     congr,
-     rw [mul_comm, ← pow_succ, add_comm, ← hmm1],
-    end,
-    rw [left_distrib, left_distrib, ← add_assoc, ← mul_assoc, mul_comm 3 (2^m : ℤ),
+    rw [hc2mm, hmm1,
+        (show (3 + 2 ^ (1 + m1) * (1 + 2 * d)) * (3 + 2 ^ (1 + m1) * (1 + 2 * d) - 1) = 2 * (3 + 2^m1 + 2^(1 + m1) * (2 + 5 * d + 2^m1 * (1 + 2 * d) * (1 + 2 * d))), by ring_exp),
+        int.mul_div_cancel_left _ (show (2 : ℤ) ≠ 0, by norm_num), ← hmm1,
         ← add_mod_mod, mul_assoc, mul_mod_right, add_zero] at hb,
-    conv at hb
-    begin
-      to_lhs,
-      congr,
-      congr,
-      skip,
-      rw [(show (3 : ℤ) = 1 + 2, by norm_num), right_distrib, one_mul, ← pow_succ,
-          add_comm m1 1, ← hmm1],
-    end,
-    rw [← add_assoc, mul_one, ← add_mod_mod, mod_self, add_zero] at hb,
     have hbbx: (3 + (2 : ℤ)^m1) % 2^m = 3 % 2^m, {rw [← mod_mod, hb]},
     rw [mod_eq_mod_iff_mod_sub_eq_zero, add_comm, add_sub_assoc, sub_self, add_zero,
         hmm1, add_comm, pow_succ] at hbbx,
