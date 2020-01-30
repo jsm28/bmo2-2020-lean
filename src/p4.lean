@@ -1,23 +1,29 @@
 -- BMO2 2020 problem 4.
 
+import data.rat.basic
 import data.real.basic
 import tactic.basic
 import tactic.linarith
+import tactic.ring_exp
 import topology.instances.real
 
 noncomputable theory
 
 open real
 
+-- Some of the following are defined for a general field, although the
+-- problem is stated for real numbers, because it's convenient to use
+-- a sequence of rationals in proving terms are nonzero.
+
 -- Next term in sequence.
-def p4_seq_next (x y : ℝ) : ℝ := (y * y - 1) / x
+def p4_seq_next {α : Type} [field α] (x y : α) : α := (y * y - 1) / x
 
 -- Condition that sequence satisfies recurrence.
-def p4_recurrence (b : ℕ → ℝ) : Prop :=
+def p4_recurrence {α : Type} [field α] (b : ℕ → α) : Prop :=
 ∀ n : ℕ, b (n + 2) = p4_seq_next (b n) (b (n + 1))
 
 -- Condition that terms are nonzero.
-def p4_nonzero (b : ℕ → ℝ) : Prop := ∀ n : ℕ, b n ≠ 0
+def p4_nonzero {α : Type} [field α] (b : ℕ → α) : Prop := ∀ n : ℕ, b n ≠ 0
 
 -- Function we will show is an invariant (the same for all pairs of
 -- consecutive terms).
@@ -148,7 +154,7 @@ begin
 end
 
 -- Terms of the sequence, as functions of k.
-noncomputable def p4_term : ℕ → ℝ → ℝ
+noncomputable def p4_term {α : Type} [field α] : ℕ → α → α
 | 0 := λ k, 1
 | 1 := λ k, k
 | (nat.succ (nat.succ n)) := λ k, p4_seq_next (p4_term n k) (p4_term (nat.succ n) k)
@@ -169,7 +175,7 @@ begin
 end
 
 -- These functions have the expected value for k = 2.
-theorem p4_terms_at_2 : ∀ n : ℕ, p4_term n 2 = n + 1 :=
+theorem p4_terms_at_2 : ∀ n : ℕ, p4_term n (2 : ℝ) = n + 1 :=
 begin
   intro n,
   induction n using nat.case_strong_induction_on with m hm,
@@ -192,7 +198,7 @@ begin
 end
 
 -- These functions are continuous at k = 2.
-theorem p4_terms_continuous : ∀ n : ℕ, continuous_at (p4_term n) 2 :=
+theorem p4_terms_continuous : ∀ n : ℕ, continuous_at (p4_term n) (2 : ℝ) :=
 begin
   intro n,
   induction n using nat.case_strong_induction_on with m hm,
@@ -221,7 +227,7 @@ end
 theorem p4_terms_close : ∀ n : ℕ, ∀ ε > 0, ∃ δ > 0, ∀ x : ℝ, abs (x - 2) < δ → abs (p4_term n x - p4_term n 2) < ε :=
 begin
   intro n,
-  have h : continuous_at (p4_term n) 2 := p4_terms_continuous n,
+  have h : continuous_at (p4_term n) (2 : ℝ) := p4_terms_continuous n,
   unfold continuous_at at h,
   rw metric.tendsto_nhds_nhds at h,
   exact h,
@@ -272,45 +278,179 @@ begin
   linarith,
 end
 
--- The second part of the problem, in terms of p4_term rather than the
--- original recurrence and with an explicit term number.  Remark: we
--- haven't actually shown the existence of k subject to the additional
--- constraint of all the terms being nonzero, but neither did any of
--- the official solutions.  However, the structure with the above
--- result is designed so that only choosing a different value in the
--- given interval, that has been shown to have all terms nonzero,
--- would suffice to prove the full result.
+-- Having found an interval, we now need to show it contains a real
+-- such that all the terms are nonzero.  A natural informal proof is:
+-- each b_n is a rational function of k, except for at finitely many
+-- points where a previous term was zero, and none of those functions
+-- is the constant 0 (because of the values at 2), so each b_n has
+-- only finitely many k for which it is zero, so there are only
+-- countably many such k in total, but there are uncountably many k in
+-- the interval.  This seems hard for a beginner to formalise, so
+-- instead we show that any noninteger rational results in all terms
+-- nonzero.
 
-theorem p4_part_2_terms : ∃ (k : ℝ) (h1 : 1 < k) (h2 : k < 2), 2020 < (p4_term 2020) k :=
+-- Define the concept of a power of a natural number (intended to be
+-- prime) exactly dividing the denominator of a rational (and that
+-- number not dividing the numerator).  (Ideally this would be based
+-- on extending the notion of multiplicity with which a prime divides
+-- a natural number to the case of rationals with negative
+-- multiplicity allowed.)
+
+def pow_exactly_divides_denom (p : ℕ) (k : ℕ) (q : ℚ) :=
+  ∃ (a : ℤ) (b : ℤ), a.nat_abs.coprime p ∧ b.nat_abs.coprime p ∧ q = (a : ℚ) / ((b * p ^ k) : ℚ)
+
+-- How this behaves for products.
+theorem divides_denom_mul (p : ℕ) (hp : p.prime) (kq : ℕ) (q : ℚ)
+  (hkq : pow_exactly_divides_denom p kq q)
+  (kr : ℕ) (r : ℚ) (hkr : pow_exactly_divides_denom p kr r) :
+  pow_exactly_divides_denom p (kq + kr) (q * r) :=
+begin
+  cases hkq with qa hkq,
+  cases hkq with qb hkq,
+  cases hkq with hqa hkq,
+  cases hkq with hqb hkq,
+  cases hkr with ra hkr,
+  cases hkr with rb hkr,
+  cases hkr with hra hkr,
+  cases hkr with hrb hkr,
+  use qa * ra,
+  use qb * rb,
+  split,
+  { rw int.nat_abs_mul,
+    exact nat.coprime.mul hqa hra },
+  { split,
+    { rw int.nat_abs_mul,
+      exact nat.coprime.mul hqb hrb },
+    { rw [hkq, hkr],
+      push_cast,
+      field_simp,
+      congr' 1,
+      ring_exp } }
+end
+
+-- How this behaves for division.
+theorem divides_denom_div (p : ℕ) (hp : p.prime) (kqr : ℕ) (kr : ℕ) (q : ℚ)
+  (hkq : pow_exactly_divides_denom p (kqr + kr) q)
+  (kr : ℕ) (r : ℚ) (hkr : pow_exactly_divides_denom p kr r) :
+  pow_exactly_divides_denom p kqr (q / r) :=
+begin
+  cases hkq with qa hkq,
+  cases hkq with qb hkq,
+  cases hkq with hqa hkq,
+  cases hkq with hqb hkq,
+  cases hkr with ra hkr,
+  cases hkr with rb hkr,
+  cases hkr with hra hkr,
+  cases hkr with hrb hkr,
+  use qa * rb,
+  use qb * ra,
+  split,
+  { rw int.nat_abs_mul,
+    exact nat.coprime.mul hqa hrb },
+  { split,
+    { rw int.nat_abs_mul,
+      exact nat.coprime.mul hqb hra },
+    { rw [hkq, hkr],
+      push_cast,
+      rw pow_add,
+      field_simp,
+      sorry } }
+end
+
+-- Any rational with denominator not 1 is suitable.
+
+theorem p4_rational_terms_nonzero (k : ℚ) (hk : k.denom ≠ 1): ∀ n : ℕ, p4_term n k ≠ 0 :=
+begin
+  sorry
+end
+
+theorem p4_rational_real_terms_eq (k : ℚ) : ∀ n : ℕ, ↑(p4_term n k) = p4_term n (↑k : ℝ) :=
+begin
+  intro n,
+  induction n using nat.case_strong_induction_on with m hm,
+  { unfold p4_term,
+    norm_cast },
+  { cases m,
+    { unfold p4_term },
+    { unfold p4_term,
+      rw [← hm m (nat.le_succ _), ← hm (nat.succ m) (by refl)],
+      unfold p4_seq_next,
+      norm_cast } }
+end
+
+theorem p4_rational_real_terms_nonzero (k : ℚ) (hk : k.denom ≠ 1): ∀ n : ℕ, p4_term n (↑k : ℝ) ≠ 0 :=
+begin
+  intro n,
+  rw ← p4_rational_real_terms_eq,
+  norm_cast,
+  exact p4_rational_terms_nonzero k hk n
+end
+
+-- The actual result that a suitable value is in the interval.
+
+theorem p4_interval_terms_nonzero (kb : ℝ) (h1 : 1 ≤ kb) (h2 : kb < 2) :
+  ∃ (k : ℝ) (h1 : kb < k) (h2 : k < 2), ∀ n : ℕ, p4_term n k ≠ 0 :=
+begin
+  have hq: ∃ q : ℚ, kb < q ∧ (q : ℝ) < 2 := exists_rat_btwn h2,
+  cases hq with q hq,
+  use (↑q : ℝ),
+  cases hq with hql hqr,
+  use hql,
+  use hqr,
+  have hq1 : (1 : ℝ) < q, {linarith},
+  norm_cast at hq1,
+  norm_cast at hqr,
+  have hqd : q.denom ≠ 1,
+  { intro hqd,
+    have hqnum : (↑q.num) = q := rat.coe_int_num_of_denom_eq_one hqd,
+    rw ← hqnum at hq1,
+    rw ← hqnum at hqr,
+    norm_cast at hq1,
+    norm_cast at hqr,
+    linarith },
+  exact p4_rational_real_terms_nonzero q hqd
+end
+
+-- The second part of the problem, in terms of p4_term rather than the
+-- original recurrence and with an explicit term number.
+theorem p4_part_2_terms : ∃ (k : ℝ) (h1 : 1 < k) (h2 : k < 2),
+  2020 < (p4_term 2020) k ∧ ∀ n : ℕ, p4_term n k ≠ 0 :=
 begin
   cases p4_part_2_terms_interval with kb hkb,
   cases hkb with h1 hkb,
   cases hkb with h2 hkb,
-  use 1 + kb / 2,
+  cases p4_interval_terms_nonzero kb h1 h2 with k hk,
+  cases hk with hk1 hk,
+  cases hk with hk2 hk,
+  use k,
   use (by linarith),
-  use (by linarith),
-  apply hkb,
-  { linarith },
-  { linarith }
+  use hk2,
+  split,
+  { exact hkb k hk1 hk2 },
+  { exact hk },
 end
 
--- The second part of the original problem.  Same remark as above
--- applies about not showing all terms nonzero.
-theorem p4_part_2 : ∃ (k : ℝ) (h1 : 1 < k) (h2 : k < 2) (n : ℕ),
-  ∀ b : ℕ → ℝ, b 0 = 1 → b 1 = k → (p4_recurrence b) → 2020 < b n :=
+-- The second part of the original problem.
+theorem p4_part_2 : ∃ (k : ℝ) (h1 : 1 < k) (h2 : k < 2),
+  ∀ b : ℕ → ℝ, b 0 = 1 → b 1 = k → (p4_recurrence b) →
+    ((∃ n : ℕ, 2020 < b n) ∧ (∀ n : ℕ, b n ≠ 0)) :=
 begin
-  have hterms: ∃ (k : ℝ) (h1 : 1 < k) (h2 : k < 2), 2020 < (p4_term 2020) k := p4_part_2_terms,
+  have hterms: ∃ (k : ℝ) (h1 : 1 < k) (h2 : k < 2), 2020 < (p4_term 2020) k ∧ ∀ n : ℕ, p4_term n k ≠ 0 := p4_part_2_terms,
   cases hterms with k hterms,
   cases hterms with h1 hterms,
   cases hterms with h2 hterms,
   use k,
   use h1,
   use h2,
-  use 2020,
   intro b,
   intro hb0,
   intro hb1,
   intro hrec,
-  rw p4_terms b hrec k hb0 hb1 2020,
-  exact hterms,
+  split,
+  { use 2020,
+    rw p4_terms b hrec k hb0 hb1 2020,
+     exact hterms.1 },
+  { intro n,
+    rw p4_terms b hrec k hb0 hb1 n,
+    exact hterms.2 n }
 end
