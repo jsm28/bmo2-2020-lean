@@ -447,18 +447,35 @@ begin
   induction n using nat.case_strong_induction_on with m hm,
   { unfold p4_term,
     rw zero_mul,
-    sorry },
+    use 1,
+    use 1,
+    norm_num },
   { cases m,
     { unfold p4_term,
       rw one_mul,
       exact hkt },
     { unfold p4_term,
-      sorry } }
+      have hmd : pow_exactly_divides_denom p (m * t) (p4_term m k) := hm m (nat.le_succ m),
+      have hm1d : pow_exactly_divides_denom p ((nat.succ m) * t) (p4_term (nat.succ m) k) := hm (nat.succ m) (by refl),
+      rw [(show (m + 1) * t = m * t + t, by ring)] at hm1d,
+      have hm2d : pow_exactly_divides_denom p (m * t + 2 * t) (p4_seq_next (p4_term m k) (p4_term (nat.succ m) k)) := divides_denom_recurrence p hp t (m * t) (p4_term m k) hmd (p4_term (nat.succ m) k) hm1d htpos,
+      rw [nat.succ_eq_add_one, nat.succ_eq_add_one,
+          (show (m + 1 + 1) * t = (m * t + 2 * t), by ring)],
+          exact hm2d } }
 end
 
 -- Any rational with denominator not 1 is suitable.
 theorem p4_rational_terms_nonzero (k : ℚ) (hk : k.denom ≠ 1): ∀ n : ℕ, p4_term n k ≠ 0 :=
 begin
+  have hf : ∃ (p : ℕ), p.prime ∧ p ∣ k.denom,
+  { use nat.min_fac k.denom,
+    split,
+    { exact nat.min_fac_prime hk },
+    { exact nat.min_fac_dvd k.denom } },
+  cases hf with p hf,
+  cases hf with hp hdvd,
+  have hexp : ∃ (exp : ℕ), 0 < exp ∧ pow_exactly_divides_denom p exp k,
+  { sorry },
   sorry
 end
 
