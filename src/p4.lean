@@ -331,7 +331,7 @@ end
 -- How this behaves for division.
 theorem divides_denom_div (p : ℕ) (hp : p.prime) (kqr : ℕ) (kr : ℕ) (q : ℚ)
   (hkq : pow_exactly_divides_denom p (kqr + kr) q)
-  (kr : ℕ) (r : ℚ) (hkr : pow_exactly_divides_denom p kr r) :
+  (r : ℚ) (hkr : pow_exactly_divides_denom p kr r) :
   pow_exactly_divides_denom p kqr (q / r) :=
 begin
   cases hkq with qa hkq,
@@ -344,6 +344,25 @@ begin
   cases hkr with hrb hkr,
   use qa * rb,
   use qb * ra,
+  have hranz : (ra : ℚ) ≠ 0,
+  { norm_cast,
+    intro hraz,
+    rw hraz at hra,
+    norm_num at hra,
+    rw hra at hp,
+    norm_num at hp },
+  have hqbnz : (qb : ℚ) ≠ 0,
+  { norm_cast,
+    intro hqbz,
+    rw hqbz at hqb,
+    norm_num at hqb,
+    rw hqb at hp,
+    norm_num at hp },
+  have hpnz : (p : ℚ) ≠ 0,
+  { norm_cast,
+    intro hpz,
+    rw hpz at hp,
+    norm_num at hp },
   split,
   { rw int.nat_abs_mul,
     exact nat.coprime.mul hqa hrb },
@@ -352,13 +371,92 @@ begin
       exact nat.coprime.mul hqb hra },
     { rw [hkq, hkr],
       push_cast,
-      rw pow_add,
-      field_simp,
+      field_simp [hranz, hqbnz, pow_ne_zero kqr hpnz, pow_ne_zero kr hpnz,
+                  pow_ne_zero (kqr + kr) hpnz],
+      ring_exp } }
+end
+
+-- How this behaves for subtracting 1.
+theorem divides_denom_sub_one (p : ℕ) (hp : p.prime) (kq : ℕ) (q : ℚ)
+  (hkq : pow_exactly_divides_denom p kq q) (hkqpos : 0 < kq) :
+  pow_exactly_divides_denom p kq (q - 1) :=
+begin
+  cases hkq with qa hkq,
+  cases hkq with qb hkq,
+  cases hkq with hqa hkq,
+  cases hkq with hqb hkq,
+  use qa - qb * p ^ kq,
+  use qb,
+  split,
+  { apply nat.coprime.symm,
+    rw nat.prime.coprime_iff_not_dvd hp,
+    intro hdvd,
+    rw ← int.coe_nat_dvd at hdvd,
+    rw int.dvd_nat_abs at hdvd,
+    have hkq1 : ∃ kq1 : ℕ, kq = kq1 + 1,
+    { cases kq,
+      { norm_num at hkqpos },
+      { use kq } },
+    cases hkq1 with kq1 hkq1,
+    rw [hkq1, pow_add, pow_one,
+        (show qa - qb * (↑p ^ kq1 * ↑p) = qa + ↑p * (-qb * ↑p ^ kq1), by ring),
+        ←dvd_add_iff_left (dvd.intro (-qb * ↑p ^ kq1) rfl),
+        int.coe_nat_dvd_left] at hdvd,
+        have hqas := nat.coprime.symm hqa,
+        rw nat.prime.coprime_iff_not_dvd hp at hqas,
+        exact hqas hdvd },
+  { split,
+    { exact hqb },
+    { rw hkq,
+      have hqbnz : (qb : ℚ) ≠ 0,
+      { norm_cast,
+        intro hqbz,
+        rw hqbz at hqb,
+        norm_num at hqb,
+        rw hqb at hp,
+        norm_num at hp },
+      have hpnz : (p : ℚ) ≠ 0,
+      { norm_cast,
+        intro hpz,
+        rw hpz at hp,
+        norm_num at hp },
+      field_simp [hqbnz, pow_ne_zero kq hpnz] } }
+end
+
+-- How this behaves for iterating the recurrence.
+theorem divides_denom_recurrence (p : ℕ) (hp : p.prime) (t : ℕ) (kq : ℕ) (q : ℚ)
+  (hkq : pow_exactly_divides_denom p kq q) (r : ℚ)
+  (hkr : pow_exactly_divides_denom p (kq + t) r) (htpos : 0 < t):
+  pow_exactly_divides_denom p (kq + 2 * t) (p4_seq_next q r) :=
+begin
+  unfold p4_seq_next,
+  have hnum : pow_exactly_divides_denom p (kq + 2 * t + kq) (r * r - 1),
+  { apply divides_denom_sub_one p hp (kq + 2 * t + kq) (r * r),
+    { rw (show kq + 2 * t + kq = (kq + t) + (kq + t), by ring),
+      apply divides_denom_mul p hp (kq + t) r hkr (kq + t) r hkr },
+    { linarith } },
+  apply divides_denom_div p hp (kq + 2 * t) kq (r * r - 1) hnum q hkq
+end
+
+-- What this implies for the terms.
+theorem p4_terms_divides_denom (p : ℕ) (hp : p.prime) (t : ℕ) (htpos : 0 < t)
+  (k : ℚ) (hkt : pow_exactly_divides_denom p t k) :
+  ∀ n : ℕ, pow_exactly_divides_denom p (n * t) (p4_term n k) :=
+begin
+  intro n,
+  induction n using nat.case_strong_induction_on with m hm,
+  { unfold p4_term,
+    rw zero_mul,
+    sorry },
+  { cases m,
+    { unfold p4_term,
+      rw one_mul,
+      exact hkt },
+    { unfold p4_term,
       sorry } }
 end
 
 -- Any rational with denominator not 1 is suitable.
-
 theorem p4_rational_terms_nonzero (k : ℚ) (hk : k.denom ≠ 1): ∀ n : ℕ, p4_term n k ≠ 0 :=
 begin
   sorry
