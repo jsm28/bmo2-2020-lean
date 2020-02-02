@@ -289,16 +289,22 @@ nat.eq_zero_of_dvd_of_div_eq_zero w
 theorem zero_if_all_powers_divide_nat (a : ℕ) (h : ∀ m : ℕ, 2^m ∣ a) : a = 0 :=
 eq_zero_of_dvd_of_gt (h a) (nat.lt_pow_self dec_trivial a)
 
+-- If a number with larger absolute value divides an integer, it is zero.
+theorem eq_zero_of_dvd_of_nat_abs_gt_nat_abs {a b : ℤ} (w : a ∣ b) (h : nat_abs b < nat_abs a)
+  : b = 0 :=
+begin
+  rw [←nat_abs_dvd, ←dvd_nat_abs, coe_nat_dvd] at w,
+  rw ←nat_abs_eq_zero,
+  exact eq_zero_of_dvd_of_gt w h
+end
+
 -- If all powers of 2 divide an integer, it is zero.
 theorem zero_if_all_powers_divide_int (a : ℤ) (h : ∀ m : ℕ, 2^m ∣ a) : a = 0 :=
 begin
-  have habs : 2 ^ (nat_abs a) ∣ nat_abs a,
-  { rw ←coe_nat_dvd_left,
-    push_cast,
-    norm_num,
-    exact h (nat_abs a) },
-  rw ← nat_abs_eq_zero,
-  exact eq_zero_of_dvd_of_gt habs (nat.lt_pow_self dec_trivial (nat_abs a))
+  have hpow : nat_abs a < 2 ^ (nat_abs a) := nat.lt_pow_self dec_trivial (nat_abs a),
+  have heq : 2 ^ (nat_abs a) = nat_abs (2 ^ (nat_abs a)), {norm_cast},
+  rw heq at hpow,
+  exact eq_zero_of_dvd_of_nat_abs_gt_nat_abs (h (nat_abs a)) hpow
 end
 
 -- The first term of the sequence is 3.
