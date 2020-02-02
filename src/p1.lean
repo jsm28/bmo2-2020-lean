@@ -296,9 +296,9 @@ begin
   exact eq_zero_of_dvd_of_gt habs (nat.lt_pow_self dec_trivial (nat_abs a))
 end
 
--- If the first term of the sequence is at least 3, it is 3.
+-- The first term of the sequence is 3.
 theorem first_term_three_if_at_least_three (a : ℕ → ℤ) (hodd : all_odd a)
-    (hrec : p1_recurrence a) (ha3 : 3 ≤ a 0) : a 0 = 3 :=
+    (hrec : p1_recurrence a) : a 0 = 3 :=
 begin
   have hallpowers: ∀ m : ℕ, 2^m ∣ a 0 - 3,
   { intro m,
@@ -312,9 +312,8 @@ end
 theorem p1_result  (a : ℕ → ℤ) (hrec : p1_recurrence a) (ha3 : 2 < a 0) :
     all_odd a ↔ a 0 = 3 :=
 begin
-  rw [(show (2 : ℤ) = 3 - 1, by norm_num), sub_one_lt_iff] at ha3,
   split,
-  { intro hodd, exact first_term_three_if_at_least_three a hodd hrec ha3, },
+  { intro hodd, exact first_term_three_if_at_least_three a hodd hrec, },
   { intro h03,
     have halln: ∀ n : ℕ, a n = 3,
     { intro n,
