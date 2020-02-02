@@ -1,5 +1,8 @@
 -- BMO2 2020 problem 4.
 
+-- Choices made for formalization: we index the sequence starting at 0
+-- rather than at 1 as in the original problem.
+
 import data.rat.basic
 import data.real.basic
 import tactic.basic

@@ -1,5 +1,10 @@
 -- BMO2 2020 problem 1.
 
+-- Choices made for formalization: the original problem does not
+-- specify a type for the terms of the sequence; we choose ℤ.  We also
+-- index the sequence starting at 0 rather than at 1 as in the
+-- original problem.
+
 import data.int.basic
 import tactic.basic
 import tactic.linarith
