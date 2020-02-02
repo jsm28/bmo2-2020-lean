@@ -277,15 +277,15 @@ end
 
 -- If a larger number divides a natural number, it is zero.
 theorem eq_zero_of_dvd_of_gt {a b : ℕ} (w : a ∣ b) (h : b < a) : b = 0 :=
-nat.eq_zero_of_dvd_of_div_eq_zero w ((nat.div_eq_zero_iff (show 0 < a, by linarith)).elim_right h)
+nat.eq_zero_of_dvd_of_div_eq_zero w ((nat.div_eq_zero_iff (lt_of_le_of_lt (zero_le b) h)).elim_right h)
 
 -- If all powers of 2 divide a natural number, it is zero.
 -- (Not needed at present.)
 theorem zero_if_all_powers_divide_nat (a : ℕ) (h: ∀ m : ℕ, 2^m ∣ a) : a = 0 :=
 eq_zero_of_dvd_of_gt (h a) (nat.lt_pow_self dec_trivial a)
 
--- If all powers of 2 divide a nonnegative integer, it is zero.
-theorem zero_if_all_powers_divide_int (a : ℤ) (ha : 0 ≤ a) (h: ∀ m : ℕ, 2^m ∣ a) : a = 0 :=
+-- If all powers of 2 divide an integer, it is zero.
+theorem zero_if_all_powers_divide_int (a : ℤ) (h: ∀ m : ℕ, 2^m ∣ a) : a = 0 :=
 begin
   have habs : 2 ^ (nat_abs a) ∣ nat_abs a,
   { rw ←coe_nat_dvd_left,
@@ -303,9 +303,7 @@ begin
   have hallpowers: ∀ m : ℕ, 2^m ∣ a 0 - 3,
   { intro m,
     exact all_powers_divides_terms_minus_three a hodd hrec m 0, },
-  have ha0: 0 ≤ a 0 - 3,
-  { linarith, },
-  have ha30: a 0 - 3 = 0 := zero_if_all_powers_divide_int (a 0 - 3) ha0 hallpowers,
+  have ha30: a 0 - 3 = 0 := zero_if_all_powers_divide_int (a 0 - 3) hallpowers,
   rw [← add_zero (3 : ℤ), ← ha30],
   ring,
 end
