@@ -201,6 +201,15 @@ begin
       ring } }
 end
 
+-- Continuity at a point of the result of dividing two functions
+-- continuous at that point, where the denominator is nonzero.  Is
+-- this in mathlib?  Should it be (for general topological
+-- semifields, not just ℝ?)?
+theorem continuous_at.div {α : Type} [topological_space α] {f : α → ℝ} {g : α → ℝ} {x : α}
+    (hf : continuous_at f x) (hg : continuous_at g x) (hnz : g x ≠ 0) :
+  continuous_at (λ x, f x / g x) x :=
+continuous_at.mul hf (continuous_at.comp (tendsto_inv hnz) hg)
+
 -- These functions are continuous at k = 2.
 theorem p4_terms_continuous : ∀ n : ℕ, continuous_at (p4_term n) (2 : ℝ) :=
 begin
@@ -213,18 +222,16 @@ begin
       exact continuous_at_id },
     { unfold p4_term,
       unfold p4_seq_next,
-      apply continuous_at.mul,
+      apply continuous_at.div,
       { apply continuous_at.add,
         { apply continuous_at.mul,
           { exact hm (nat.succ m) (by refl), },
           { exact hm (nat.succ m) (by refl), } },
         { exact continuous_at_const } },
-      { apply continuous_at.comp,
-        { apply tendsto_inv,
-          { rw p4_terms_at_2 m,
-            norm_cast,
-            exact dec_trivial, } },
-        { exact hm m (nat.le_succ m) } } } }
+      { exact hm m (nat.le_succ m) },
+      { rw p4_terms_at_2 m,
+        norm_cast,
+        exact dec_trivial } } }
 end
 
 -- These functions have values close to n + 1 near k = 2.
