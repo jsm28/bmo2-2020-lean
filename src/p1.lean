@@ -275,40 +275,25 @@ begin
     exact dvd_trans hm1div ha3d2, },
 end
 
+-- If a larger number divides a natural number, it is zero.
+theorem eq_zero_of_dvd_of_gt {a b : ℕ} (w : a ∣ b) (h : b < a) : b = 0 :=
+nat.eq_zero_of_dvd_of_div_eq_zero w ((nat.div_eq_zero_iff (show 0 < a, by linarith)).elim_right h)
+
 -- If all powers of 2 divide a natural number, it is zero.
+-- (Not needed at present.)
 theorem zero_if_all_powers_divide_nat (a : ℕ) (h: ∀ m : ℕ, 2^m ∣ a) : a = 0 :=
-begin
-  by_cases haeq0: a = 0,
-  { assumption },
-  { have ha : 2^a ∣ a := h a,
-    have h2pself : ∀ n : ℕ, n < 2^n,
-    { intro n,
-      exact nat.lt_pow_self dec_trivial n, },
-    exfalso,
-    have h2aself: a < 2^a := h2pself a,
-    have hapos : a > 0 := nat.pos_of_ne_zero haeq0,
-    have hself2a : 2^a ≤ a := (nat.le_of_dvd hapos) ha,
-    have haa: a < a := lt_of_lt_of_le h2aself hself2a,
-    exact lt_irrefl a haa },
-end
+eq_zero_of_dvd_of_gt (h a) (nat.lt_pow_self dec_trivial a)
 
 -- If all powers of 2 divide a nonnegative integer, it is zero.
 theorem zero_if_all_powers_divide_int (a : ℤ) (ha : 0 ≤ a) (h: ∀ m : ℕ, 2^m ∣ a) : a = 0 :=
 begin
-  have hb: ∃ b : ℕ, a = (b : ℤ),
-  { use nat_abs a,
-    exact eq_nat_abs_of_zero_le ha, },
-  cases hb with b hb_h,
-  have hbd : ∀ m : ℕ, 2^m ∣ b,
-  { intro m,
-    have hma: 2^m ∣ a := h m,
-    rw hb_h at hma,
-    norm_cast at hma,
-    exact hma, },
-  have hb0 : b = 0,
-  { exact zero_if_all_powers_divide_nat b hbd, },
-  rw [hb_h, hb0],
-  refl,
+  have habs : 2 ^ (nat_abs a) ∣ nat_abs a,
+  { rw ←coe_nat_dvd_left,
+    push_cast,
+    norm_num,
+    exact h (nat_abs a) },
+  rw ← nat_abs_eq_zero,
+  exact eq_zero_of_dvd_of_gt habs (nat.lt_pow_self dec_trivial (nat_abs a))
 end
 
 -- If the first term of the sequence is at least 3, it is 3.
