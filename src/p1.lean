@@ -236,12 +236,9 @@ end
 -- If a % b = c then b divides a - c.
 theorem dvd_sub_of_mod_eq (a b c : ℤ) (h : a % b = c) : b ∣ a - c :=
 begin
-  rw mod_def at h,
-  have hx : a - b * (a / b) + b * (a / b) = c + b * (a / b), {rw h},
-  rw [add_comm, ← add_sub_assoc, add_comm, add_sub_assoc, sub_self,
-      add_zero] at hx,
-  rw [hx, add_comm, add_sub_assoc, sub_self, add_zero],
-  simp
+  have hx : a % b % b = c % b, {rw h},
+  rw [mod_mod, ←mod_sub_cancel_right c, sub_self, zero_mod] at hx,
+  exact dvd_of_mod_eq_zero hx
 end
 
 -- If n is 3 mod all powers of 2 (4 and above), n - 3 is divisible by
