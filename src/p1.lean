@@ -233,55 +233,40 @@ begin
         finish, }}},
 end
 
+-- If a % b = c then b divides a - c.
+theorem dvd_sub_of_mod_eq (a b c : ℤ) (h : a % b = c) : b ∣ a - c :=
+begin
+  rw mod_def at h,
+  have hx : a - b * (a / b) + b * (a / b) = c + b * (a / b), {rw h},
+  rw [add_comm, ← add_sub_assoc, add_comm, add_sub_assoc, sub_self,
+      add_zero] at hx,
+  rw [hx, add_comm, add_sub_assoc, sub_self, add_zero],
+  simp
+end
+
+-- If n is 3 mod all powers of 2 (4 and above), n - 3 is divisible by
+-- all powers of 2.
+theorem all_powers_divide_n_minus_3 (n : ℤ) (hmod : ∀ m : ℕ, 2 ≤ m → n % 2^m = 3) :
+  ∀ m : ℕ, 2^m ∣ n - 3 :=
+begin
+  intro m,
+  by_cases h2m : 2 ≤ m,
+  { exact dvd_sub_of_mod_eq n (2^m) 3 (hmod m h2m) },
+  { have h4 : 2 ^ 2 ∣ n - 3 := dvd_sub_of_mod_eq n (2 ^ 2) 3 (hmod 2 dec_trivial),
+    norm_cast,
+    norm_cast at h4,
+    exact pow_dvd_of_le_of_pow_dvd (le_trans (le_of_not_gt h2m) dec_trivial) h4 }
+end
+
 -- All powers of 2 divide all terms minus 3.
-theorem all_powers_divides_terms_minus_three (a : ℕ → ℤ) (hodd : all_odd a)
+theorem all_powers_divide_terms_minus_three (a : ℕ → ℤ) (hodd : all_odd a)
     (hrec : p1_recurrence a) :
   ∀ m : ℕ, ∀ n : ℕ, 2^m ∣ (a n) - 3 :=
 begin
   intros m n,
-  by_cases h2m : 2 ≤ m,
-  { have hmod : (a n) % 2^m = 3 := three_mod_all_powers a hodd hrec m h2m n,
-    rw mod_def at hmod,
-    have hmodx : a n - 2^m * (a n / 2^m) + 2^m * (a n / 2^m) = 3 + 2^m * (a n / 2 ^ m), {rw hmod},
-    rw [add_comm, ← add_sub_assoc, add_comm, add_sub_assoc, sub_self,
-        add_zero] at hmodx,
-    rw [hmodx, add_comm, add_sub_assoc, sub_self, add_zero],
-    simp, },
-  { have hmle1 : m ≤ 1,
-    { apply le_of_not_gt,
-      rw gt,
-      exact h2m, },
-    have haodd : a n % 2 = 1 := hodd n,
-    rw mod_def at haodd,
-    have ha3m2 : a n - 2 * (a n / 2) + 2 * (a n / 2) - 3 = 2 * (a n / 2) - 2,
-    { rw [haodd, add_comm, add_sub_assoc],
-      ring, },
-    rw [add_comm, ← add_sub_assoc, add_comm, add_sub_assoc, sub_self,
-        add_zero] at ha3m2,
-    conv at ha3m2
-    begin
-      to_rhs,
-      congr,
-      skip,
-      rw (show (2 : ℤ) = 2 * 1, by norm_num),
-    end,
-    rw ← mul_sub_left_distrib at ha3m2,
-    have ha3d2 : 2 ∣ a n - 3 := dvd_of_mul_right_eq _ ha3m2.symm,
-    rw (show (2 : ℤ) = 2^1, by norm_num) at ha3d2,
-    have hm1div : (2 : ℤ)^m ∣ 2^1,
-    { have hm1 : ∃ m1 : ℕ, 1 = m + m1 := nat.exists_eq_add_of_le hmle1,
-      cases hm1 with m1 hm1_h,
-      conv
-      begin
-        congr,
-        skip,
-        congr,
-        skip,
-        rw hm1_h,
-      end,
-      rw pow_add,
-      exact dvd_of_mul_right_eq (2^m1) rfl },
-    exact dvd_trans hm1div ha3d2, },
+  apply all_powers_divide_n_minus_3,
+  intros m2 hm2,
+  exact three_mod_all_powers a hodd hrec m2 hm2 n
 end
 
 -- If a larger number divides a natural number, it is zero.
@@ -313,12 +298,12 @@ begin
 end
 
 -- The first term of the sequence is 3.
-theorem first_term_three_if_at_least_three (a : ℕ → ℤ) (hodd : all_odd a)
+theorem first_term_three (a : ℕ → ℤ) (hodd : all_odd a)
     (hrec : p1_recurrence a) : a 0 = 3 :=
 begin
   have hallpowers : ∀ m : ℕ, 2^m ∣ a 0 - 3,
   { intro m,
-    exact all_powers_divides_terms_minus_three a hodd hrec m 0, },
+    exact all_powers_divide_terms_minus_three a hodd hrec m 0, },
   have ha30 : a 0 - 3 = 0 := zero_if_all_powers_divide_int (a 0 - 3) hallpowers,
   rw [← add_zero (3 : ℤ), ← ha30],
   ring,
@@ -329,7 +314,7 @@ theorem p1_result  (a : ℕ → ℤ) (hrec : p1_recurrence a) (ha3 : 2 < a 0) :
     all_odd a ↔ a 0 = 3 :=
 begin
   split,
-  { intro hodd, exact first_term_three_if_at_least_three a hodd hrec, },
+  { intro hodd, exact first_term_three a hodd hrec, },
   { intro h03,
     have halln : ∀ n : ℕ, a n = 3,
     { intro n,
