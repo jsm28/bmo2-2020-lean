@@ -471,9 +471,9 @@ begin
         hm (nat.succ m) (by refl),
       rw [(show (m + 1) * t = m * t + t, by ring)] at hm1d,
       have hm2d : pow_exactly_divides_denom p (m * t + 2 * t)
-          (p4_seq_next (p4_term m k) (p4_term (nat.succ m) k))
-        := divides_denom_recurrence p hp t (m * t) (p4_term m k) hmd (p4_term (nat.succ m) k)
-                                    hm1d htpos,
+          (p4_seq_next (p4_term m k) (p4_term (nat.succ m) k)) :=
+        divides_denom_recurrence p hp t (m * t) (p4_term m k) hmd (p4_term (nat.succ m) k)
+                                 hm1d htpos,
       rw [nat.succ_eq_add_one, nat.succ_eq_add_one,
           (show (m + 1 + 1) * t = (m * t + 2 * t), by ring)],
           exact hm2d } }
