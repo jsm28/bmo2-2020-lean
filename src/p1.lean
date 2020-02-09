@@ -87,9 +87,7 @@ begin
   { exfalso,
     unfold p1_seq_next at hb,
     rw mod_def at hc2,
-    let d := a / (2 * 2^m),
-    have hd : d = a / (2 * 2^m) := rfl,
-    rw ← hd at hc2,
+    set d := a / (2 * 2^m) with hd,
     have hc2m : a = 3 + 2^m + 2 * 2^m * d,
     { rw ← hc2,
       simp, },
@@ -148,9 +146,7 @@ begin
   { exfalso,
     unfold p1_seq_next at hb,
     rw mod_def at hc1,
-    let d := a / (2 * 2),
-    have hd : d = a / (2 * 2) := rfl,
-    rw ← hd at hc1,
+    set d := a / (2 * 2) with hd,
     have hc1m : a = 1 + 2 * 2 * d,
     { conv
       begin
@@ -183,8 +179,7 @@ theorem induction_base_all (a : ℕ → ℤ) (hodd : all_odd a) (hrec : p1_recur
 begin
   intro n,
   let an : ℤ := a n,
-  let an1 : ℤ := a (n + 1),
-  have han1 : an1 = a (n + 1) := rfl,
+  set an1 : ℤ := a (n + 1) with han1,
   have hrecn : a (n + 1) = p1_seq_next an, {rw hrec n},
   rw ← han1 at hrecn,
   have hanodd : odd an := hodd n,
@@ -200,8 +195,7 @@ theorem induction_main_all (m : ℕ) (a : ℕ → ℤ) (hm : 2 ≤ m)
 begin
   intro n,
   let an : ℤ := a n,
-  let an1 : ℤ := a (n + 1),
-  have han1 : an1 = a (n + 1) := rfl,
+  set an1 : ℤ := a (n + 1) with han1,
   have hrecn : a (n + 1) = p1_seq_next an, {rw hrec n},
   rw ← han1 at hrecn,
   have hanmod : an % 2^m = 3 := hmod n,
