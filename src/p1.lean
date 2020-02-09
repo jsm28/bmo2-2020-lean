@@ -24,47 +24,44 @@ def p1_recurrence (a : ℕ → ℤ) : Prop := ∀ n : ℕ, a (n + 1) = p1_seq_ne
 def odd (a : ℤ) : Prop := a % 2 = 1
 def all_odd (a : ℕ → ℤ) : Prop := ∀ n : ℕ, odd (a n)
 
--- If an integer from 0 to 2b is a mod b, it is a or a + b.
-theorem mod_mul_2_aux (n : ℤ) (a : ℤ) (b : ℤ) (hbpos : 0 < b) (hmod : n % b = a)
-    (hnlower : 0 ≤ n) (hnupper : n < 2 * b) :
-  n = a ∨ n = a + b :=
+-- If an integer is a mod b, there are corresponding cases for its
+-- value mod c * b.
+theorem mod_mul_eq_cases (n : ℤ) (a : ℤ) (b : ℤ) (c : ℤ) (hbpos : 0 < b) (hcpos : 0 < c)
+  (hmod : n % b = a) :
+  ∃ d : ℤ, 0 ≤ d ∧ d < c ∧ n % (c * b) = a + d * b :=
 begin
-  have ha : a = n - b * (n / b),
-  { rw ← hmod, exact mod_def _ _, },
-  by_cases hn : n < b,
-  { left,
-    rw [div_eq_zero_of_lt hnlower hn, mul_zero, sub_zero] at ha,
-    exact ha.symm, },
-  { right,
-    have hnx : b ≤ n,
-    { apply le_of_not_gt, rw gt, exact hn, },
-    have h1nd : 1 ≤ n / b,
-    { rw ← one_mul b at hnx, exact int.le_div_of_mul_le hbpos hnx, },
-    have hnd2 : n / b < 2 := int.div_lt_of_lt_mul hbpos hnupper,
-    have hnd1 : n / b ≤ 1,
-    { rw lt_iff_add_one_le at hnd2, exact le_of_add_le_add_right hnd2, },
-    rw [ha, le_antisymm hnd1 h1nd],
-    simp, },
+  use ((n % (c * b)) / b),
+  split,
+  { exact int.div_nonneg (mod_nonneg _ (mul_ne_zero (ne_of_gt hcpos) (ne_of_gt hbpos)))
+                         (int.le_of_lt hbpos) },
+  split,
+  { rw int.div_lt_iff_lt_mul hbpos,
+    exact mod_lt_of_pos n (mul_pos hcpos hbpos) },
+  { rw [←hmod, ←mod_mod_of_dvd n (dvd_mul_left b c), mod_def (n % (c * b)) b,
+        mul_comm b (n % (c * b) / b)],
+    simp }
 end
 
 -- If an integer is a mod b, it is a or a + b mod 2b.
 theorem mod_mul_2 (n : ℤ) (a : ℤ) (b : ℤ) (hbpos : 0 < b) (hmod : n % b = a) :
   n % (2 * b) = a ∨ n % (2 * b) = a + b :=
 begin
-  have hdvd : b ∣ 2 * b := dvd_mul_left _ _,
-  have hmodm : n % (2 * b) % b = a,
-  { rw mod_mod_of_dvd n hdvd, exact hmod, },
-  have h2bpos : 0 < 2 * b,
-  { rw ← gt,
-    rw ← gt at hbpos,
-    exact mul_pos dec_trivial hbpos, },
-  have hn2blower : 0 ≤ n % (2 * b),
-  { apply mod_nonneg,
-    intro h2b0,
-    rw h2b0 at h2bpos,
-    exact lt_irrefl 0 h2bpos, },
-  have hn2bupper : n % (2 * b) < 2 * b := mod_lt_of_pos _ h2bpos,
-  exact mod_mul_2_aux (n % (2 * b)) a b hbpos hmodm hn2blower hn2bupper,
+  cases mod_mul_eq_cases n a b 2 hbpos dec_trivial hmod with d hd,
+  cases hd with hd0 hd2,
+  cases hd2 with hd2 hdmod,
+  have hd01 : d = 0 ∨ d = 1,
+  { by_cases h : 1 ≤ d,
+    { right,
+      linarith },
+    { left,
+      linarith } },
+  cases hd01,
+  { left,
+    rw [hd01, zero_mul, add_zero] at hdmod,
+    exact hdmod },
+  { right,
+    rw [hd01, one_mul] at hdmod,
+    exact hdmod }
 end
 
 -- Powers of 2 are positive.
