@@ -241,40 +241,10 @@ begin
   exact dvd_of_mod_eq_zero hx
 end
 
--- If n is 3 mod all powers of 2 (4 and above), n - 3 is divisible by
--- all powers of 2.
-theorem all_powers_divide_n_minus_3 (n : ℤ) (hmod : ∀ m : ℕ, 2 ≤ m → n % 2^m = 3) :
-  ∀ m : ℕ, 2^m ∣ n - 3 :=
-begin
-  intro m,
-  by_cases h2m : 2 ≤ m,
-  { exact dvd_sub_of_mod_eq n (2^m) 3 (hmod m h2m) },
-  { have h4 : 2 ^ 2 ∣ n - 3 := dvd_sub_of_mod_eq n (2 ^ 2) 3 (hmod 2 dec_trivial),
-    norm_cast,
-    norm_cast at h4,
-    exact pow_dvd_of_le_of_pow_dvd (le_trans (le_of_not_gt h2m) dec_trivial) h4 }
-end
-
--- All powers of 2 divide all terms minus 3.
-theorem all_powers_divide_terms_minus_three (a : ℕ → ℤ) (hodd : all_odd a)
-    (hrec : p1_recurrence a) :
-  ∀ m : ℕ, ∀ n : ℕ, 2^m ∣ (a n) - 3 :=
-begin
-  intros m n,
-  apply all_powers_divide_n_minus_3,
-  intros m2 hm2,
-  exact three_mod_all_powers a hodd hrec m2 hm2 n
-end
-
 -- If a larger number divides a natural number, it is zero.
 theorem eq_zero_of_dvd_of_gt {a b : ℕ} (w : a ∣ b) (h : b < a) : b = 0 :=
 nat.eq_zero_of_dvd_of_div_eq_zero w
   ((nat.div_eq_zero_iff (lt_of_le_of_lt (zero_le b) h)).elim_right h)
-
--- If all powers of 2 divide a natural number, it is zero.
--- (Not needed at present.)
-theorem zero_if_all_powers_divide_nat (a : ℕ) (h : ∀ m : ℕ, 2^m ∣ a) : a = 0 :=
-eq_zero_of_dvd_of_gt (h a) (nat.lt_pow_self dec_trivial a)
 
 -- If a number with larger absolute value divides an integer, it is zero.
 theorem eq_zero_of_dvd_of_nat_abs_gt_nat_abs {a b : ℤ} (w : a ∣ b) (h : nat_abs b < nat_abs a)
@@ -285,25 +255,28 @@ begin
   exact eq_zero_of_dvd_of_gt w h
 end
 
--- If all powers of 2 divide an integer, it is zero.
-theorem zero_if_all_powers_divide_int (a : ℤ) (h : ∀ m : ℕ, 2^m ∣ a) : a = 0 :=
-begin
-  have hpow : nat_abs a < 2 ^ (nat_abs a) := nat.lt_pow_self dec_trivial (nat_abs a),
-  have heq : 2 ^ (nat_abs a) = nat_abs (2 ^ (nat_abs a)), {norm_cast},
-  rw heq at hpow,
-  exact eq_zero_of_dvd_of_nat_abs_gt_nat_abs (h (nat_abs a)) hpow
-end
+-- If two integers are congruent to a sufficiently large modulus, they
+-- are equal.
+theorem eq_of_mod_eq_of_nat_abs_gt_nat_abs_sub {a b c : ℤ} (h1 : a % b = c)
+    (h2 : nat_abs (a - c) < nat_abs b) :
+  a = c :=
+eq_of_sub_eq_zero (eq_zero_of_dvd_of_nat_abs_gt_nat_abs (dvd_sub_of_mod_eq a b c h1) h2)
 
 -- The first term of the sequence is 3.
 theorem first_term_three (a : ℕ → ℤ) (hodd : all_odd a)
     (hrec : p1_recurrence a) : a 0 = 3 :=
 begin
-  have hallpowers : ∀ m : ℕ, 2^m ∣ a 0 - 3,
-  { intro m,
-    exact all_powers_divide_terms_minus_three a hodd hrec m 0, },
-  have ha30 : a 0 - 3 = 0 := zero_if_all_powers_divide_int (a 0 - 3) hallpowers,
-  rw [← add_zero (3 : ℤ), ← ha30],
-  ring,
+  set k : ℕ := 2 ^ (2 + nat_abs (a 0 - 3)) with hk,
+  have hltk : 2 + nat_abs (a 0 - 3) < k,
+  { rw hk,
+    exact nat.lt_pow_self dec_trivial _ },
+  have hmod : a 0 % k = 3,
+  { rw hk,
+    push_cast,
+    norm_num,
+    exact three_mod_all_powers a hodd hrec (2 + nat_abs (a 0 + -3)) (by linarith) 0 },
+  rw ←nat_abs_of_nat k at hltk,
+  exact eq_of_mod_eq_of_nat_abs_gt_nat_abs_sub hmod (by linarith)
 end
 
 -- The actual result of the problem.
