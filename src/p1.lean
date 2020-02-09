@@ -147,8 +147,8 @@ begin
       rw [add_comm, add_sub_assoc, sub_self, add_zero],
     end,
     rw [mul_comm, mul_assoc, mul_assoc] at hb,
-    have hbm : 2 * (2 * (d * (1 + 2 * 2 * d))) / 2 = 2 * (d * (1 + 2 * 2 * d)),
-      by exact int.mul_div_cancel_left _ dec_trivial,
+    have hbm : 2 * (2 * (d * (1 + 2 * 2 * d))) / 2 = 2 * (d * (1 + 2 * 2 * d)) :=
+      int.mul_div_cancel_left _ dec_trivial,
     rw [hbm, mul_mod_right] at hb,
     norm_num at hb },
   { rw hc2, norm_num, },
