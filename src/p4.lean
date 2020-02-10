@@ -305,7 +305,10 @@ end
 -- number not dividing the numerator).  (Ideally this would be based
 -- on extending the notion of multiplicity with which a prime divides
 -- a natural number to the case of rationals with negative
--- multiplicity allowed.)
+-- multiplicity allowed.  It's possible that expressing this in terms
+-- of p-adic valuations rather than building it by hand or on top of
+-- data.nat.multiplicity would be the idiomatic approach to doing this
+-- on top of mathlib.)
 
 def pow_exactly_divides_denom (p : ℕ) (k : ℕ) (q : ℚ) :=
   ∃ (a : ℤ) (b : ℤ), a.nat_abs.coprime p ∧ b.nat_abs.coprime p ∧ q = (a : ℚ) / ((b * p ^ k) : ℚ)
