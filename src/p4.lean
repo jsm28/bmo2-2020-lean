@@ -3,8 +3,10 @@
 -- Choices made for formalization: we index the sequence starting at 0
 -- rather than at 1 as in the original problem.
 
+import data.polynomial
 import data.rat.basic
 import data.real.basic
+import data.real.cardinality
 import tactic.basic
 import tactic.linarith
 import tactic.ring_exp
@@ -13,6 +15,7 @@ import topology.instances.real
 import p4_lemmas
 
 noncomputable theory
+open_locale classical
 
 open real
 
@@ -296,324 +299,356 @@ end
 -- is the constant 0 (because of the values at 2), so each b_n has
 -- only finitely many k for which it is zero, so there are only
 -- countably many such k in total, but there are uncountably many k in
--- the interval.  This seems hard for a beginner to formalise, so
--- instead we show that any noninteger rational results in all terms
--- nonzero.
+-- the interval.  As mathlib does not have the concept of rational
+-- function, we define a pair of numerator and denominator
+-- polynomials.  (In fact the terms are polynomials in k, but that is
+-- not needed for this proof.)
 
--- Define the concept of a power of a natural number (intended to be
--- prime) exactly dividing the denominator of a rational (and that
--- number not dividing the numerator).  (Ideally this would be based
--- on extending the notion of multiplicity with which a prime divides
--- a natural number to the case of rationals with negative
--- multiplicity allowed.  It's possible that expressing this in terms
--- of p-adic valuations rather than building it by hand or on top of
--- data.nat.multiplicity would be the idiomatic approach to doing this
--- on top of mathlib.)
+-- Terms of the sequence, as numerators and denominators of polynomials in k.
+noncomputable def p4_term_poly : ℕ → ((polynomial ℝ) × (polynomial ℝ))
+| 0 := ⟨polynomial.C 1, polynomial.C 1⟩
+| 1 := ⟨polynomial.X, polynomial.C 1⟩
+| (nat.succ (nat.succ n)) :=
+  ⟨((p4_term_poly (nat.succ n)).fst * (p4_term_poly (nat.succ n)).fst -
+    (p4_term_poly (nat.succ n)).snd * (p4_term_poly (nat.succ n)).snd) *
+   (p4_term_poly n).snd,
+   (p4_term_poly (nat.succ n)).snd * (p4_term_poly (nat.succ n)).snd * (p4_term_poly n).fst⟩
 
-def pow_exactly_divides_denom (p : ℕ) (k : ℕ) (q : ℚ) :=
-  ∃ (a : ℤ) (b : ℤ), a.nat_abs.coprime p ∧ b.nat_abs.coprime p ∧ q = (a : ℚ) / ((b * p ^ k) : ℚ)
-
--- How this behaves for products.
-theorem divides_denom_mul (p : ℕ) (hp : p.prime) (kq : ℕ) (q : ℚ)
-    (hkq : pow_exactly_divides_denom p kq q)
-    (kr : ℕ) (r : ℚ) (hkr : pow_exactly_divides_denom p kr r) :
-  pow_exactly_divides_denom p (kq + kr) (q * r) :=
+theorem p4_term_poly_num (n : ℕ) : (p4_term_poly (nat.succ (nat.succ n))).fst =
+    ((p4_term_poly (nat.succ n)).fst * (p4_term_poly (nat.succ n)).fst -
+      (p4_term_poly (nat.succ n)).snd * (p4_term_poly (nat.succ n)).snd) *
+        (p4_term_poly n).snd :=
 begin
-  cases hkq with qa hkq,
-  cases hkq with qb hkq,
-  cases hkq with hqa hkq,
-  cases hkq with hqb hkq,
-  cases hkr with ra hkr,
-  cases hkr with rb hkr,
-  cases hkr with hra hkr,
-  cases hkr with hrb hkr,
-  use qa * ra,
-  use qb * rb,
-  split,
-  { rw int.nat_abs_mul,
-    exact nat.coprime.mul hqa hra },
-  { split,
-    { rw int.nat_abs_mul,
-      exact nat.coprime.mul hqb hrb },
-    { rw [hkq, hkr],
-      push_cast,
-      field_simp,
-      congr' 1,
-      ring_exp } }
+  unfold p4_term_poly
 end
 
--- How this behaves for division.
-theorem divides_denom_div (p : ℕ) (hp : p.prime) (kqr : ℕ) (kr : ℕ) (q : ℚ)
-    (hkq : pow_exactly_divides_denom p (kqr + kr) q)
-    (r : ℚ) (hkr : pow_exactly_divides_denom p kr r) :
-  pow_exactly_divides_denom p kqr (q / r) :=
+theorem p4_term_poly_den (n : ℕ) : (p4_term_poly (nat.succ (nat.succ n))).snd =
+  (p4_term_poly (nat.succ n)).snd * (p4_term_poly (nat.succ n)).snd * (p4_term_poly n).fst :=
 begin
-  cases hkq with qa hkq,
-  cases hkq with qb hkq,
-  cases hkq with hqa hkq,
-  cases hkq with hqb hkq,
-  cases hkr with ra hkr,
-  cases hkr with rb hkr,
-  cases hkr with hra hkr,
-  cases hkr with hrb hkr,
-  use qa * rb,
-  use qb * ra,
-  have hranz : (ra : ℚ) ≠ 0,
-  { norm_cast,
-    intro hraz,
-    rw hraz at hra,
-    norm_num at hra,
-    rw hra at hp,
-    norm_num at hp },
-  have hqbnz : (qb : ℚ) ≠ 0,
-  { norm_cast,
-    intro hqbz,
-    rw hqbz at hqb,
-    norm_num at hqb,
-    rw hqb at hp,
-    norm_num at hp },
-  have hpnz : (p : ℚ) ≠ 0,
-  { norm_cast,
-    intro hpz,
-    rw hpz at hp,
-    norm_num at hp },
-  split,
-  { rw int.nat_abs_mul,
-    exact nat.coprime.mul hqa hrb },
-  { split,
-    { rw int.nat_abs_mul,
-      exact nat.coprime.mul hqb hra },
-    { rw [hkq, hkr],
-      push_cast,
-      field_simp [hranz, hqbnz, pow_ne_zero kqr hpnz, pow_ne_zero kr hpnz,
-                  pow_ne_zero (kqr + kr) hpnz],
-      ring_exp } }
+  unfold p4_term_poly
 end
 
--- How this behaves for subtracting 1.
-theorem divides_denom_sub_one (p : ℕ) (hp : p.prime) (kq : ℕ) (q : ℚ)
-    (hkq : pow_exactly_divides_denom p kq q) (hkqpos : 0 < kq) :
-  pow_exactly_divides_denom p kq (q - 1) :=
-begin
-  cases hkq with qa hkq,
-  cases hkq with qb hkq,
-  cases hkq with hqa hkq,
-  cases hkq with hqb hkq,
-  use qa - qb * p ^ kq,
-  use qb,
-  split,
-  { apply nat.coprime.symm,
-    rw nat.prime.coprime_iff_not_dvd hp,
-    intro hdvd,
-    rw ← int.coe_nat_dvd at hdvd,
-    rw int.dvd_nat_abs at hdvd,
-    have hkq1 : ∃ kq1 : ℕ, kq = kq1 + 1,
-    { cases kq,
-      { norm_num at hkqpos },
-      { use kq } },
-    cases hkq1 with kq1 hkq1,
-    rw [hkq1, pow_add, pow_one,
-        (show qa - qb * (↑p ^ kq1 * ↑p) = qa + ↑p * (-qb * ↑p ^ kq1), by ring),
-        ←dvd_add_iff_left (dvd.intro (-qb * ↑p ^ kq1) rfl),
-        int.coe_nat_dvd_left] at hdvd,
-        have hqas := nat.coprime.symm hqa,
-        rw nat.prime.coprime_iff_not_dvd hp at hqas,
-        exact hqas hdvd },
-  { split,
-    { exact hqb },
-    { rw hkq,
-      have hqbnz : (qb : ℚ) ≠ 0,
-      { norm_cast,
-        intro hqbz,
-        rw hqbz at hqb,
-        norm_num at hqb,
-        rw hqb at hp,
-        norm_num at hp },
-      have hpnz : (p : ℚ) ≠ 0,
-      { norm_cast,
-        intro hpz,
-        rw hpz at hp,
-        norm_num at hp },
-      field_simp [hqbnz, pow_ne_zero kq hpnz] } }
-end
-
--- How this behaves for iterating the recurrence.
-theorem divides_denom_recurrence (p : ℕ) (hp : p.prime) (t : ℕ) (kq : ℕ) (q : ℚ)
-    (hkq : pow_exactly_divides_denom p kq q) (r : ℚ)
-    (hkr : pow_exactly_divides_denom p (kq + t) r) (htpos : 0 < t) :
-  pow_exactly_divides_denom p (kq + 2 * t) (p4_seq_next q r) :=
-begin
-  unfold p4_seq_next,
-  have hnum : pow_exactly_divides_denom p (kq + 2 * t + kq) (r * r - 1),
-  { apply divides_denom_sub_one p hp (kq + 2 * t + kq) (r * r),
-    { rw (show kq + 2 * t + kq = (kq + t) + (kq + t), by ring),
-      apply divides_denom_mul p hp (kq + t) r hkr (kq + t) r hkr },
-    { linarith } },
-  apply divides_denom_div p hp (kq + 2 * t) kq (r * r - 1) hnum q hkq
-end
-
--- What this implies for the terms.
-theorem p4_terms_divides_denom (p : ℕ) (hp : p.prime) (t : ℕ) (htpos : 0 < t)
-    (k : ℚ) (hkt : pow_exactly_divides_denom p t k) :
-  ∀ n : ℕ, pow_exactly_divides_denom p (n * t) (p4_term n k) :=
+-- Terms are given by those rational functions, if no prior term was
+-- zero.
+theorem p4_terms_poly (k : ℝ) : ∀ n : ℕ, (∀ m : ℕ, m < n → p4_term m k ≠ 0) →
+    p4_term n k = polynomial.eval k (p4_term_poly n).fst /
+        polynomial.eval k (p4_term_poly n).snd :=
 begin
   intro n,
-  induction n using nat.case_strong_induction_on with m hm,
-  { unfold p4_term,
-    rw zero_mul,
-    use 1,
-    use 1,
-    norm_num },
-  { cases m,
+  induction n using nat.case_strong_induction_on with t ht,
+  { intro hm,
+    unfold p4_term p4_term_poly,
+    simp },
+  { intro hm,
+    cases t,
+    { unfold p4_term p4_term_poly,
+      simp },
     { unfold p4_term,
-      rw one_mul,
-      exact hkt },
-    { unfold p4_term,
-      have hmd : pow_exactly_divides_denom p (m * t) (p4_term m k) := hm m (nat.le_succ m),
-      have hm1d : pow_exactly_divides_denom p ((nat.succ m) * t) (p4_term (nat.succ m) k) :=
-        hm (nat.succ m) (by refl),
-      rw [(show (m + 1) * t = m * t + t, by ring)] at hm1d,
-      have hm2d : pow_exactly_divides_denom p (m * t + 2 * t)
-          (p4_seq_next (p4_term m k) (p4_term (nat.succ m) k)) :=
-        divides_denom_recurrence p hp t (m * t) (p4_term m k) hmd (p4_term (nat.succ m) k)
-                                 hm1d htpos,
-      rw [nat.succ_eq_add_one, nat.succ_eq_add_one,
-          (show (m + 1 + 1) * t = (m * t + 2 * t), by ring)],
-          exact hm2d } }
-end
-
--- A prime power exists that exactly divides any non-0 natural number.
-theorem nat_pow_exactly_divides_exists (k : ℕ) (hkn0 : k ≠ 0) (p : ℕ) (hp : p.prime) :
-  ∃ (pe : ℕ), p^pe ∣ k ∧ ¬ p^(pe + 1) ∣ k :=
-begin
-  induction k using nat.case_strong_induction_on with m hm,
-  { exfalso,
-    exact hkn0 rfl },
-  { by_cases p ∣ nat.succ m,
-    { have hlt : (nat.succ m) / p < (nat.succ m),
-     { apply nat.div_lt_self,
-       { exact dec_trivial, },
-       { apply nat.prime.two_le,
-         exact hp } },
-     have hnez : (nat.succ m) / p ≠ 0,
-     { intro hez,
-       exact nat.succ_ne_zero m (nat.eq_zero_of_dvd_of_div_eq_zero h hez) },
-     have hexists : ∃ (pe : ℕ), p ^ pe ∣ (nat.succ m / p) ∧ ¬p ^ (pe + 1) ∣ (nat.succ m / p),
-     { apply hm (nat.succ m / p) (nat.le_of_lt_succ hlt) hnez },
-     cases hexists with pem1 hpem1,
-     cases hpem1 with hpem1a hpem1b,
-     use pem1 + 1,
-     rw ← nat.div_mul_cancel h,
-     have hppos : 0 < p, {linarith [hp.left]},
-     split,
-     { rw [←nat.succ_eq_add_one, nat.pow_succ, nat.mul_dvd_mul_iff_right hppos],
-       exact hpem1a },
-     { rw [←nat.succ_eq_add_one, nat.pow_succ, nat.mul_dvd_mul_iff_right hppos],
-       exact hpem1b } },
-    { use 0,
-      norm_num,
-      exact h } }
-end
-
--- Any rational with denominator not 1 is suitable.
-theorem p4_rational_terms_nonzero (k : ℚ) (hk : k.denom ≠ 1) : ∀ n : ℕ, p4_term n k ≠ 0 :=
-begin
-  have hf : ∃ (p : ℕ), p.prime ∧ p ∣ k.denom,
-  { use nat.min_fac k.denom,
-    split,
-    { exact nat.min_fac_prime hk },
-    { exact nat.min_fac_dvd k.denom } },
-  cases hf with p hf,
-  cases hf with hp hdvd,
-  have hexp : ∃ (exp : ℕ), 0 < exp ∧ pow_exactly_divides_denom p exp k,
-  { have hdennz : k.denom ≠ 0,
-    { linarith [k.pos] },
-    have hpe : ∃ (pe : ℕ), p^pe ∣ k.denom ∧ ¬ p^(pe + 1) ∣ k.denom :=
-      nat_pow_exactly_divides_exists k.denom hdennz p hp,
-    cases hpe with exp hexp,
-    cases hexp with hexp1 hexp2,
-    use exp,
-    split,
-    { cases exp,
-      { exfalso,
-        norm_num at hexp2,
-        exact hexp2 hdvd, },
-      { norm_num } },
-    { use k.num,
-      use k.denom / p^exp,
-      norm_cast,
-      split,
-      { apply nat.coprime.symm,
-        rw nat.prime.coprime_iff_not_dvd hp,
-        intro hndvd,
-        have hnc : ¬ nat.coprime (int.nat_abs k.num) k.denom :=
-          nat.not_coprime_of_dvd_of_dvd (nat.prime.one_lt hp) hndvd hdvd,
-        exact hnc k.cop },
-      { split,
-        { apply nat.coprime.symm,
-          rw nat.prime.coprime_iff_not_dvd hp,
-          intro hexp3,
-          have hexp4 : p * p^exp ∣ k.denom / p^exp * p^exp := mul_dvd_mul_right hexp3 _,
-          rw [nat.div_mul_cancel hexp1,
-              (show p * p^exp = p^(exp + 1), by ring_exp)] at hexp4,
-          exact hexp2 hexp4 },
-        { rw nat.div_mul_cancel hexp1, simp } } } },
-  cases hexp with t ht,
-  cases ht with htpos htdiv,
-  intro n,
-  have hdiv : pow_exactly_divides_denom p (n * t) (p4_term n k) :=
-    p4_terms_divides_denom p hp t htpos k htdiv n,
-  intro h0,
-  rw h0 at hdiv,
-  unfold pow_exactly_divides_denom at hdiv,
-  cases hdiv with a hdiv,
-  cases hdiv with b hdiv,
-  cases hdiv with hac hdiv,
-  cases hdiv with hbc hdiv,
-  have hanz : (a : ℚ) ≠ 0,
-  { norm_cast,
-    intro haz,
-    rw haz at hac,
-    norm_num at hac,
-    rw hac at hp,
-    norm_num at hp },
-  have hbnz : (b : ℚ) ≠ 0,
-  { norm_cast,
-    intro hbz,
-    rw hbz at hbc,
-    norm_num at hbc,
-    rw hbc at hp,
-    norm_num at hp },
-  have hpnz : (p : ℚ) ≠ 0,
-  { norm_cast,
-    intro hpz,
-    rw hpz at hp,
-    norm_num at hp },
-  field_simp [hbnz, pow_ne_zero (n * t) hpnz] at hdiv,
-  exact hanz hdiv.symm,
-end
-
-theorem p4_rational_real_terms_eq (k : ℚ) : ∀ n : ℕ, ↑(p4_term n k) = p4_term n (↑k : ℝ) :=
-begin
-  intro n,
-  induction n using nat.case_strong_induction_on with m hm,
-  { unfold p4_term,
-    norm_cast },
-  { cases m,
-    { unfold p4_term },
-    { unfold p4_term,
-      rw [← hm m (nat.le_succ _), ← hm (nat.succ m) (by refl)],
+      rw [p4_term_poly_num, p4_term_poly_den],
+      have hmm : ∀ (m : ℕ), m < nat.succ t → p4_term m k ≠ 0,
+      { intros m hmlt,
+        exact hm m (lt_trans hmlt (nat.lt_succ_self _)) },
+      have hmmm : ∀ (m : ℕ), m < t → p4_term m k ≠ 0,
+      { intros m hmlt,
+        exact hmm m (lt_trans hmlt (nat.lt_succ_self _)) },
+      have ht1 := ht t (nat.le_succ t) hmmm,
+      have ht2 := ht (nat.succ t) (by refl) hmm,
+      rw [ht1, ht2],
       unfold p4_seq_next,
-      norm_cast } }
+      have ht1a : polynomial.eval k (p4_term_poly t).fst ≠ 0,
+      { intro hz,
+        rw [hz, zero_div] at ht1,
+        exact hmm t (nat.lt_succ_self _) ht1 },
+      have ht1b : polynomial.eval k (p4_term_poly t).snd ≠ 0,
+      { intro hz,
+        rw [hz, div_zero] at ht1,
+        exact hmm t (nat.lt_succ_self _) ht1 },
+      have ht2a : polynomial.eval k (p4_term_poly (nat.succ t)).fst ≠ 0,
+      { intro hz,
+        rw [hz, zero_div] at ht2,
+        exact hm (nat.succ t) (nat.lt_succ_self _) ht2 },
+      have ht2b : polynomial.eval k (p4_term_poly (nat.succ t)).snd ≠ 0,
+      { intro hz,
+        rw [hz, div_zero] at ht2,
+        exact hm (nat.succ t) (nat.lt_succ_self _) ht2 },
+      field_simp [ht1a, ht1b, ht2a, ht2b] } }
 end
 
-theorem p4_rational_real_terms_nonzero (k : ℚ) (hk : k.denom ≠ 1) :
-  ∀ n : ℕ, p4_term n (↑k : ℝ) ≠ 0 :=
+-- The numerator and denominator polynomials are not identically zero.
+theorem p4_poly_ne_zero : ∀ n : ℕ, ((p4_term_poly n).fst) ≠ 0 ∧ ((p4_term_poly n).snd) ≠ 0 :=
 begin
+  have h2 : ∀ m : ℕ, p4_term m (2 : ℝ) = polynomial.eval 2 (p4_term_poly m).fst /
+        polynomial.eval 2 (p4_term_poly m).snd,
+  { intro m,
+    apply p4_terms_poly,
+    intro m1,
+    intro hm1,
+    rw p4_terms_at_2,
+    norm_cast,
+    simp },
   intro n,
-  rw ← p4_rational_real_terms_eq,
-  norm_cast,
-  exact p4_rational_terms_nonzero k hk n
+  split,
+  { intro h,
+    have h2n := h2 n,
+    rw [h, p4_terms_at_2, polynomial.eval_zero, zero_div] at h2n,
+    norm_cast at h2n },
+  { intro h,
+    have h2n := h2 n,
+    rw [h, p4_terms_at_2, polynomial.eval_zero, div_zero] at h2n,
+    norm_cast at h2n }
+end
+
+-- There exists a finite set of k for which some term up to n is zero.
+theorem p4_finset_zero  (n : ℕ) :
+  ∃ s : finset ℝ, (∀ k : ℝ, (∃ m : ℕ, m ≤ n ∧ p4_term m k = 0) → k ∈ s) :=
+begin
+  induction n with t ht,
+  { use ∅,
+    intro k,
+    intro h,
+    exfalso,
+    cases h with m hm,
+    cases hm with hm0 hmt,
+    have hm00 : m = 0, {linarith},
+    rw hm00 at hmt,
+    unfold p4_term at hmt,
+    norm_num at hmt },
+  { cases ht with st hst,
+    use st ∪ polynomial.roots ((p4_term_poly (nat.succ t)).fst) ∪
+             polynomial.roots ((p4_term_poly (nat.succ t)).snd),
+    intro k,
+    intro hm,
+    cases hm with m hm,
+    cases hm with hmlt hm0,
+    by_cases hx : ∃ (q : ℕ), (q ≤ t ∧ p4_term q k = 0),
+    { apply finset.mem_union_left,
+      apply finset.mem_union_left,
+      exact hst k hx },
+    { by_cases hmlet : m ≤ t,
+      { exfalso,
+        apply hx,
+        use m,
+        split,
+        { exact hmlet },
+        { exact hm0 } },
+      { have hmt : m = nat.succ t,
+        { rw [←lt_iff_not_ge', ←nat.succ_le_iff] at hmlet,
+          linarith },
+        have hterm : p4_term m k = polynomial.eval k (p4_term_poly m).fst /
+          polynomial.eval k (p4_term_poly m).snd,
+        { apply p4_terms_poly,
+          intros m1 hm1 hm10,
+          apply hx,
+          use m1,
+          split,
+          { rw hmt at hm1,
+            rw ←nat.lt_succ_iff,
+            exact hm1 },
+          { exact hm10 } },
+        { have hn0 : (p4_term_poly (nat.succ t)).fst ≠ 0 := (p4_poly_ne_zero (nat.succ t)).left,
+          have hd0 : (p4_term_poly (nat.succ t)).snd ≠ 0 := (p4_poly_ne_zero (nat.succ t)).right,
+          by_cases hden : polynomial.eval k (p4_term_poly m).snd = 0,
+          { apply finset.mem_union_right,
+            rw polynomial.mem_roots hd0,
+            unfold polynomial.is_root,
+            rw ← hmt,
+            exact hden },
+          { rw [hterm, div_eq_zero_iff hden] at hm0,
+            apply finset.mem_union_left,
+            apply finset.mem_union_right,
+            rw polynomial.mem_roots hn0,
+            unfold polynomial.is_root,
+            rw ← hmt,
+            exact hm0 } } } } }
+end
+
+-- There exists a countable set of k for which some term up to n is zero.
+theorem p4_countableset_zero (n : ℕ) :
+  ∃ s : set ℝ, s.countable ∧ (∀ k : ℝ, (∃ m : ℕ, m ≤ n ∧ p4_term m k = 0) → k ∈ s) :=
+begin
+  cases p4_finset_zero n with fs hfs,
+  use (↑fs),
+  split,
+  { apply set.countable_finite,
+    exact finset.finite_to_set fs },
+  { intro k,
+    intro h,
+    rw finset.mem_coe,
+    revert h,
+    revert k,
+    exact hfs }
+end
+
+-- That countable set.
+def p4_countableset_zero_set (n : ℕ) := classical.some (p4_countableset_zero n)
+
+-- Its defining property.
+theorem p4_countableset_zero_set_prop (n : ℕ) :
+  (p4_countableset_zero_set n).countable ∧
+    (∀ k : ℝ, (∃ m : ℕ, m ≤ n ∧ p4_term m k = 0) → k ∈ (p4_countableset_zero_set n)) :=
+classical.some_spec (p4_countableset_zero n)
+
+-- There exists a countable set of k for which some term is zero.
+theorem p4_countable_zero : ∃ s : set ℝ,
+    s.countable ∧ (∀ k : ℝ, (∃ m : ℕ, p4_term m k = 0) → k ∈ s) :=
+begin
+  use ⋃ n : ℕ, p4_countableset_zero_set n,
+  split,
+  { apply set.countable_Union,
+    intro n,
+    exact (p4_countableset_zero_set_prop n).left },
+  { intros k h,
+    rw set.mem_Union,
+    cases h with m hm,
+    use m,
+    apply (p4_countableset_zero_set_prop m).right k,
+    use m,
+    split,
+    { refl },
+    { exact hm } },
+end
+
+-- That countable set.
+def p4_countable_zero_set := classical.some p4_countable_zero
+
+-- Its defining property.
+theorem p4_countable_zero_set_prop:
+  set.countable p4_countable_zero_set ∧
+    (∀ k : ℝ, (∃ m : ℕ, p4_term m k = 0) → k ∈ p4_countable_zero_set) :=
+classical.some_spec p4_countable_zero
+
+-- Should the following properties about uncountability of intervals,
+-- and existence of reals outside a countable set, be in mathlib in
+-- some form?  Are they already?
+
+-- The interval [0, 1) is uncountable.
+theorem interval_0_1_uncountable : ¬ set.countable {x : ℝ | 0 ≤ x ∧ x < 1} :=
+begin
+  intro h,
+  have hm : ∀ m : ℝ, set.countable {x : ℝ | m ≤ x ∧ x < m + 1},
+  { intro m,
+    convert set.countable_image (λ x : ℝ, m + x) h,
+    ext,
+    split,
+    { intro h,
+      cases h with h1 h2,
+      use x - m,
+      split,
+      { simp,
+        split,
+        { linarith },
+        { linarith } },
+      { simp } },
+    { intro h,
+      cases h with a ha,
+      cases ha with ha1 ha2,
+      simp at ha1,
+      simp at ha2,
+      cases ha1 with ha1a ha1b,
+      split,
+      { linarith },
+      { linarith } } },
+  have hu : (set.univ : set ℝ) = ⋃ m : ℤ, {x : ℝ | (m : ℝ) ≤ x ∧ x < (m : ℝ) + 1},
+  { symmetry,
+    apply set.eq_univ_of_forall,
+    intro y,
+    rw set.mem_Union,
+    use floor y,
+    simp,
+    split,
+    { exact floor_le y },
+    { rw add_comm,
+      exact lt_floor_add_one y } },
+  apply cardinal.not_countable_real,
+  rw hu,
+  apply set.countable_Union,
+  intro m,
+  exact hm (m : ℝ)
+end
+
+-- The interval (0, 1) is uncountable.
+theorem interval_0_1_open_uncountable : ¬ set.countable {x : ℝ | 0 < x ∧ x < 1} :=
+begin
+  intro h,
+  have hu : {x : ℝ | 0 ≤ x ∧ x < 1} = {x : ℝ | 0 < x ∧ x < 1} ∪ {0},
+  { ext,
+    simp,
+    split,
+    { intro h,
+      cases h with h1 h2,
+      by_cases h0 : x = 0,
+      { left,
+        exact h0 },
+      { right,
+        split,
+        { have hz : 0 ≠ x,
+          { intro heq,
+            exact h0 heq.symm },
+          exact lt_of_le_of_ne h1 hz },
+        { exact h2 } } },
+    { intro h,
+      cases h with h1 h2,
+      { rw h1,
+        norm_num },
+      { cases h2 with h2a h2b,
+        split,
+        { linarith },
+        { linarith } } } },
+  apply interval_0_1_uncountable,
+  rw hu,
+  apply set.countable_union h,
+  exact set.countable_singleton 0,
+end
+
+-- Any open interval of reals is uncountable.
+theorem interval_open_uncountable (k1 k2 : ℝ) (h : k1 < k2) :
+  ¬ set.countable {x : ℝ | k1 < x ∧ x < k2} :=
+begin
+  intro h,
+  apply interval_0_1_open_uncountable,
+  convert set.countable_image (λ x, (x - k1) / (k2 - k1)) h,
+  ext,
+  split,
+  { intro hx,
+    cases hx with hx0 hx1,
+    use (k2 - k1) * x + k1,
+    split,
+    { simp,
+      split,
+      { exact mul_pos (show 0 < k2 + -k1, by linarith) hx0 },
+      { have h2 : (k2 + -k1) * x < (k2 + -k1) * 1 :=
+          mul_lt_mul_of_pos_left hx1 (show 0 < (k2 + -k1), by linarith),
+        linarith } },
+    { simp,
+      field_simp [(show k2 + -k1 ≠ 0, by linarith)],
+      ring } },
+  { intro hy,
+    cases hy with y hy,
+    cases hy with hy1 hy2,
+    simp at hy1,
+    simp at hy2,
+    cases hy1 with hy1a hy1b,
+    rw ← hy2,
+    rw [lt_div_iff (show 0 < (k2 + -k1), by linarith), zero_mul,
+        div_lt_iff (show 0 < (k2 + -k1), by linarith)],
+    split,
+    { linarith },
+    { linarith } }
+end
+
+-- Any open interval of reals contains one not in that set.
+theorem interval_open_not_in_set (k1 k2 : ℝ) (h : k1 < k2) :
+  ∃ k : ℝ, k ∈ {x : ℝ | k1 < x ∧ x < k2} ∧ ¬ k ∈ p4_countable_zero_set :=
+begin
+  have hns : ¬ {x : ℝ | k1 < x ∧ x < k2} ⊆ p4_countable_zero_set,
+  { intro hsub,
+    exact interval_open_uncountable k1 k2 h
+                                    (set.countable_subset hsub p4_countable_zero_set_prop.left) },
+  rw set.not_subset at hns,
+  cases hns with k hk,
+  cases hk with hk1 hk2,
+  use k,
+  exact and.intro hk1 hk2
 end
 
 -- The actual result that a suitable value is in the interval.
@@ -621,24 +656,19 @@ end
 theorem p4_interval_terms_nonzero (kb : ℝ) (h1 : 1 ≤ kb) (h2 : kb < 2) :
   ∃ (k : ℝ) (h1 : kb < k) (h2 : k < 2), ∀ n : ℕ, p4_term n k ≠ 0 :=
 begin
-  have hq : ∃ q : ℚ, kb < q ∧ (q : ℝ) < 2 := exists_rat_btwn h2,
-  cases hq with q hq,
-  use (↑q : ℝ),
-  cases hq with hql hqr,
-  use hql,
-  use hqr,
-  have hq1 : (1 : ℝ) < q, {linarith},
-  norm_cast at hq1,
-  norm_cast at hqr,
-  have hqd : q.denom ≠ 1,
-  { intro hqd,
-    have hqnum : (↑q.num) = q := rat.coe_int_num_of_denom_eq_one hqd,
-    rw ← hqnum at hq1,
-    rw ← hqnum at hqr,
-    norm_cast at hq1,
-    norm_cast at hqr,
-    linarith },
-  exact p4_rational_real_terms_nonzero q hqd
+  cases interval_open_not_in_set kb 2 h2 with k hk,
+  cases hk with hk1 hk2,
+  simp at hk1,
+  cases hk1 with hk1a hk1b,
+  use k,
+  use hk1a,
+  use hk1b,
+  intro n,
+  intro hz,
+  have hex : ∃ m : ℕ, p4_term m k = 0,
+  { use n,
+    exact hz },
+  exact hk2 (p4_countable_zero_set_prop.right k hex)
 end
 
 -- The second part of the problem, in terms of p4_term rather than the
