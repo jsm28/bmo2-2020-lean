@@ -4,9 +4,7 @@
 -- rather than at 1 as in the original problem.
 
 import data.polynomial
-import data.rat.basic
 import data.real.basic
-import data.real.cardinality
 import tactic.basic
 import tactic.linarith
 import tactic.ring_exp
@@ -517,132 +515,14 @@ theorem p4_countable_zero_set_prop:
     (∀ k : ℝ, (∃ m : ℕ, p4_term m k = 0) → k ∈ p4_countable_zero_set) :=
 classical.some_spec p4_countable_zero
 
--- Should the following properties about uncountability of intervals,
--- and existence of reals outside a countable set, be in mathlib in
--- some form?  Are they already?
-
--- The interval [0, 1) is uncountable.
-theorem interval_0_1_uncountable : ¬ set.countable {x : ℝ | 0 ≤ x ∧ x < 1} :=
-begin
-  intro h,
-  have hm : ∀ m : ℝ, set.countable {x : ℝ | m ≤ x ∧ x < m + 1},
-  { intro m,
-    convert set.countable_image (λ x : ℝ, m + x) h,
-    ext,
-    split,
-    { intro h,
-      cases h with h1 h2,
-      use x - m,
-      split,
-      { rw set.mem_set_of_eq,
-        split,
-        { linarith },
-        { linarith } },
-      { simp } },
-    { intro h,
-      cases h with a ha,
-      cases ha with ha1 ha2,
-      rw set.mem_set_of_eq at ha1,
-      unfold at ha2,
-      cases ha1 with ha1a ha1b,
-      split,
-      { linarith },
-      { linarith } } },
-  have hu : (set.univ : set ℝ) = ⋃ m : ℤ, {x : ℝ | (m : ℝ) ≤ x ∧ x < (m : ℝ) + 1},
-  { symmetry,
-    apply set.eq_univ_of_forall,
-    intro y,
-    rw set.mem_Union,
-    use floor y,
-    rw set.mem_set_of_eq,
-    split,
-    { exact floor_le y },
-    { exact lt_floor_add_one y } },
-  apply cardinal.not_countable_real,
-  rw hu,
-  apply set.countable_Union,
-  intro m,
-  exact hm (m : ℝ)
-end
-
--- The interval (0, 1) is uncountable.
-theorem interval_0_1_open_uncountable : ¬ set.countable {x : ℝ | 0 < x ∧ x < 1} :=
-begin
-  intro h,
-  have hu : {x : ℝ | 0 ≤ x ∧ x < 1} = {x : ℝ | 0 < x ∧ x < 1} ∪ {0},
-  { ext,
-    rw [set.union_singleton, set.mem_insert_iff, set.mem_set_of_eq, set.mem_set_of_eq],
-    split,
-    { intro h,
-      cases h with h1 h2,
-      by_cases h0 : x = 0,
-      { left,
-        exact h0 },
-      { right,
-        split,
-        { have hz : 0 ≠ x,
-          { intro heq,
-            exact h0 heq.symm },
-          exact lt_of_le_of_ne h1 hz },
-        { exact h2 } } },
-    { intro h,
-      cases h with h1 h2,
-      { rw h1,
-        norm_num },
-      { cases h2 with h2a h2b,
-        split,
-        { linarith },
-        { linarith } } } },
-  apply interval_0_1_uncountable,
-  rw hu,
-  apply set.countable_union h,
-  exact set.countable_singleton 0,
-end
-
--- Any open interval of reals is uncountable.
-theorem interval_open_uncountable (k1 k2 : ℝ) (h : k1 < k2) :
-  ¬ set.countable {x : ℝ | k1 < x ∧ x < k2} :=
-begin
-  intro h,
-  apply interval_0_1_open_uncountable,
-  convert set.countable_image (λ x, (x - k1) / (k2 - k1)) h,
-  ext,
-  split,
-  { intro hx,
-    cases hx with hx0 hx1,
-    use (k2 - k1) * x + k1,
-    split,
-    { rw set.mem_set_of_eq,
-      split,
-      { linarith [mul_pos (show 0 < k2 - k1, by linarith) hx0] },
-      { have h2 : (k2 - k1) * x < (k2 - k1) * 1 :=
-          mul_lt_mul_of_pos_left hx1 (show 0 < (k2 - k1), by linarith),
-        linarith } },
-    { unfold,
-      field_simp [(show k2 + -k1 ≠ 0, by linarith)],
-      ring } },
-  { intro hy,
-    cases hy with y hy,
-    cases hy with hy1 hy2,
-    rw set.mem_set_of_eq at hy1,
-    unfold at hy2,
-    cases hy1 with hy1a hy1b,
-    rw ← hy2,
-    rw [lt_div_iff (show 0 < (k2 - k1), by linarith), zero_mul,
-        div_lt_iff (show 0 < (k2 - k1), by linarith)],
-    split,
-    { linarith },
-    { linarith } }
-end
-
 -- Any open interval of reals contains one not in that set.
 theorem interval_open_not_in_set (k1 k2 : ℝ) (h : k1 < k2) :
   ∃ k : ℝ, k ∈ {x : ℝ | k1 < x ∧ x < k2} ∧ ¬ k ∈ p4_countable_zero_set :=
 begin
   have hns : ¬ {x : ℝ | k1 < x ∧ x < k2} ⊆ p4_countable_zero_set,
   { intro hsub,
-    exact interval_open_uncountable k1 k2 h
-                                    (set.countable_subset hsub p4_countable_zero_set_prop.left) },
+    exact not_countable_real_interval_open k1 k2 h
+      (set.countable_subset hsub p4_countable_zero_set_prop.left) },
   rw set.not_subset at hns,
   cases hns with k hk,
   cases hk with hk1 hk2,
