@@ -17,19 +17,15 @@ open_locale classical
 
 open real
 
--- Some of the following are defined for a general field, although the
--- problem is stated for real numbers, because it's convenient to use
--- a sequence of rationals in proving terms are nonzero.
-
 -- Next term in sequence.
-def p4_seq_next {α : Type} [field α] (x y : α) : α := (y * y - 1) / x
+def p4_seq_next (x y : ℝ) : ℝ := (y * y - 1) / x
 
 -- Condition that sequence satisfies recurrence.
-def p4_recurrence {α : Type} [field α] (b : ℕ → α) : Prop :=
+def p4_recurrence (b : ℕ → ℝ) : Prop :=
 ∀ n : ℕ, b (n + 2) = p4_seq_next (b n) (b (n + 1))
 
 -- Condition that terms are nonzero.
-def p4_nonzero {α : Type} [field α] (b : ℕ → α) : Prop := ∀ n : ℕ, b n ≠ 0
+def p4_nonzero (b : ℕ → ℝ) : Prop := ∀ n : ℕ, b n ≠ 0
 
 -- Function we will show is an invariant (the same for all pairs of
 -- consecutive terms).
@@ -164,7 +160,7 @@ begin
 end
 
 -- Terms of the sequence, as functions of k.
-noncomputable def p4_term {α : Type} [field α] : ℕ → α → α
+noncomputable def p4_term : ℕ → ℝ → ℝ
 | 0 := λ k, 1
 | 1 := λ k, k
 | (nat.succ (nat.succ n)) := λ k, p4_seq_next (p4_term n k) (p4_term (nat.succ n) k)
