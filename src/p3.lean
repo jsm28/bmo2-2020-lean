@@ -1183,6 +1183,54 @@ begin
     exact ha }
 end
 
+-- colouring_of_row_colouring produces a row-alternating colouring.
+theorem colouring_of_row_colouring_rows_alternate (c : row_colouring) :
+  rows_alternate (colouring_of_row_colouring c) :=
+begin
+  unfold colouring_of_row_colouring,
+  -- Why is unfolding filter here needed for the second rewrite to
+  -- work?
+  unfold filter,
+  intros a b ha,
+  rw fin.coe_eq_val at ha,
+  have halt : a.val + 1 < 2018 + 1 := add_lt_add_right ha 1,
+  erw mem_filter,
+  erw mem_filter,
+  unfold prod.fst prod.snd,
+  split,
+  { intro h,
+    cases h with hu heq,
+    intro h2,
+    cases h2 with h2u h2,
+    unfold fin.of_nat at h2,
+    rw fin.coe_eq_val at *,
+    rw fin.coe_eq_val at h2,
+    unfold fin.val at h2,
+    rw nat.succ_eq_add_one at h2,
+    rw nat.mod_eq_of_lt halt at h2,
+    rw ←nat.even_iff at *,
+    rw nat.even_add at h2,
+    norm_num at h2,
+    rw [iff_not_comm, iff.comm, ←not_iff] at h2,
+    exact h2 heq },
+  { intro h,
+    rw not_and at h,
+    have h2 := h (mem_univ _),
+    split,
+    { exact mem_univ _ },
+    { unfold fin.of_nat at h2,
+      rw fin.coe_eq_val at *,
+      rw fin.coe_eq_val at h2,
+      unfold fin.val at h2,
+      rw nat.succ_eq_add_one at h2,
+      rw nat.mod_eq_of_lt halt at h2,
+      rw ←nat.even_iff at *,
+      rw nat.even_add at h2,
+      norm_num at h2,
+      rw [not_iff, not_iff_not] at h2,
+      exact h2 } }
+end
+
 -- TODO: rest of solution.
 
 -- The remaining two parts of the sum for the result.
