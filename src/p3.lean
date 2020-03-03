@@ -19,27 +19,30 @@ abbreviation grid := fin 2019 × fin 2019
 -- A colouring of the grid (the set of black cells).
 abbreviation colouring := finset grid
 
--- A square subgrid of the coloured grid.  (This definition allows the
--- square to go off the edges, so separate hypotheses are needed where
--- that is undesirable.)
-def subcolouring (c : colouring) (a b : fin 2019) (k : ℕ) : finset grid :=
+-- A rectangular subgrid of the coloured grid.  (This definition
+-- allows the rectangle to go off the edges, so separate hypotheses
+-- are needed where that is undesirable.)  Although the problem only
+-- refers to square subgrids, rectangular ones are useful in the
+-- solution when counting black squares in colourings made from
+-- alternating rows.
+def subcolouring (c : colouring) (a b : fin 2019) (k1 k2 : ℕ) : finset grid :=
 finset.filter (λ p : grid, a ≤ p.1 ∧ b ≤ p.2 ∧
-                               (p.1 : ℕ) < (a : ℕ) + k ∧ (p.2 : ℕ) < (b : ℕ) + k) c
+                               (p.1 : ℕ) < (a : ℕ) + k1 ∧ (p.2 : ℕ) < (b : ℕ) + k2) c
 
 -- The complement of a colouring.
 def complement (c : colouring) : colouring := finset.univ \ c
 
 -- The number of black cells in a subgrid.
-def sub_black (c : colouring) (a b : fin 2019) (k : ℕ) : ℕ :=
-finset.card (subcolouring c a b k)
+def sub_black (c : colouring) (a b : fin 2019) (k1 k2 : ℕ) : ℕ :=
+finset.card (subcolouring c a b k1 k2)
 
 -- The number of white cells in a subgrid.
-def sub_white (c : colouring) (a b : fin 2019) (k : ℕ) : ℕ :=
-finset.card (subcolouring (complement c) a b k)
+def sub_white (c : colouring) (a b : fin 2019) (k1 k2 : ℕ) : ℕ :=
+finset.card (subcolouring (complement c) a b k1 k2)
 
 -- The imbalance of a subgrid.
 def sub_imbalance (c : colouring) (a b : fin 2019) (k : ℕ) : ℕ :=
-int.nat_abs (((sub_black c a b k) : ℤ) - ((sub_white c a b k) : ℤ))
+int.nat_abs (((sub_black c a b k k) : ℤ) - ((sub_white c a b k k) : ℤ))
 
 -- Whether a subgrid is balanced.
 def sub_balanced (c : colouring) (a b : fin 2019) (k : ℕ) : Prop :=
@@ -60,7 +63,7 @@ finset.univ.filter balanced
 -- Adding the numbers of black and white cells in a subgrid.
 theorem sub_black_add_sub_white (c : colouring) (a b : fin 2019) (k : ℕ)
     (ha : (a : ℕ) + k ≤ 2019) (hb : (b : ℕ) + k ≤ 2019) :
-  sub_black c a b k + sub_white c a b k = k * k :=
+  sub_black c a b k k + sub_white c a b k k = k * k :=
 begin
   unfold sub_black sub_white subcolouring complement,
   rw [←card_union_add_card_inter, ←filter_union, filter_inter, inter_filter,
@@ -180,7 +183,7 @@ end
 
 -- Number of black cells in a subgrid, inequality.
 theorem sub_black_le (c : colouring) (a b : fin 2019) (k : ℕ)
-    (ha : (a : ℕ) + k ≤ 2019) (hb : (b : ℕ) + k ≤ 2019) : sub_black c a b k ≤ k * k :=
+    (ha : (a : ℕ) + k ≤ 2019) (hb : (b : ℕ) + k ≤ 2019) : sub_black c a b k k ≤ k * k :=
 begin
   rw ← sub_black_add_sub_white c a b k ha hb,
   exact nat.le_add_right _ _,
@@ -189,7 +192,7 @@ end
 -- Number of white cells in a subgrid, more convenient form.
 theorem sub_white_eq (c : colouring) (a b : fin 2019) (k : ℕ)
     (ha : (a : ℕ) + k ≤ 2019) (hb : (b : ℕ) + k ≤ 2019) :
-  sub_white c a b k = k * k - sub_black c a b k :=
+  sub_white c a b k k = k * k - sub_black c a b k k :=
 begin
   symmetry,
   rw [nat.sub_eq_iff_eq_add (sub_black_le c a b k ha hb), add_comm],
@@ -200,7 +203,7 @@ end
 -- Imbalance in terms only of number of black cells.
 theorem imbalance_eq (c : colouring) (a b : fin 2019) (k : ℕ)
     (ha : (a : ℕ) + k ≤ 2019) (hb : (b : ℕ) + k ≤ 2019) :
-  sub_imbalance c a b k = int.nat_abs (2 * ((sub_black c a b k) : ℤ) - ((k * k) : ℤ)) :=
+  sub_imbalance c a b k = int.nat_abs (2 * ((sub_black c a b k k) : ℤ) - ((k * k) : ℤ)) :=
 begin
   unfold sub_imbalance,
   rw sub_white_eq c a b k ha hb,
@@ -315,7 +318,7 @@ end
 -- Transposing a subcolouring produces the same results as taking the
 -- corresponding subcolouring of the transpose.
 theorem transpose_subcolouring (c : colouring) (a b : fin 2019) (k : ℕ) :
-  transpose_colouring (subcolouring c a b k) = subcolouring (transpose_colouring c) b a k :=
+  transpose_colouring (subcolouring c a b k k) = subcolouring (transpose_colouring c) b a k k :=
 begin
   unfold transpose_colouring subcolouring,
   ext,
@@ -349,7 +352,7 @@ end
 -- The number of black cells in a subgrid behaves as expected under
 -- transposition.
 theorem transpose_sub_black (c : colouring) (a b : fin 2019) (k : ℕ) :
-  sub_black c a b k = sub_black (transpose_colouring c) b a k :=
+  sub_black c a b k k = sub_black (transpose_colouring c) b a k k :=
 begin
   unfold sub_black,
   rw ←transpose_subcolouring,
@@ -594,7 +597,7 @@ end
 -- black cells.
 theorem sub_balanced_2 (c : colouring) (a b : fin 2019)
     (ha : (a : ℕ) < 2018) (hb : (b : ℕ) < 2018) :
-  sub_balanced c a b 2 ↔ sub_black c a b 2 = 2 :=
+  sub_balanced c a b 2 ↔ sub_black c a b 2 2 = 2 :=
 begin
   unfold sub_balanced,
   rw [imbalance_eq c a b 2 (by linarith) (by linarith),
@@ -610,10 +613,10 @@ end
 -- A subgrid of side 2 is made up of a given 4 cells.
 theorem subcolouring_2 (c : colouring) (a b : fin 2019)
     (ha : (a : ℕ) < 2018) (hb : (b : ℕ) < 2018) :
-  subcolouring c a b 2 = (c.filter (λ p, p = (a, b))) ∪
-                         (c.filter (λ p, p = (a, fin.of_nat (b + 1)))) ∪
-                         (c.filter (λ p, p = (fin.of_nat (a + 1), b))) ∪
-                         (c.filter (λ p, p = (fin.of_nat (a + 1), fin.of_nat (b + 1)))) :=
+  subcolouring c a b 2 2 = (c.filter (λ p, p = (a, b))) ∪
+                           (c.filter (λ p, p = (a, fin.of_nat (b + 1)))) ∪
+                           (c.filter (λ p, p = (fin.of_nat (a + 1), b))) ∪
+                           (c.filter (λ p, p = (fin.of_nat (a + 1), fin.of_nat (b + 1)))) :=
 begin
   unfold subcolouring,
   repeat {rw filter_union_right},
@@ -713,7 +716,7 @@ end
 -- corresponding four cells.
 theorem sub_black_2 (c : colouring) (a b : fin 2019)
     (ha : (a : ℕ) < 2018) (hb : (b : ℕ) < 2018) :
-  sub_black c a b 2 =
+  sub_black c a b 2 2 =
     (c.filter (λ p : grid, p = (a, b))).card +
     (c.filter (λ p : grid, p = (a, fin.of_nat (b + 1)))).card +
     (c.filter (λ p : grid, p = (fin.of_nat (a + 1), b))).card +
