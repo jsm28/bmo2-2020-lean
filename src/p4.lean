@@ -38,7 +38,7 @@ begin
   unfold p4_invar p4_seq_next,
   unfold p4_seq_next at hz,
   have hzz : (y * y - 1) / x * x ≠ 0 := mul_ne_zero hz hx,
-  rw [div_mul_cancel _ hx, sub_eq_add_neg] at hzz,
+  rw [div_mul_cancel _ hx] at hzz,
   field_simp [hx, hy, hzz],
   ring,
 end
@@ -195,9 +195,8 @@ begin
           hm (m + 1) (show m + 1 ≤ nat.succ m, by rw nat.succ_eq_add_one),
           p4_seq_next],
       push_cast,
-      have hm1 : 1 + (↑m : ℝ) ≠ 0,
+      have hm1 : (↑m : ℝ) + 1 ≠ 0,
       { norm_cast,
-        rw add_comm,
         exact dec_trivial },
       field_simp [hm1],
       ring } }

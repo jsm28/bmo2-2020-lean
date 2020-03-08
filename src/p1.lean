@@ -80,7 +80,7 @@ begin
       cases hm2 with m2 hm2_h,
       use 1 + m2,
       rw hm2_h,
-      simp },
+      ring },
     cases hm1 with m1 hmm1,
     rw [hc2mm, hmm1,
         (show (3 + 2 ^ (1 + m1) * (1 + 2 * d)) * (3 + 2 ^ (1 + m1) * (1 + 2 * d) - 1) =

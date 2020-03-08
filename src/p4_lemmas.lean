@@ -119,7 +119,7 @@ begin
           mul_lt_mul_of_pos_left hx1 (show 0 < (k2 - k1), by linarith),
         linarith } },
     { unfold,
-      field_simp [(show k2 + -k1 ≠ 0, by linarith)],
+      field_simp [(show k2 - k1 ≠ 0, by linarith)],
       ring } },
   { intro hy,
     cases hy with y hy,

@@ -606,7 +606,7 @@ begin
   norm_cast,
   rw ←nat.le_div_iff_mul_le _ _ (dec_trivial : 2 > 0),
   norm_num,
-  rw [add_comm, ←sub_eq_add_neg, sub_eq_zero_iff_eq],
+  rw sub_eq_zero_iff_eq,
   norm_cast
 end
 
