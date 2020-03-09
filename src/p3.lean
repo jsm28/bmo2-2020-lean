@@ -376,7 +376,7 @@ end
 
 -- If a colouring is balanced, so is its transpose.
 theorem transpose_balanced (c : colouring) (h : balanced c) :
-  balanced (transpose_colouring c):=
+  balanced (transpose_colouring c) :=
 begin
   intros k hk1 hk2,
   exact transpose_balanced_k c k (h k hk1 hk2)
@@ -384,7 +384,7 @@ end
 
 -- A colouring is balanced if and only if its transpose is.
 theorem transpose_balanced_iff (c : colouring) :
-  balanced c ↔ balanced (transpose_colouring c):=
+  balanced c ↔ balanced (transpose_colouring c) :=
 begin
   split,
   { apply transpose_balanced, },
@@ -884,7 +884,7 @@ end
 -- Two rows alternate in position b if and only if they alternate in
 -- all later positions.  b2 is in ℕ for convenience of induction.
 theorem rows_alternate_two_cols_later (c : colouring) (hbal2 : balanced_k c 2) (a b : fin 2019)
-    (b2 : ℕ) (ha : (a : ℕ) < 2018) (hb2 : (b : ℕ) < b2) (hb2a : b2 < 2019):
+    (b2 : ℕ) (ha : (a : ℕ) < 2018) (hb2 : (b : ℕ) < b2) (hb2a : b2 < 2019) :
   ((a, b) ∈ c ↔ ¬ (fin.of_nat (a + 1), b) ∈ c) ↔
     ((a, fin.of_nat b2) ∈ c ↔ ¬ (fin.of_nat (a + 1), fin.of_nat b2) ∈ c) :=
 begin
@@ -936,7 +936,7 @@ end
 
 -- Likewise, but with b2 in fin 2019.
 theorem rows_alternate_two_cols_later' (c : colouring) (hbal2 : balanced_k c 2) (a b : fin 2019)
-    (b2 : fin 2019) (ha : (a : ℕ) < 2018) (hb2 : b < b2):
+    (b2 : fin 2019) (ha : (a : ℕ) < 2018) (hb2 : b < b2) :
   ((a, b) ∈ c ↔ ¬ (fin.of_nat (a + 1), b) ∈ c) ↔
     ((a, b2) ∈ c ↔ ¬ (fin.of_nat (a + 1), b2) ∈ c) :=
 begin
@@ -1093,6 +1093,14 @@ begin
   tauto
 end
 
+-- Thus the cardinality of the set of balanced colourings, in two parts.
+theorem card_split_2 :
+  card balanced_colourings = card balanced_colourings_r_c +
+    2 * card balanced_colourings_r_no_c :=
+begin
+  rw [card_split_3, result_no_r_no_c, add_zero]
+end
+
 -- Now we need only consider balanced colourings where rows alternate.
 -- These can be expressed as a function of their first row, so we can
 -- reduce to counting first rows with certain properties.
@@ -1234,16 +1242,794 @@ begin
       exact h2 } }
 end
 
+-- colouring_of_row_colouring is injective.
+theorem colouring_of_row_colouring_injective : function.injective colouring_of_row_colouring :=
+begin
+  apply function.injective_of_has_left_inverse,
+  use row_colouring_of_colouring,
+  intro c,
+  unfold colouring_of_row_colouring row_colouring_of_colouring,
+  ext,
+  erw [mem_filter, mem_filter],
+  unfold prod.fst prod.snd,
+  norm_num
+end
+
+-- Whether a row colouring gives a balanced colouring of the grid.
+-- (This will later be proved equivalent to a more convenient form.)
+def gives_balanced (c : row_colouring) : Prop :=
+balanced (colouring_of_row_colouring c)
+
+-- Row colourings with alternating columns.
+def row_cols_alternate (c : row_colouring) : Prop :=
+∀ (a : fin 2019) (h : (a : ℕ) < 2018), a ∈ c ↔ ¬ fin.of_nat (a + 1) ∈ c
+
+-- Columns alternate in the whole grid if and only if they do in a
+-- row.
+theorem row_cols_alternate_iff_cols_alternate (c : row_colouring) :
+  row_cols_alternate c ↔ cols_alternate (colouring_of_row_colouring c) :=
+begin
+  unfold row_cols_alternate cols_alternate,
+  split,
+  { intros h a b hb,
+    have hb2 := h b hb,
+    unfold colouring_of_row_colouring,
+    erw [mem_filter, mem_filter],
+    unfold prod.fst prod.snd,
+    by_cases ha : (a : ℕ) % 2 = 0,
+    { simpa [ha] },
+    { rw [iff.comm, not_iff_comm] at hb2,
+      simpa [ha] } },
+  { intros h a ha,
+    have ha2 := h (fin.of_nat 0) a ha,
+    unfold colouring_of_row_colouring at ha2,
+    erw [mem_filter, mem_filter] at ha2,
+    unfold prod.fst prod.snd fin.of_nat at ha2,
+    norm_num at ha2,
+    exact ha2 }
+end
+
+-- Convert the split into cases to one based on gives_balanced.
+
+def row_not_cols_alternate (c : row_colouring) : Prop :=
+¬ row_cols_alternate c
+
+def gives_balanced_colourings : finset row_colouring :=
+finset.univ.filter gives_balanced
+
+def gives_balanced_colourings_r_c : finset row_colouring :=
+gives_balanced_colourings.filter row_cols_alternate
+
+def gives_balanced_colourings_r_no_c : finset row_colouring :=
+gives_balanced_colourings.filter row_not_cols_alternate
+
+theorem card_r_c_eq_gives_rc :
+  card balanced_colourings_r_c = card gives_balanced_colourings_r_c :=
+begin
+  convert card_image_of_injective gives_balanced_colourings_r_c
+    colouring_of_row_colouring_injective,
+  ext c,
+  rw mem_image,
+  split,
+  { intro h,
+    use row_colouring_of_colouring c,
+    split,
+    { unfold gives_balanced_colourings_r_c gives_balanced_colourings,
+      rw [mem_filter, mem_filter],
+      unfold gives_balanced,
+      unfold balanced_colourings_r_c balanced_colourings_r balanced_colourings at h,
+      rw [mem_filter, mem_filter, mem_filter] at h,
+      rw row_cols_alternate_iff_cols_alternate,
+      have hc : colouring_of_row_colouring (row_colouring_of_colouring c) = c,
+      { symmetry,
+        exact row_alternating_first_row' c h.1.2 },
+      rw hc,
+      exact and.intro (and.intro (mem_univ _) h.1.1.2) h.2 },
+    { symmetry,
+      apply row_alternating_first_row',
+      unfold balanced_colourings_r_c balanced_colourings_r at h,
+      rw [mem_filter, mem_filter] at h,
+      exact h.1.2 } },
+  { intro h,
+    cases h with rc hrc,
+    cases hrc with hrc hcrc,
+    unfold gives_balanced_colourings_r_c gives_balanced_colourings at hrc,
+    rw [mem_filter, mem_filter] at hrc,
+    unfold gives_balanced at hrc,
+    rw hcrc at hrc,
+    unfold balanced_colourings_r_c balanced_colourings_r balanced_colourings,
+    rw [mem_filter, mem_filter, mem_filter],
+    repeat { split },
+    { exact mem_univ _ },
+    { exact hrc.1.2 },
+    { rw ←hcrc,
+      exact colouring_of_row_colouring_rows_alternate rc },
+    { rw [←hcrc, ←row_cols_alternate_iff_cols_alternate rc],
+      exact hrc.2 } }
+end
+
+theorem card_r_no_c_eq_gives_r_no_c :
+  card balanced_colourings_r_no_c = card gives_balanced_colourings_r_no_c :=
+begin
+  convert card_image_of_injective gives_balanced_colourings_r_no_c
+    colouring_of_row_colouring_injective,
+  ext c,
+  rw mem_image,
+  split,
+  { intro h,
+    use row_colouring_of_colouring c,
+    split,
+    { unfold gives_balanced_colourings_r_no_c gives_balanced_colourings,
+      rw [mem_filter, mem_filter],
+      unfold gives_balanced,
+      unfold balanced_colourings_r_no_c balanced_colourings_r balanced_colourings at h,
+      rw [mem_filter, mem_filter, mem_filter] at h,
+      unfold row_not_cols_alternate,
+      rw row_cols_alternate_iff_cols_alternate,
+      have hc : colouring_of_row_colouring (row_colouring_of_colouring c) = c,
+      { symmetry,
+        exact row_alternating_first_row' c h.1.2 },
+      rw hc,
+      exact and.intro (and.intro (mem_univ _) h.1.1.2) h.2 },
+    { symmetry,
+      apply row_alternating_first_row',
+      unfold balanced_colourings_r_no_c balanced_colourings_r at h,
+      rw [mem_filter, mem_filter] at h,
+      exact h.1.2 } },
+  { intro h,
+    cases h with rc hrc,
+    cases hrc with hrc hcrc,
+    unfold gives_balanced_colourings_r_no_c gives_balanced_colourings at hrc,
+    rw [mem_filter, mem_filter] at hrc,
+    unfold gives_balanced at hrc,
+    rw hcrc at hrc,
+    unfold balanced_colourings_r_no_c balanced_colourings_r balanced_colourings,
+    rw [mem_filter, mem_filter, mem_filter],
+    repeat { split },
+    { exact mem_univ _ },
+    { exact hrc.1.2 },
+    { rw ←hcrc,
+      exact colouring_of_row_colouring_rows_alternate rc },
+    { unfold not_cols_alternate,
+      unfold row_not_cols_alternate at hrc,
+      rw [←hcrc, ←row_cols_alternate_iff_cols_alternate rc],
+      exact hrc.2 } }
+end
+
+-- Thus the cardinality of the set of balanced colourings, in two
+-- parts based on gives_balanced.
+theorem card_split_2_gives :
+  card balanced_colourings = card gives_balanced_colourings_r_c +
+    2 * card gives_balanced_colourings_r_no_c :=
+begin
+  rw [card_split_2, card_r_c_eq_gives_rc, card_r_no_c_eq_gives_r_no_c]
+end
+
+-- Next, show that the gives_balanced property is equivalent to a
+-- balanced property for odd numbers of consecutive cells in the row,
+-- so completing the reduction of the problem to be based on
+-- properties of row colourings only.
+
+-- The number of black cells in a subgrid equals the sum of the
+-- numbers in a division of its rows into two parts.  (Note: the use
+-- of fin 2019 for row numbers means this does not cover the case
+-- where the first part of the split ends at the end of the grid.)
+theorem sub_black_split_rows (c : colouring) (a b : fin 2019) (k1_1 k1_2 k2 : ℕ)
+    (h : (a : ℕ) + k1_1 < 2019) :
+  sub_black c a b (k1_1 + k1_2) k2 =
+    sub_black c a b k1_1 k2 + sub_black c (fin.of_nat ((a : ℕ) + k1_1)) b k1_2 k2 :=
+begin
+  have h2019 : nat.succ 2018 = 2019,
+  { rw nat.succ_eq_add_one,
+    norm_num },
+  unfold sub_black,
+  rw [←card_union_add_card_inter],
+  symmetry,
+  convert nat.add_zero (card (subcolouring c a b (k1_1 + k1_2) k2)),
+  { unfold subcolouring,
+    rw ←filter_or,
+    ext x,
+    rw [mem_filter, mem_filter],
+    split,
+    { intro hm,
+      cases hm with hmc hm,
+      cases hm,
+      { rcases hm with ⟨ha1, hb1, ha2, hb2⟩,
+        repeat { split },
+        { exact hmc },
+        { exact ha1 },
+        { exact hb1 },
+        { linarith },
+        { exact hb2 } },
+      { rcases hm with ⟨ha1, hb1, ha2, hb2⟩,
+        repeat { split },
+        { exact hmc },
+        { unfold fin.of_nat at ha1,
+          rw fin.le_iff_val_le_val at ha1,
+          unfold fin.val at ha1,
+          conv at ha1
+          begin
+            to_lhs,
+            congr,
+            skip,
+            rw h2019
+          end,
+          rw [nat.mod_eq_of_lt h, fin.coe_eq_val] at ha1,
+          rw fin.le_iff_val_le_val,
+          linarith },
+        { exact hb1 },
+        { convert ha2 using 1,
+          unfold fin.of_nat,
+          rw [fin.coe_eq_val, fin.coe_eq_val],
+          unfold fin.val,
+          rw h2019,
+          rw fin.coe_eq_val at h,
+          rw nat.mod_eq_of_lt h,
+          rw add_assoc },
+        { exact hb2 } } },
+    { intro hm,
+      rcases hm with ⟨hmc, ha1, hb1, ha2, hb2⟩,
+      split,
+      { exact hmc },
+      { by_cases hx : (x.fst : ℕ) < (a : ℕ) + k1_1,
+        { left,
+          exact and.intro ha1 (and.intro hb1 (and.intro hx hb2)) },
+        { right,
+          unfold fin.of_nat,
+          repeat { rw fin.coe_eq_val },
+          rw fin.coe_eq_val at h,
+          rw fin.le_iff_val_le_val,
+          unfold fin.val,
+          repeat { split },
+          { conv
+            begin
+              to_lhs,
+              congr,
+              skip,
+              rw h2019
+            end,
+            rw nat.mod_eq_of_lt h,
+            rw fin.coe_eq_val at hx,
+            exact not_lt.mp hx },
+          { exact hb1 },
+          { convert ha2 using 1,
+            rw [h2019, nat.mod_eq_of_lt h, fin.coe_eq_val, add_assoc] },
+          { exact hb2 } } } } },
+  { convert card_empty,
+    unfold subcolouring,
+    rw ←filter_and,
+    convert filter_false c,
+    { ext,
+      split,
+      { intro hx,
+        rcases hx with ⟨⟨ha1, hb1, ha2, hb2⟩, ⟨ha3, hb3, ha4, hb4⟩⟩,
+        unfold fin.of_nat at ha3,
+        rw fin.le_iff_val_le_val at ha3,
+        unfold fin.val at ha3,
+        rw fin.coe_eq_val at ha2,
+        conv at ha3
+        begin
+          to_lhs,
+          congr,
+          skip,
+          rw h2019
+        end,
+        rw nat.mod_eq_of_lt h at ha3,
+        linarith },
+      { exact false.elim } },
+    { exact classical.dec_pred _ } }
+end
+
+-- There are no black cells in zero rows.
+theorem sub_black_zero_rows (c : colouring) (a b : fin 2019) (k2 : ℕ) :
+  sub_black c a b 0 k2 = 0 :=
+begin
+  unfold sub_black,
+  convert card_empty,
+  unfold subcolouring,
+  convert filter_false c,
+  { ext,
+    split,
+    { intro h,
+      rcases h with ⟨ha1, hb1, ha2, hb2⟩,
+      rw [fin.coe_eq_val, fin.coe_eq_val] at ha2,
+      rw fin.le_iff_val_le_val at ha1,
+      linarith },
+    { exact false.elim } },
+  { exact classical.dec_pred _ }
+end
+
+-- A subgrid of a row colouring.
+def row_subcolouring (c : row_colouring) (a : fin 2019) (k2 : ℕ) : finset row :=
+c.filter (λ p : row, a ≤ p ∧ (p : ℕ) < (a : ℕ) + k2)
+
+-- The complement of a row colouring.
+def row_complement (c : row_colouring) : row_colouring :=
+finset.univ \ c
+
+-- The number of black cells in a subgrid of a row colouring.
+def row_sub_black (c : row_colouring) (a : fin 2019) (k2 : ℕ) : ℕ :=
+finset.card (row_subcolouring c a k2)
+
+-- The number of black cells in a subgrid of a row colouring and its
+-- complement.
+theorem row_sub_black_add_complement (c : row_colouring) (a : fin 2019) (k2 : ℕ)
+    (hk2 : (a : ℕ) + k2 ≤ 2019) :
+  row_sub_black c a k2 + row_sub_black (row_complement c) a k2 = k2 :=
+begin
+  have h2019 : nat.succ 2018 = 2019,
+  { rw nat.succ_eq_add_one,
+    norm_num },
+  unfold row_sub_black row_complement row_subcolouring,
+  rw [←card_union_add_card_inter, ←filter_union, filter_inter, inter_filter,
+      union_sdiff_of_subset (subset_univ _), inter_sdiff_self, filter_empty, filter_empty,
+      card_empty, add_zero],
+  refine card_eq_of_bijective (λ i h, fin.of_nat (a + i)) _ _ _,
+  { intro p,
+    intro hp,
+    rw mem_filter at hp,
+    use p.val - a.val,
+    rw fin.le_iff_val_le_val at hp,
+    rw fin.coe_eq_val at *,
+    rw fin.coe_eq_val at hp,
+    rcases hp with ⟨hpu, hpa, hpa2⟩,
+    split,
+    { exact (nat.sub_lt_left_iff_lt_add hpa).mpr hpa2 },
+    { rw nat.add_sub_of_le hpa,
+      unfold fin.of_nat,
+      rw fin.eq_iff_veq,
+      unfold fin.val,
+      rw nat.mod_eq_of_lt,
+      exact p.is_lt } },
+  { intros i hi,
+    rw mem_filter,
+    unfold fin.of_nat,
+    rw [fin.le_iff_val_le_val, fin.coe_eq_val, fin.coe_eq_val],
+    unfold fin.val,
+    rw fin.coe_eq_val at hk2,
+    have hai : a.val + i < 2019, {linarith},
+    repeat { split },
+    { exact mem_univ _ },
+    { rw [h2019, nat.mod_eq_of_lt hai],
+      linarith },
+    { rw [h2019, nat.mod_eq_of_lt hai],
+      linarith } },
+  { intros i j hi hj,
+    rw fin.coe_eq_val at *,
+    unfold fin.of_nat,
+    rw fin.eq_iff_veq,
+    unfold fin.val,
+    rw h2019,
+    have hai : a.val + i < 2019, {linarith},
+    have haj : a.val + j < 2019, {linarith},
+    rw [nat.mod_eq_of_lt hai, nat.mod_eq_of_lt haj],
+    intro hij,
+    exact nat.add_left_cancel hij }
+end
+
+
+-- The number of black cells in a subgrid of the complement of a row
+-- colouring.
+theorem row_sub_black_complement (c : row_colouring) (a : fin 2019) (k2 : ℕ)
+    (hk2 : (a : ℕ) + k2 ≤ 2019) :
+  row_sub_black (row_complement c) a k2 = k2 - row_sub_black c a k2 :=
+begin
+  conv
+  begin
+    to_rhs,
+    congr,
+    rw ←row_sub_black_add_complement c a k2 hk2
+  end,
+  rw nat.add_sub_cancel_left
+end
+
+-- The number of black cells in an even row, derived from a row colouring.
+theorem sub_black_even_row (c : row_colouring) (a b : fin 2019) (k2 : ℕ)
+    (ha : (a : ℕ) % 2 = 0) (hk2 : (b : ℕ) + k2 ≤ 2019) :
+  sub_black (colouring_of_row_colouring c) a b 1 k2 = (row_sub_black c b k2) :=
+begin
+  set f : row -> grid := λ p, (a, p) with hf,
+  have hfi : function.injective f,
+  { intros p1 p2 h,
+    rw hf at h,
+    unfold at h,
+    rw prod.mk.inj_iff at h,
+    exact h.2 },
+  unfold sub_black row_sub_black,
+  convert card_image_of_injective (row_subcolouring c b k2) hfi,
+  unfold subcolouring row_subcolouring,
+  ext p,
+  rw [mem_filter, mem_image],
+  split,
+  { intro h,
+    rcases h with ⟨hp, ha1, hb1, ha2, hb2⟩,
+    unfold colouring_of_row_colouring at hp,
+    rw mem_filter at hp,
+    use p.snd,
+    rw hf,
+    rw mem_filter,
+    unfold,
+    rw fin.coe_eq_val at *,
+    rw fin.coe_eq_val at *,
+    cases hp with hpu hp,
+    rw fin.le_iff_val_le_val at ha1,
+    have hap : p.fst.val = a.val,
+    { linarith },
+    repeat { split },
+    { rw hap at hp,
+      tauto },
+    { exact hb1 },
+    { exact hb2 },
+    { ext,
+      { unfold prod.fst,
+        rw fin.eq_iff_veq,
+        exact hap.symm },
+      { unfold prod.snd } } },
+  { intro h,
+    cases h with rp hp,
+    cases hp with hp hp2,
+    rw mem_filter at hp,
+    rw hf at hp2,
+    unfold at hp2,
+    rw ←hp2,
+    unfold prod.fst prod.snd,
+    repeat { split },
+    { unfold colouring_of_row_colouring,
+      rw mem_filter,
+      unfold prod.fst prod.snd,
+      split,
+      { exact mem_univ _ },
+      { tauto } },
+    { refl },
+    { exact hp.2.1 },
+    { exact nat.lt_succ_self _ },
+    { exact hp.2.2 } }
+end
+
+-- The number of black cells in an odd row, derived from a row colouring.
+theorem sub_black_odd_row (c : row_colouring) (a b : fin 2019) (k2 : ℕ)
+    (ha : (a : ℕ) % 2 ≠ 0) (hk2 : (b : ℕ) + k2 ≤ 2019) :
+  sub_black (colouring_of_row_colouring c) a b 1 k2 = k2 - (row_sub_black c b k2) :=
+begin
+  set f : row -> grid := λ p, (a, p) with hf,
+  have hfi : function.injective f,
+  { intros p1 p2 h,
+    rw hf at h,
+    unfold at h,
+    rw prod.mk.inj_iff at h,
+    exact h.2 },
+  rw ←row_sub_black_complement,
+  unfold sub_black row_sub_black,
+  convert card_image_of_injective (row_subcolouring (row_complement c) b k2) hfi,
+  unfold subcolouring row_subcolouring row_complement,
+  ext p,
+  rw [mem_filter, mem_image],
+  split,
+  { intro h,
+    rcases h with ⟨hp, ha1, hb1, ha2, hb2⟩,
+    unfold colouring_of_row_colouring at hp,
+    rw mem_filter at hp,
+    use p.snd,
+    rw hf,
+    rw mem_filter,
+    unfold,
+    rw fin.coe_eq_val at *,
+    rw fin.coe_eq_val at *,
+    cases hp with hpu hp,
+    rw fin.le_iff_val_le_val at ha1,
+    have hap : p.fst.val = a.val,
+    { linarith },
+    rw mem_sdiff,
+    repeat { split },
+    { exact mem_univ _ },
+    { rw hap at hp,
+      tauto },
+    { exact hb1 },
+    { exact hb2 },
+    { ext,
+      { unfold prod.fst,
+        rw fin.eq_iff_veq,
+        exact hap.symm },
+      { unfold prod.snd } } },
+  { intro h,
+    cases h with rp hp,
+    cases hp with hp hp2,
+    rw mem_filter at hp,
+    rw hf at hp2,
+    unfold at hp2,
+    rw ←hp2,
+    unfold prod.fst prod.snd,
+    repeat { split },
+    { unfold colouring_of_row_colouring,
+      rw mem_filter,
+      unfold prod.fst prod.snd,
+      split,
+      { exact mem_univ _ },
+      { cases hp with hpc hp3,
+        rw mem_sdiff at hpc,
+        cases hpc with hpu hpc,
+        tauto } },
+    { refl },
+    { exact hp.2.1 },
+    { exact nat.lt_succ_self _ },
+    { exact hp.2.2 } },
+  { exact hk2 }
+end
+
+-- The number of black cells in one row, derived from a row colouring.
+theorem sub_black_one_row (c : row_colouring) (a b : fin 2019) (k2 : ℕ)
+    (hk2 : (b : ℕ) + k2 ≤ 2019) :
+  sub_black (colouring_of_row_colouring c) a b 1 k2 =
+    ite ((a : ℕ) % 2 = 0) (row_sub_black c b k2) (k2 - (row_sub_black c b k2)) :=
+begin
+  by_cases ha : (a : ℕ) % 2 = 0,
+  { rw if_pos ha,
+    exact sub_black_even_row c a b k2 ha hk2 },
+  { rw if_neg ha,
+    exact sub_black_odd_row c a b k2 ha hk2 },
+end
+
+-- The number of black cells in two rows, derived from a row colouring.
+theorem sub_black_two_rows (c : row_colouring) (a b : fin 2019) (k2 : ℕ)
+    (ha : (a : ℕ) < 2018) (hk2 : (b : ℕ) + k2 ≤ 2019) :
+  sub_black (colouring_of_row_colouring c) a b 2 k2 = k2 :=
+begin
+  rw sub_black_split_rows (colouring_of_row_colouring c) a b 1 1 k2
+     (show (a : ℕ) + 1 < 2019, by linarith),
+  have h2019 : nat.succ 2018 = 2019,
+  { rw nat.succ_eq_add_one,
+    norm_num },
+  have hf : ((fin.of_nat ((a : ℕ) + 1) : fin 2019) : ℕ) = (a : ℕ) + 1,
+  { repeat { rw fin.coe_eq_val },
+    rw fin.coe_eq_val at ha,
+    unfold fin.of_nat fin.val,
+    rw h2019,
+    rw nat.mod_eq_of_lt,
+    linarith },
+  have hle : row_sub_black c b k2 ≤ k2 := nat.le.intro (row_sub_black_add_complement c b k2 hk2),
+  by_cases ha2 : (a : ℕ) % 2 = 0,
+  { rw sub_black_even_row c a b k2 ha2 hk2,
+    have ha1 : ((fin.of_nat ((a : ℕ) + 1) : fin 2019) : ℕ) % 2 ≠ 0,
+    { rw hf,
+      intro ha3,
+      rw ←nat.even_iff at *,
+      rw nat.even_add at ha3,
+      norm_num at ha3,
+      exact ha3 ha2 },
+    rw sub_black_odd_row c (fin.of_nat ((a : ℕ) + 1)) b k2 ha1 hk2,
+    apply nat.add_sub_cancel',
+    exact hle },
+  { rw sub_black_odd_row c a b k2 ha2 hk2,
+    have ha1 : ((fin.of_nat ((a : ℕ) + 1) : fin 2019) : ℕ) % 2 = 0,
+    { rw hf,
+      rw ←nat.even_iff at *,
+      rw nat.even_add,
+      norm_num,
+      exact ha2 },
+    rw sub_black_even_row c (fin.of_nat ((a : ℕ) + 1)) b k2 ha1 hk2,
+    apply nat.sub_add_cancel,
+    exact hle },
+end
+
+-- The number of black cells in an even number of rows, derived from a
+-- row colouring.
+theorem sub_black_even_rows (c : row_colouring) (a b : fin 2019) (k1 k2 : ℕ)
+    (h : (a : ℕ) + (2 * k1) ≤ 2019) (hk2 : (b : ℕ) + k2 ≤ 2019) :
+  sub_black (colouring_of_row_colouring c) a b (2 * k1) k2 = k1 * k2 :=
+begin
+  induction k1 with k1a hk1a,
+  { rw [mul_zero, zero_mul],
+    exact sub_black_zero_rows _ _ _ _ },
+  { convert sub_black_split_rows (colouring_of_row_colouring c) a b (2 * k1a) 2 k2 _,
+    { rw nat.succ_eq_add_one at h,
+      rw [nat.succ_eq_add_one, hk1a (by linarith), add_mul, one_mul, add_left_cancel_iff],
+      symmetry,
+      refine sub_black_two_rows c _ b k2 _ hk2,
+      unfold fin.of_nat,
+      rw fin.coe_eq_val,
+      unfold fin.val,
+      have h2019 : nat.succ 2018 = 2019,
+      { rw nat.succ_eq_add_one,
+        norm_num },
+      rw h2019,
+      have ha : ((a : ℕ) + 2 * k1a) < 2019, {linarith},
+      rw nat.mod_eq_of_lt ha,
+      linarith },
+    { rw nat.succ_eq_add_one at h,
+      linarith } }
+end
+
+-- The number of black cells in an odd number of rows, derived from a
+-- row colouring.
+theorem sub_black_odd_rows (c : row_colouring) (a b : fin 2019) (k1 k2 : ℕ)
+    (h : (a : ℕ) + (2 * k1 + 1) ≤ 2019) (hk2 : (b : ℕ) + k2 ≤ 2019) :
+  sub_black (colouring_of_row_colouring c) a b (2 * k1 + 1) k2 =
+    (ite ((a : ℕ) % 2 = 0) (row_sub_black c b k2) (k2 - (row_sub_black c b k2))) + k1 * k2 :=
+begin
+  by_cases ha : (a : ℕ) + 1 < 2019,
+  { convert sub_black_split_rows (colouring_of_row_colouring c) a b 1 (2 * k1) k2 _ using 1,
+    { congr' 1,
+      ring },
+    { rw ←sub_black_one_row c a b k2 hk2,
+      rw sub_black_even_rows c _ b k1 k2 _ hk2,
+      unfold fin.of_nat,
+      rw [fin.coe_eq_val, fin.coe_eq_val],
+      unfold fin.val,
+      rw fin.coe_eq_val at h,
+      have h2019 : nat.succ 2018 = 2019,
+      { rw nat.succ_eq_add_one,
+        norm_num },
+      rw h2019,
+      linarith [nat.mod_le (a.val + 1) 2019] },
+    { linarith } },
+  { have hk1 : k1 = 0, {linarith},
+    have ha2 : (a : ℕ) = 2018, {linarith},
+    rw [hk1, ha2],
+    norm_num,
+    rw [sub_black_one_row _ _ _ _ hk2, ha2],
+    norm_num }
+end
+
+-- colouring_of_row_colouring gives colourings balanced for subgrids
+-- of even side.
+theorem gives_balanced_even (c : row_colouring) (k : ℕ) :
+  balanced_k (colouring_of_row_colouring c) (2 * k) :=
+begin
+  intros a b ha hb,
+  unfold sub_balanced,
+  rw imbalance_eq _ _ _ _ ha hb,
+  rw sub_black_even_rows _ _ _ _ _ ha hb,
+  norm_cast,
+  ring,
+  rw sub_self,
+  norm_num
+end
+
+-- The imbalance of an odd subgrid of a row.
+def row_odd_imbalance (c : row_colouring) (a : fin 2019) (k : ℕ)
+    (ha : (a : ℕ) + (2 * k + 1) ≤ 2019) : ℕ :=
+int.nat_abs (2 * ((row_sub_black c a (2 * k + 1)) : ℤ) - ((2 * k + 1) : ℤ))
+
+-- Whether odd subgrids of a row are balanced.
+def row_odd_balanced_k (c : row_colouring) (k : ℕ) : Prop :=
+∀ (a : fin 2019) (ha : ((a : ℕ) + (2 * k + 1)) ≤ 2019), row_odd_imbalance c a k ha ≤ 1
+
+-- The imbalance of a square subgrid of odd side equals the
+-- corresponding imbalance for a row.
+theorem imbalance_odd_eq (c : row_colouring) (a b : fin 2019) (k : ℕ)
+    (ha : (a : ℕ) + (2 * k + 1) ≤ 2019) (hb : (b : ℕ) + (2 * k + 1) ≤ 2019) :
+  sub_imbalance (colouring_of_row_colouring c) a b (2 * k + 1) = row_odd_imbalance c b k hb :=
+begin
+  rw [imbalance_eq _ _ _ _ ha hb, sub_black_odd_rows _ _ _ _ _ ha hb],
+  unfold row_odd_imbalance,
+  by_cases hae : ((a : ℕ) % 2 = 0),
+  { rw if_pos hae,
+    congr' 1,
+    push_cast,
+    ring,
+    norm_cast,
+    norm_num },
+  { rw if_neg hae,
+    rw ←int.nat_abs_neg,
+    have hcoe : (((2 * k + 1 : ℕ) - row_sub_black c b (2 * k + 1) : ℕ) : ℤ) =
+      ((2 * k + 1) : ℤ) - (row_sub_black c b (2 * k + 1) : ℤ),
+    { norm_cast,
+      apply int.coe_nat_sub,
+      exact nat.le.intro (row_sub_black_add_complement _ _ _ hb) },
+    have hcoe2 : (((2 * k + 1 : ℕ) - row_sub_black c b (2 * k + 1)  + k * (2 * k + 1) : ℕ) : ℤ) =
+      ((2 * k + 1) : ℤ) - (row_sub_black c b (2 * k + 1) : ℤ) + (k * (2 * k + 1) : ℤ),
+    { rw int.coe_nat_add,
+      rw hcoe,
+      norm_cast },
+    rw hcoe2,
+    congr' 1,
+    push_cast,
+    ring,
+    norm_cast,
+    norm_num,
+    norm_cast,
+    ring }
+end
+
+-- colouring_of_row_colouring gives colourings balanced for subgrids
+-- of odd side if and only if their row_odd_imbalance is at most 1.
+theorem gives_balanced_odd_iff (c : row_colouring) (k : ℕ) :
+  balanced_k (colouring_of_row_colouring c) (2 * k + 1) ↔ row_odd_balanced_k c k :=
+begin
+  unfold balanced_k row_odd_balanced_k sub_balanced,
+  split,
+  { intros h a ha,
+    rw ← imbalance_odd_eq _ _ _ _ ha ha,
+    exact h a a ha ha },
+  { intros h a b ha hb,
+    rw imbalance_odd_eq _ _ _ _ ha hb,
+    exact h b hb }
+end
+
+-- Whether a row colouring gives a balanced colouring of the grid,
+-- without referring to the full grid at all.
+def row_balanced (c : row_colouring) : Prop :=
+∀ k : ℕ, k ≤ 1009 → row_odd_balanced_k c k
+
+-- A row is gives_balanced if and only if it is row_balanced.
+theorem gives_balanced_iff_row_balanced (c : row_colouring) :
+  gives_balanced c ↔ row_balanced c :=
+begin
+  unfold gives_balanced row_balanced balanced,
+  split,
+  { intros h k hk,
+    rw ← gives_balanced_odd_iff,
+    exact h (2 * k + 1) (by linarith) (by linarith) },
+  { intros h k hk1 hk2,
+    by_cases he : k % 2 = 0,
+    { convert gives_balanced_even c (k / 2),
+      symmetry,
+      exact nat.mul_div_cancel' (nat.dvd_of_mod_eq_zero he) },
+    { rw [←nat.even_iff, nat.not_even_iff] at he,
+      have he2 : 2 * (k / 2) + 1 = k,
+      { rw add_comm,
+        convert nat.mod_add_div k 2,
+        exact he.symm },
+      rw [←he2, gives_balanced_odd_iff _ _],
+      exact h (k / 2) (by linarith) } }
+end
+
+-- So now rewrite the split in terms of row_balanced.
+
+def row_balanced_colourings : finset row_colouring :=
+finset.univ.filter row_balanced
+
+theorem gives_balanced_eq_row_balanced : gives_balanced_colourings = row_balanced_colourings :=
+begin
+  unfold gives_balanced_colourings row_balanced_colourings,
+  ext,
+  rw [mem_filter, mem_filter],
+  rw gives_balanced_iff_row_balanced
+end
+
+def row_balanced_colourings_r_c : finset row_colouring :=
+row_balanced_colourings.filter row_cols_alternate
+
+def row_balanced_colourings_r_no_c : finset row_colouring :=
+row_balanced_colourings.filter row_not_cols_alternate
+
+theorem card_gives_balanced_r_c_eq :
+  card gives_balanced_colourings_r_c = card row_balanced_colourings_r_c :=
+begin
+  unfold gives_balanced_colourings_r_c row_balanced_colourings_r_c,
+  rw gives_balanced_eq_row_balanced
+end
+
+theorem card_gives_balanced_r_no_c_eq :
+  card gives_balanced_colourings_r_no_c = card row_balanced_colourings_r_no_c :=
+begin
+  unfold gives_balanced_colourings_r_no_c row_balanced_colourings_r_no_c,
+  rw gives_balanced_eq_row_balanced
+end
+
+-- Thus the cardinality of the set of balanced colourings, in two
+-- parts based on row_balanced.
+theorem card_split_2_row :
+  card balanced_colourings = card row_balanced_colourings_r_c +
+    2 * card row_balanced_colourings_r_no_c :=
+begin
+  rw [card_split_2_gives, card_gives_balanced_r_c_eq, card_gives_balanced_r_no_c_eq]
+end
+
+-- The next aim is to prove that a row colouring is row_balanced if
+-- and only if the positions (between two cells) where the colour does
+-- *not* change all have the same parity.
+
 -- TODO: rest of solution.
 
 -- The remaining two parts of the sum for the result.
 
-theorem result_r_c : card balanced_colourings_r_c = 2 :=
+theorem result_r_c : card row_balanced_colourings_r_c = 2 :=
 begin
   sorry
 end
 
-theorem result_r_no_c : card balanced_colourings_r_no_c = 2^1011 - 4 :=
+theorem result_r_no_c : card row_balanced_colourings_r_no_c = 2^1011 - 4 :=
 begin
   sorry
 end
@@ -1251,6 +2037,6 @@ end
 -- The result of the problem.
 theorem p3_result : finset.card balanced_colourings = 2^1012 - 6 :=
 begin
-  rw [card_split_3, result_r_c, result_no_r_no_c, result_r_no_c],
+  rw [card_split_2_row, result_r_c, result_r_no_c],
   norm_num
 end
