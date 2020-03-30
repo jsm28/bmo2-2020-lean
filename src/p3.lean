@@ -60,6 +60,23 @@ def balanced (c : colouring) : Prop :=
 def balanced_colourings : finset colouring :=
 finset.univ.filter balanced
 
+-- Some lemmas about fin 2019 that are of use below.
+
+theorem of_nat_val (a : ℕ) (h : a < 2019) : ((fin.of_nat a) : fin 2019).val = a :=
+nat.mod_eq_of_lt h
+
+theorem of_nat_val_self (a : fin 2019) : ((fin.of_nat a.val) : fin 2019).val = a.val :=
+of_nat_val a.val a.is_lt
+
+theorem of_nat_eq_self (a : fin 2019) : fin.of_nat a.val = a :=
+begin
+  rw fin.eq_iff_veq,
+  exact of_nat_val_self a
+end
+
+theorem of_nat_coe (a : ℕ) (h : a < 2019) : (((fin.of_nat a) : fin 2019) : ℕ) = a :=
+nat.mod_eq_of_lt h
+
 -- Adding the numbers of black and white cells in a subgrid.
 theorem sub_black_add_sub_white (c : colouring) (a b : fin 2019) (k : ℕ)
     (ha : (a : ℕ) + k ≤ 2019) (hb : (b : ℕ) + k ≤ 2019) :
@@ -69,9 +86,6 @@ begin
   rw [←card_union_add_card_inter, ←filter_union, filter_inter, inter_filter,
       union_sdiff_of_subset (subset_univ _), inter_sdiff_self, filter_empty, filter_empty,
       card_empty, add_zero],
-  have h2019 : nat.succ 2018 = 2019,
-  { rw nat.succ_eq_add_one,
-    norm_num },
   refine card_eq_of_bijective (λ i h, ⟨fin.of_nat (a + i / k : ℕ), fin.of_nat (b + i % k : ℕ)⟩)
     _ _ _,
   { intro p,
@@ -98,34 +112,29 @@ begin
           ring } },
       linarith },
     { ext,
-      { unfold prod.fst fin.of_nat,
-        unfold fin.val,
+      { unfold prod.fst,
         cases k with kk,
         { exfalso,
           exact nat.not_lt_zero _ ha2 },
         { rw [add_comm ((p.fst.val - a.val) * nat.succ kk) (p.snd.val - b.val),
               nat.add_mul_div_right _ _ (nat.zero_lt_succ _), nat.div_eq_of_lt hb2, zero_add,
               ←nat.add_sub_assoc ha1, nat.add_sub_cancel_left],
-          apply nat.mod_eq_of_lt,
-          exact p.fst.is_lt } },
-      { unfold prod.snd fin.of_nat,
-        unfold fin.val,
+          exact of_nat_val_self p.fst } },
+      { unfold prod.snd,
         cases k with kk,
         { exfalso,
           exact nat.not_lt_zero _ ha2 },
         { rw [add_comm ((p.fst.val - a.val) * nat.succ kk) (p.snd.val - b.val),
               nat.add_mul_mod_self_right, nat.mod_eq_of_lt hb2, ←nat.add_sub_assoc hb1,
               nat.add_sub_cancel_left],
-          apply nat.mod_eq_of_lt,
-          exact p.snd.is_lt } } } },
+          exact of_nat_val_self p.snd } } } },
   { intros i hi,
     rw mem_filter,
     split,
     { exact mem_univ _ },
     { repeat { rw fin.le_def },
       repeat { rw fin.coe_eq_val at * },
-      unfold fin.of_nat prod.fst prod.snd fin.val,
-      repeat { rw h2019 },
+      unfold prod.fst prod.snd fin.val,
       have hkpos : 0 < k,
       { by_contradiction,
         have hk0 : k = 0, {linarith},
@@ -137,25 +146,20 @@ begin
       have himod : i % k < k := nat.mod_lt _ hkpos,
       repeat { split },
       { have hax : (a.val + i / k) < 2019, {linarith},
-        rw nat.mod_eq_of_lt hax,
+        rw of_nat_val _ hax,
         exact nat.le_add_right _ _ },
       { have hbx : (b.val + i % k) < 2019, {linarith},
-        rw nat.mod_eq_of_lt hbx,
+        rw of_nat_val _ hbx,
         exact nat.le_add_right _ _ },
       { have hax : (a.val + i / k) < 2019, {linarith},
-        rw nat.mod_eq_of_lt hax,
+        rw of_nat_val _ hax,
         linarith },
       { have hbx : (b.val + i % k) < 2019, {linarith},
-        rw nat.mod_eq_of_lt hbx,
+        rw of_nat_val _ hbx,
         linarith } } },
   { intros i j hi hj heq,
     rw prod.mk.inj_iff at heq,
     cases heq with heq1 heq2,
-    unfold fin.of_nat at heq1 heq2,
-    injection heq1 with heq1a,
-    injection heq2 with heq2a,
-    rw [h2019] at heq1a,
-    rw [h2019] at heq2a,
     repeat { rw fin.coe_eq_val at * },
     have hkpos : 0 < k,
     { by_contradiction,
@@ -174,9 +178,9 @@ begin
     have haj : a.val + j / k < 2019, {linarith},
     have hbi : b.val + i % k < 2019, {linarith},
     have hbj : b.val + j % k < 2019, {linarith},
-    rw [nat.mod_eq_of_lt hai, nat.mod_eq_of_lt haj, add_left_cancel_iff] at heq1a,
-    rw [nat.mod_eq_of_lt hbi, nat.mod_eq_of_lt hbj, add_left_cancel_iff] at heq2a,
-    rw [←nat.mod_add_div i k, ←nat.mod_add_div j k, heq1a, heq2a] }
+    rw [fin.eq_iff_veq, of_nat_val _ hai, of_nat_val _ haj, add_left_cancel_iff] at heq1,
+    rw [fin.eq_iff_veq, of_nat_val _ hbi, of_nat_val _ hbj, add_left_cancel_iff] at heq2,
+    rw [←nat.mod_add_div i k, ←nat.mod_add_div j k, heq1, heq2] }
 end
 
 -- Number of black cells in a subgrid, inequality.
@@ -631,23 +635,14 @@ begin
   { rw nat.succ_eq_add_one, linarith },
   have hbo1 : nat.succ b_val < 2019,
   { rw nat.succ_eq_add_one, linarith },
-  have h2019 : nat.succ 2018 = 2019,
-  { rw nat.succ_eq_add_one,
-    norm_num },
   have hao : fin.of_nat (a_val + 1) = ⟨a_val + 1, hao1⟩,
-  { unfold fin.of_nat,
-    apply fin.eq_of_veq,
+  { apply fin.eq_of_veq,
     unfold fin.val,
-    rw h2019,
-    apply nat.mod_eq_of_lt,
-    linarith },
+    exact of_nat_val _ (by linarith only [ha]) },
   have hbo : fin.of_nat (b_val + 1) = ⟨b_val + 1, hbo1⟩,
-  { unfold fin.of_nat,
-    apply fin.eq_of_veq,
+  { apply fin.eq_of_veq,
     unfold fin.val,
-    rw h2019,
-    apply nat.mod_eq_of_lt,
-    linarith },
+    exact of_nat_val _ (by linarith only [hb]) },
   repeat { unfold prod.fst prod.snd fin.val, rw [fin.le_def, prod.mk.inj_iff, fin.eq_iff_veq,
                                                  hao, hbo] },
   repeat { unfold fin.val, rw [prod.mk.inj_iff, fin.eq_iff_veq] },
@@ -938,15 +933,7 @@ theorem rows_alternate_two_cols_later' (c : colouring) (hbal2 : balanced_k c 2) 
   ((a, b) ∈ c ↔ ¬ (fin.of_nat (a + 1), b) ∈ c) ↔
     ((a, b2) ∈ c ↔ ¬ (fin.of_nat (a + 1), b2) ∈ c) :=
 begin
-  have hb2b : b2 = (fin.of_nat (b2 : ℕ)),
-  { rw fin.coe_eq_val,
-    unfold fin.of_nat,
-    rw fin.eq_iff_veq,
-    unfold fin.val,
-    rw nat.succ_eq_add_one,
-    symmetry,
-    apply nat.mod_eq_of_lt,
-    exact b2.is_lt },
+  have hb2b : b2 = (fin.of_nat (b2 : ℕ)) := (of_nat_eq_self b2).symm,
   convert rows_alternate_two_cols_later c hbal2 a b (b2 : ℕ) ha _ _,
   { norm_cast,
     exact hb2 },
@@ -1127,13 +1114,7 @@ begin
     exact iff.rfl },
   { rw ←not_iff_not,
     rw nat.succ_eq_add_one at ha,
-    have hf : ((fin.of_nat k : fin 2019) : ℕ) = k,
-    { unfold fin.of_nat,
-      rw fin.coe_eq_val,
-      unfold fin.val,
-      rw nat.succ_eq_add_one,
-      rw nat.mod_eq_of_lt,
-      linarith },
+    have hf : ((fin.of_nat k : fin 2019) : ℕ) = k := of_nat_coe _ (by linarith only [ha]),
     have ha1 : ((fin.of_nat k : fin 2019) : ℕ) < 2018,
     { rw hf,
       linarith },
@@ -1158,10 +1139,8 @@ begin
     rw [mem_filter, mem_filter],
     have hf : a = (fin.of_nat a.fst.val, a.snd),
     { ext,
-      { unfold prod.fst fin.of_nat,
-        unfold fin.val,
-        rw nat.mod_eq_of_lt,
-        exact a.fst.is_lt },
+      { unfold prod.fst,
+        exact (of_nat_val_self a.fst).symm },
       { refl } },
     rw [hf, row_alternating_first_row c h a.fst.val a.snd a.fst.is_lt] at ha,
     rw ha,
@@ -1180,10 +1159,8 @@ begin
     rw [hu, true_and] at ha,
     have hf : a = (fin.of_nat a.fst.val, a.snd),
     { ext,
-      { unfold prod.fst fin.of_nat,
-        unfold fin.val,
-        rw nat.mod_eq_of_lt,
-        exact a.fst.is_lt },
+      { unfold prod.fst,
+        exact (of_nat_val_self a.fst).symm },
       { refl } },
     rw [hf, row_alternating_first_row c h a.fst.val a.snd a.fst.is_lt],
     rw fin.coe_eq_val at ha,
@@ -1199,8 +1176,8 @@ begin
   -- work?
   unfold filter,
   intros a b ha,
-  rw fin.coe_eq_val at ha,
-  have halt : a.val + 1 < 2018 + 1 := add_lt_add_right ha 1,
+  have halt : (a : ℕ) + 1 < 2018 + 1 := add_lt_add_right ha 1,
+  norm_num at halt,
   erw mem_filter,
   erw mem_filter,
   unfold prod.fst prod.snd,
@@ -1209,12 +1186,7 @@ begin
     cases h with hu heq,
     intro h2,
     cases h2 with h2u h2,
-    unfold fin.of_nat at h2,
-    rw fin.coe_eq_val at *,
-    rw fin.coe_eq_val at h2,
-    unfold fin.val at h2,
-    rw nat.succ_eq_add_one at h2,
-    rw nat.mod_eq_of_lt halt at h2,
+    rw of_nat_coe _ halt at h2,
     rw ←nat.even_iff at *,
     rw nat.even_add at h2,
     norm_num at h2,
@@ -1225,12 +1197,8 @@ begin
     have h2 := h (mem_univ _),
     split,
     { exact mem_univ _ },
-    { unfold fin.of_nat at h2,
+    { rw of_nat_coe _ halt at h2,
       rw fin.coe_eq_val at *,
-      rw fin.coe_eq_val at h2,
-      unfold fin.val at h2,
-      rw nat.succ_eq_add_one at h2,
-      rw nat.mod_eq_of_lt halt at h2,
       rw ←nat.even_iff at *,
       rw nat.even_add at h2,
       norm_num at h2,
@@ -1415,9 +1383,6 @@ theorem sub_black_split_rows (c : colouring) (a b : fin 2019) (k1_1 k1_2 k2 : �
   sub_black c a b (k1_1 + k1_2) k2 =
     sub_black c a b k1_1 k2 + sub_black c (fin.of_nat ((a : ℕ) + k1_1)) b k1_2 k2 :=
 begin
-  have h2019 : nat.succ 2018 = 2019,
-  { rw nat.succ_eq_add_one,
-    norm_num },
   unfold sub_black,
   rw [←card_union_add_card_inter],
   symmetry,
@@ -1440,28 +1405,13 @@ begin
       { rcases hm with ⟨ha1, hb1, ha2, hb2⟩,
         repeat { split },
         { exact hmc },
-        { unfold fin.of_nat at ha1,
-          rw fin.le_iff_val_le_val at ha1,
-          unfold fin.val at ha1,
-          conv at ha1
-          begin
-            to_lhs,
-            congr,
-            skip,
-            rw h2019
-          end,
-          rw [nat.mod_eq_of_lt h, fin.coe_eq_val] at ha1,
+        { rw fin.le_iff_val_le_val at ha1,
+          rw [of_nat_val _ h, fin.coe_eq_val] at ha1,
           rw fin.le_iff_val_le_val,
           linarith },
         { exact hb1 },
         { convert ha2 using 1,
-          unfold fin.of_nat,
-          rw [fin.coe_eq_val, fin.coe_eq_val],
-          unfold fin.val,
-          rw h2019,
-          rw fin.coe_eq_val at h,
-          rw nat.mod_eq_of_lt h,
-          rw add_assoc },
+          rw [of_nat_coe _ h, add_assoc] },
         { exact hb2 } } },
     { intro hm,
       rcases hm with ⟨hmc, ha1, hb1, ha2, hb2⟩,
@@ -1471,25 +1421,12 @@ begin
         { left,
           exact and.intro ha1 (and.intro hb1 (and.intro hx hb2)) },
         { right,
-          unfold fin.of_nat,
-          repeat { rw fin.coe_eq_val },
-          rw fin.coe_eq_val at h,
-          rw fin.le_iff_val_le_val,
-          unfold fin.val,
+          rw [fin.le_iff_val_le_val, of_nat_val _ h, of_nat_coe _ h],
           repeat { split },
-          { conv
-            begin
-              to_lhs,
-              congr,
-              skip,
-              rw h2019
-            end,
-            rw nat.mod_eq_of_lt h,
-            rw fin.coe_eq_val at hx,
-            exact not_lt.mp hx },
+          { exact not_lt.mp hx },
           { exact hb1 },
           { convert ha2 using 1,
-            rw [h2019, nat.mod_eq_of_lt h, fin.coe_eq_val, add_assoc] },
+            rw add_assoc },
           { exact hb2 } } } } },
   { convert card_empty,
     unfold subcolouring,
@@ -1499,18 +1436,9 @@ begin
       split,
       { intro hx,
         rcases hx with ⟨⟨ha1, hb1, ha2, hb2⟩, ⟨ha3, hb3, ha4, hb4⟩⟩,
-        unfold fin.of_nat at ha3,
         rw fin.le_iff_val_le_val at ha3,
-        unfold fin.val at ha3,
+        rw of_nat_val _ h at ha3,
         rw fin.coe_eq_val at ha2,
-        conv at ha3
-        begin
-          to_lhs,
-          congr,
-          skip,
-          rw h2019
-        end,
-        rw nat.mod_eq_of_lt h at ha3,
         linarith },
       { exact false.elim } },
     { exact classical.dec_pred _ } }
@@ -1553,9 +1481,6 @@ theorem row_sub_black_add_complement (c : row_colouring) (a : fin 2019) (k2 : �
     (hk2 : (a : ℕ) + k2 ≤ 2019) :
   row_sub_black c a k2 + row_sub_black (row_complement c) a k2 = k2 :=
 begin
-  have h2019 : nat.succ 2018 = 2019,
-  { rw nat.succ_eq_add_one,
-    norm_num },
   unfold row_sub_black row_complement row_subcolouring,
   rw [←card_union_add_card_inter, ←filter_union, filter_inter, inter_filter,
       union_sdiff_of_subset (subset_univ _), inter_sdiff_self, filter_empty, filter_empty,
@@ -1572,33 +1497,22 @@ begin
     split,
     { exact (nat.sub_lt_left_iff_lt_add hpa).mpr hpa2 },
     { rw nat.add_sub_of_le hpa,
-      unfold fin.of_nat,
-      rw fin.eq_iff_veq,
-      unfold fin.val,
-      rw nat.mod_eq_of_lt,
-      exact p.is_lt } },
+      exact of_nat_eq_self p } },
   { intros i hi,
     rw mem_filter,
-    unfold fin.of_nat,
-    rw [fin.le_iff_val_le_val, fin.coe_eq_val, fin.coe_eq_val],
-    unfold fin.val,
-    rw fin.coe_eq_val at hk2,
-    have hai : a.val + i < 2019, {linarith},
+    have hai : (a : ℕ) + i < 2019, {linarith},
+    rw [fin.le_iff_val_le_val, of_nat_val _ hai, of_nat_coe _ hai],
     repeat { split },
     { exact mem_univ _ },
-    { rw [h2019, nat.mod_eq_of_lt hai],
+    { rw fin.coe_eq_val,
       linarith },
-    { rw [h2019, nat.mod_eq_of_lt hai],
-      linarith } },
+    { linarith } },
   { intros i j hi hj,
     rw fin.coe_eq_val at *,
-    unfold fin.of_nat,
     rw fin.eq_iff_veq,
-    unfold fin.val,
-    rw h2019,
     have hai : a.val + i < 2019, {linarith},
     have haj : a.val + j < 2019, {linarith},
-    rw [nat.mod_eq_of_lt hai, nat.mod_eq_of_lt haj],
+    rw [of_nat_val _ hai, of_nat_val _ haj],
     intro hij,
     exact nat.add_left_cancel hij }
 end
@@ -1770,16 +1684,10 @@ theorem sub_black_two_rows (c : row_colouring) (a b : fin 2019) (k2 : ℕ)
 begin
   rw sub_black_split_rows (colouring_of_row_colouring c) a b 1 1 k2
      (show (a : ℕ) + 1 < 2019, by linarith),
-  have h2019 : nat.succ 2018 = 2019,
-  { rw nat.succ_eq_add_one,
-    norm_num },
   have hf : ((fin.of_nat ((a : ℕ) + 1) : fin 2019) : ℕ) = (a : ℕ) + 1,
   { repeat { rw fin.coe_eq_val },
     rw fin.coe_eq_val at ha,
-    unfold fin.of_nat fin.val,
-    rw h2019,
-    rw nat.mod_eq_of_lt,
-    linarith },
+    exact of_nat_val _ (by linarith) },
   have hle : row_sub_black c b k2 ≤ k2 := nat.le.intro (row_sub_black_add_complement c b k2 hk2),
   by_cases ha2 : (a : ℕ) % 2 = 0,
   { rw sub_black_even_row c a b k2 ha2 hk2,
@@ -1819,15 +1727,8 @@ begin
       rw [nat.succ_eq_add_one, hk1a (by linarith), add_mul, one_mul, add_left_cancel_iff],
       symmetry,
       refine sub_black_two_rows c _ b k2 _ hk2,
-      unfold fin.of_nat,
-      rw fin.coe_eq_val,
-      unfold fin.val,
-      have h2019 : nat.succ 2018 = 2019,
-      { rw nat.succ_eq_add_one,
-        norm_num },
-      rw h2019,
       have ha : ((a : ℕ) + 2 * k1a) < 2019, {linarith},
-      rw nat.mod_eq_of_lt ha,
+      rw of_nat_coe _ ha,
       linarith },
     { rw nat.succ_eq_add_one at h,
       linarith } }
@@ -1846,15 +1747,8 @@ begin
       ring },
     { rw ←sub_black_one_row c a b k2 hk2,
       rw sub_black_even_rows c _ b k1 k2 _ hk2,
-      unfold fin.of_nat,
-      rw [fin.coe_eq_val, fin.coe_eq_val],
-      unfold fin.val,
-      rw fin.coe_eq_val at h,
-      have h2019 : nat.succ 2018 = 2019,
-      { rw nat.succ_eq_add_one,
-        norm_num },
-      rw h2019,
-      linarith [nat.mod_le (a.val + 1) 2019] },
+      rw of_nat_coe _ ha,
+      linarith },
     { linarith } },
   { have hk1 : k1 = 0, {linarith},
     have ha2 : (a : ℕ) = 2018, {linarith},
@@ -2013,6 +1907,317 @@ end
 -- The next aim is to prove that a row colouring is row_balanced if
 -- and only if the positions (between two cells) where the colour does
 -- *not* change all have the same parity.
+
+-- The number of black cells in columns of a row, split into two
+-- parts.
+theorem row_sub_black_split_cols (c : row_colouring) (a : fin 2019) (k2_1 k2_2 : ℕ)
+    (h : (a : ℕ) + k2_1 < 2019) :
+  row_sub_black c a (k2_1 + k2_2) =
+    row_sub_black c a k2_1 + row_sub_black c (fin.of_nat ((a : ℕ) + k2_1)) k2_2 :=
+begin
+  unfold row_sub_black,
+  rw ←card_union_add_card_inter,
+  symmetry,
+  convert nat.add_zero (card (row_subcolouring c a (k2_1 + k2_2))),
+  { unfold row_subcolouring,
+    rw ←filter_or,
+    ext x,
+    rw [mem_filter, mem_filter],
+    split,
+    { intro hm,
+      cases hm with hmc hm,
+      cases hm,
+      { repeat { split },
+        { exact hmc },
+        { exact hm.1 },
+        { linarith [hm.2] } },
+      { repeat { split },
+        { exact hmc },
+        { cases hm with hm1 hm2,
+          rw [fin.le_iff_val_le_val, of_nat_val _ h, fin.coe_eq_val] at hm1,
+          rw fin.le_iff_val_le_val,
+          linarith },
+        { cases hm with hm1 hm2,
+          rw [of_nat_coe _ h, add_assoc] at hm2,
+          exact hm2 } } },
+    { intro hm,
+      rcases hm with ⟨hmc, ha1, ha2⟩,
+      split,
+      { exact hmc },
+      { by_cases hx : (x : ℕ) < (a : ℕ) + k2_1,
+        { left,
+          exact and.intro ha1 hx },
+        { right,
+          rw not_lt at hx,
+          split,
+          { rw [fin.le_iff_val_le_val, of_nat_val _ h, fin.coe_eq_val],
+            rw [fin.coe_eq_val, fin.coe_eq_val] at hx,
+            exact hx },
+          { convert ha2 using 1,
+            rw [of_nat_coe _ h, add_assoc] } } } } },
+  { convert card_empty,
+    unfold row_subcolouring,
+    rw ←filter_and,
+    convert filter_false c,
+    { ext,
+      split,
+      { intro hx,
+        rcases hx with ⟨⟨ha1, ha2⟩, ha3, ha4⟩,
+        rw fin.le_iff_val_le_val at ha1,
+        rw fin.coe_eq_val at *,
+        rw fin.coe_eq_val at *,
+        rw [fin.le_iff_val_le_val, of_nat_val _ h] at ha3,
+        linarith },
+      { exact false.elim } },
+    { exact classical.dec_pred _ } }
+end
+
+-- There are no black cells in zero columns.
+theorem row_sub_black_zero_cols (c : row_colouring) (a : fin 2019) : row_sub_black c a 0 = 0 :=
+begin
+  unfold row_sub_black,
+  convert card_empty,
+  unfold row_subcolouring,
+  convert filter_false c,
+  { ext,
+    split,
+    { intro h,
+      cases h with h1 h2,
+      rw fin.le_iff_val_le_val at h1,
+      rw [fin.coe_eq_val, fin.coe_eq_val] at h2,
+      linarith },
+    { exact false.elim } },
+  { exact classical.dec_pred _ }
+end
+
+-- The number of black cells in one column.
+theorem row_sub_black_one_col (c : row_colouring) (a : fin 2019) :
+  row_sub_black c a 1 = ite (a ∈ c) 1 0 :=
+begin
+  unfold row_sub_black,
+  by_cases h : a ∈ c,
+  { rw if_pos h,
+    convert card_singleton a,
+    unfold row_subcolouring,
+    ext x,
+    rw [mem_filter, mem_singleton],
+    split,
+    { intro hx,
+      rcases hx with ⟨hxc, hxa1, hxa2⟩,
+      rw fin.le_iff_val_le_val at hxa1,
+      rw [fin.coe_eq_val, fin.coe_eq_val] at hxa2,
+      have hxa : x.val = a.val, {linarith},
+      rw ←fin.eq_iff_veq at hxa,
+      exact hxa },
+    { intro hx,
+      rw hx,
+      exact and.intro h (and.intro (by refl) (by linarith)) } },
+  { rw if_neg h,
+    convert card_empty,
+    unfold row_subcolouring,
+    ext x,
+    rw mem_filter,
+    split,
+    { intro hx,
+      rcases hx with ⟨hxc, hxa1, hxa2⟩,
+      rw fin.le_iff_val_le_val at hxa1,
+      rw [fin.coe_eq_val, fin.coe_eq_val] at hxa2,
+      have hxa : x.val = a.val, {linarith},
+      rw ←fin.eq_iff_veq at hxa,
+      rw hxa at hxc,
+      contradiction },
+    { exact false.elim } }
+end
+
+-- The colour of individual cells in columns of a row that alternate
+-- in colour.
+theorem row_cols_alternate_colour (c : row_colouring) (a : fin 2019) (k2 : ℕ)
+    (hk2 : (a : ℕ) + k2 ≤ 2019)
+    (halt : ∀ k : ℕ, k + 1 < k2 → (fin.of_nat (a + k) ∈ c ↔ ¬ fin.of_nat (a + k + 1) ∈ c)) :
+  ∀ k : ℕ, k < k2 → (fin.of_nat (a + k) ∈ c ↔ (a ∈ c ↔ k % 2 = 0)) :=
+begin
+  intros k,
+  induction k with x hx,
+  { intro h0,
+    rw [add_zero, fin.coe_eq_val, of_nat_eq_self],
+    simp },
+  { intro hx2,
+    rw nat.succ_eq_add_one at hx2,
+    have hx3 : x < k2, {linarith},
+    have hx4 := hx hx3,
+    have hax := halt x hx2,
+    conv
+    begin
+      congr,
+      congr,
+      congr,
+      rw [nat.succ_eq_add_one, ←add_assoc],
+    end,
+    rw [←nat.even_iff, nat.even_succ, nat.even_iff],
+    tauto }
+end
+
+-- The number of black cells in columns of a row that alternate in
+-- colour.
+theorem row_sub_black_cols_alternate (c : row_colouring) (a : fin 2019) (k2 : ℕ)
+    (hk2 : (a : ℕ) + k2 ≤ 2019)
+    (halt : ∀ k : ℕ, k + 1 < k2 → (fin.of_nat (a + k) ∈ c ↔ ¬ fin.of_nat (a + k + 1) ∈ c)) :
+  row_sub_black c a k2 = ite (a ∈ c) ((k2 + 1) / 2) (k2 / 2) :=
+begin
+  induction k2 with x hx,
+  { norm_num,
+    exact row_sub_black_zero_cols c a },
+  { conv
+    begin
+      to_lhs,
+      rw nat.succ_eq_add_one
+    end,
+    rw [row_sub_black_split_cols c a x 1 hk2, row_sub_black_one_col _ _],
+    rw hx _ _,
+    { conv
+      begin
+        to_lhs,
+        congr,
+        skip,
+        congr,
+        rw row_cols_alternate_colour c a (nat.succ x) hk2 halt x (nat.lt_succ_self x)
+      end,
+      conv
+      begin
+        to_rhs,
+        rw nat.succ_eq_add_one x,
+      end,
+      by_cases h : a ∈ c; by_cases he : nat.even x,
+      { conv
+        begin
+          to_lhs,
+          congr,
+          skip,
+          congr,
+          rw ←nat.even_iff
+        end,
+        rw [if_pos h, if_pos h],
+        conv
+        begin
+          to_lhs,
+          congr,
+          skip,
+          congr,
+          rw iff_true_intro (iff_of_true h he),
+        end,
+        rw if_true,
+        rw nat.even_iff at he,
+        rw [←nat.mod_add_div x 2, he, zero_add, add_assoc],
+        conv
+        begin
+          to_lhs,
+          congr,
+          congr,
+          rw add_comm
+        end,
+        rw nat.add_mul_div_left _ _ (dec_trivial : 2 > 0),
+        conv
+        begin
+          to_rhs,
+          rw add_comm
+        end,
+        rw nat.add_mul_div_left _ _ (dec_trivial : 2 > 0),
+        norm_num,
+        exact add_comm _ _ },
+      { conv
+        begin
+          to_lhs,
+          congr,
+          skip,
+          congr,
+          rw ←nat.even_iff
+        end,
+        rw [if_pos h, if_pos h],
+        have hn: ¬ (a ∈ c ↔ nat.even x), {tauto},
+        conv
+        begin
+          to_lhs,
+          congr,
+          skip,
+          congr,
+          rw iff_false_intro hn,
+        end,
+        rw if_false,
+        rw nat.not_even_iff at he,
+        rw [←nat.mod_add_div x 2, he, add_zero],
+        conv
+        begin
+          to_lhs,
+          rw [add_comm, ←add_assoc, nat.add_mul_div_left _ _ (dec_trivial : 2 > 0)]
+        end,
+        rw [(show 1 + 2 * (x / 2) + 1 + 1 = 3 + 2 * (x / 2), by ring),
+            nat.add_mul_div_left _ _ (dec_trivial : 2 > 0)],
+        norm_num },
+      { conv
+        begin
+          to_lhs,
+          congr,
+          skip,
+          congr,
+          rw ←nat.even_iff
+        end,
+        rw [if_neg h, if_neg h],
+        have hn: ¬ (a ∈ c ↔ nat.even x), {tauto},
+        conv
+        begin
+          to_lhs,
+          congr,
+          skip,
+          congr,
+          rw iff_false_intro hn,
+        end,
+        rw if_false,
+        rw nat.even_iff at he,
+        rw [←nat.mod_add_div x 2, he, add_zero, zero_add,
+            nat.mul_div_cancel_left _ (dec_trivial : 2 > 0), add_comm,
+            nat.add_mul_div_left _ _ (dec_trivial : 2 > 0)],
+        norm_num },
+      { conv
+        begin
+          to_lhs,
+          congr,
+          skip,
+          congr,
+          rw ←nat.even_iff
+        end,
+        rw [if_neg h, if_neg h],
+        have hn: (a ∈ c ↔ nat.even x), {tauto},
+        conv
+        begin
+          to_lhs,
+          congr,
+          skip,
+          congr,
+          rw iff_true_intro hn,
+        end,
+        rw if_true,
+        rw nat.not_even_iff at he,
+        rw [←nat.mod_add_div x 2, he, add_zero, nat.add_mul_div_left _ _ (dec_trivial : 2 > 0)],
+        conv
+        begin
+          to_rhs,
+          rw add_assoc,
+          congr,
+          congr,
+          skip,
+          rw add_comm,
+        end,
+        rw [←add_assoc, nat.add_mul_div_left _ _ (dec_trivial : 2 > 0)],
+        norm_num,
+        exact add_comm _ _ } },
+    { rw nat.succ_eq_add_one at hk2,
+      linarith },
+    { intros k hk,
+      have hks : k + 1 < nat.succ x,
+      { rw nat.succ_eq_add_one,
+        linarith },
+      exact halt k hks } }
+end
 
 -- TODO: rest of solution.
 
