@@ -1,7 +1,7 @@
 -- BMO2 2020 problem 3.
 
 import data.finset
-import data.fintype
+import data.fintype.basic
 import data.nat.parity
 import logic.function
 import tactic.linarith
@@ -1930,7 +1930,7 @@ begin
       { repeat { split },
         { exact hmc },
         { exact hm.1 },
-        { linarith [hm.2] } },
+        { linarith } },
       { repeat { split },
         { exact hmc },
         { cases hm with hm1 hm2,
