@@ -2219,6 +2219,176 @@ begin
       exact halt k hks } }
 end
 
+-- The number of black cells in an even number of columns of a row,
+-- where each pair alternate in colour.
+theorem row_sub_black_even_cols_alternate (c : row_colouring) (a : fin 2019) (k2 : ℕ)
+    (hk2 : (a : ℕ) + 2 * k2 ≤ 2019)
+    (halt : ∀ k : ℕ, k < k2 → (fin.of_nat (a + 2 * k) ∈ c ↔ ¬ fin.of_nat (a + 2 * k + 1) ∈ c)) :
+  row_sub_black c a (2 * k2) = k2 :=
+begin
+  induction k2 with k2x hk2x,
+  { norm_num,
+    exact row_sub_black_zero_cols c a },
+  { rw [nat.succ_eq_add_one, nat.left_distrib],
+    norm_num,
+    rw [nat.succ_eq_add_one, nat.left_distrib] at hk2,
+    have ha : (a : ℕ) + 2 * k2x < 2019, {linarith},
+    rw row_sub_black_split_cols _ _ _ _ ha,
+    { congr,
+      { apply hk2x,
+        { exact le_of_lt ha },
+        { intros k hk,
+          have hks : k < nat.succ k2x, { exact nat.lt.step hk },
+          exact halt k hks } },
+      { convert row_sub_black_cols_alternate c (fin.of_nat ((a : ℕ) + 2 * k2x)) 2 _ _,
+        { norm_num },
+        { rw of_nat_coe _ ha,
+          norm_num at hk2,
+          rw add_assoc,
+          exact hk2 },
+        { intros k hk,
+          rw of_nat_coe _ ha,
+          have hk0 : k = 0, {linarith},
+          rw [hk0, add_zero],
+          apply halt,
+          exact nat.lt_succ_self k2x } } } }
+end
+
+-- The number of black cells in an odd number of columns of a row,
+-- where pairs in even positions (relative to the starting point of
+-- those columns) alternate in colour.
+theorem row_sub_black_odd_cols_alternate_0 (c : row_colouring) (a : fin 2019) (k2 : ℕ)
+    (hk2 : (a : ℕ) + 2 * k2 + 1 ≤ 2019)
+    (halt : ∀ k : ℕ, k < k2 → (fin.of_nat (a + 2 * k) ∈ c ↔ ¬ fin.of_nat (a + 2 * k + 1) ∈ c)) :
+  row_sub_black c a (2 * k2 + 1) = ite (fin.of_nat (a + 2 * k2) ∈ c) (k2 + 1) k2 :=
+begin
+  rw [row_sub_black_split_cols _ _ _ _ hk2, row_sub_black_one_col],
+  have hk2a : (a : ℕ) + 2 * k2 ≤ 2019, {linarith},
+  rw row_sub_black_even_cols_alternate _ _ _ hk2a halt,
+  by_cases h : fin.of_nat (a + 2 * k2) ∈ c,
+  { rw [if_pos h, if_pos h] },
+  { rw [if_neg h, if_neg h, add_zero] }
+end
+
+-- Thus, the odd imbalance in that case.
+theorem row_odd_imbalance_cols_alternate_0 (c : row_colouring) (a : fin 2019) (k2 : ℕ)
+    (hk2 : (a : ℕ) + 2 * k2 + 1 ≤ 2019)
+    (halt : ∀ k : ℕ, k < k2 → (fin.of_nat (a + 2 * k) ∈ c ↔ ¬ fin.of_nat (a + 2 * k + 1) ∈ c)) :
+  row_odd_imbalance c a k2 hk2 = 1 :=
+begin
+  unfold row_odd_imbalance,
+  rw row_sub_black_odd_cols_alternate_0 c a k2 hk2 halt,
+  by_cases h : fin.of_nat (a + 2 * k2) ∈ c,
+  { rw if_pos h,
+    push_cast,
+    ring },
+  { rw if_neg h,
+    ring }
+end
+
+-- The number of black cells in an odd number of columns of a row,
+-- where pairs in odd positions (relative to the starting point of
+-- those columns) alternate in colour.
+theorem row_sub_black_odd_cols_alternate_1 (c : row_colouring) (a : fin 2019) (k2 : ℕ)
+    (hk2 : (a : ℕ) + 2 * k2 + 1 ≤ 2019)
+    (halt : ∀ k : ℕ, k < k2 → (fin.of_nat (a + 1 + 2 * k) ∈ c ↔
+                                ¬ fin.of_nat (a + 1 + 2 * k + 1) ∈ c)) :
+  row_sub_black c a (2 * k2 + 1) = ite (a ∈ c) (k2 + 1) k2 :=
+begin
+  rw add_comm,
+  by_cases h0 : k2 = 0,
+  { rw h0,
+    norm_num,
+    exact row_sub_black_one_col _ _ },
+  { have hk2pos : 0 < k2 := nat.pos_of_ne_zero h0,
+    have hk2a : (a : ℕ) + 1 < 2019, {linarith},
+    rw [row_sub_black_split_cols _ _ _ _ hk2a, row_sub_black_one_col],
+    rw [add_assoc, add_comm (2 * k2) 1, ←add_assoc, ←of_nat_coe ((a : ℕ) + 1) hk2a] at hk2,
+    rw row_sub_black_even_cols_alternate _ _ _ hk2 _,
+    { by_cases h : a ∈ c,
+      { rw [if_pos h, if_pos h],
+        exact add_comm _ _ },
+      { rw [if_neg h, if_neg h, zero_add] }  },
+    { intros k hk,
+      rw of_nat_coe _ hk2a,
+      exact halt k hk } }
+end
+
+-- Thus, the odd imbalance in that case.
+theorem row_odd_imbalance_cols_alternate_1 (c : row_colouring) (a : fin 2019) (k2 : ℕ)
+    (hk2 : (a : ℕ) + 2 * k2 + 1 ≤ 2019)
+    (halt : ∀ k : ℕ, k < k2 → (fin.of_nat (a + 1 + 2 * k) ∈ c ↔
+                                ¬ fin.of_nat (a + 1 + 2 * k + 1) ∈ c)) :
+  row_odd_imbalance c a k2 hk2 = 1 :=
+begin
+  unfold row_odd_imbalance,
+  rw row_sub_black_odd_cols_alternate_1 c a k2 hk2 halt,
+  by_cases h : a ∈ c,
+  { rw if_pos h,
+    push_cast,
+    ring },
+  { rw if_neg h,
+    ring }
+end
+
+-- The columns of a row always alternate at the given parity.
+def row_cols_alternate_at_parity (c : row_colouring) (parity : ℕ) : Prop :=
+∀ k : ℕ, k < 2018 → k % 2 = parity → (fin.of_nat k ∈ c ↔ ¬ fin.of_nat (k + 1) ∈ c)
+
+-- The columns of a row always alternate at some parity.
+def row_cols_alternate_some_parity (c : row_colouring) : Prop :=
+row_cols_alternate_at_parity c 0 ∨ row_cols_alternate_at_parity c 1
+
+-- If the columns of a row always alternate at some parity, it is
+-- row_balanced.
+theorem row_balanced_if_row_cols_alternate_at_some_parity (c : row_colouring)
+    (halt : row_cols_alternate_some_parity c) : row_balanced c :=
+begin
+  intros k hk a ha,
+  convert le_refl 1,
+  have hapar : (a : ℕ) % 2 = 0 ∨ (a : ℕ) % 2 = 1,
+  { by_cases h : (a : ℕ) % 2 = 0,
+    { left,
+      exact h },
+    { right,
+      have h2 : (a : ℕ) % 2 < 2 := nat.mod_lt _ (by norm_num),
+      have h3 : 0 < (a : ℕ) % 2 := nat.pos_of_ne_zero h,
+      linarith } },
+  cases halt; cases hapar,
+  { apply row_odd_imbalance_cols_alternate_0 c a k ha,
+    intros k1 hk1,
+    unfold row_cols_alternate_at_parity at halt,
+    apply halt,
+    { linarith },
+    { simpa } },
+  { apply row_odd_imbalance_cols_alternate_1 c a k ha,
+    intros k1 hk1,
+    unfold row_cols_alternate_at_parity at halt,
+    apply halt,
+    { linarith },
+    { rw nat.add_mul_mod_self_left,
+      have ham := (nat.mod_add_div (a : ℕ) 2).symm,
+      rw hapar at ham,
+      rw [ham, add_assoc, add_comm _ 1, ←add_assoc],
+      norm_num } },
+  { apply row_odd_imbalance_cols_alternate_1 c a k ha,
+    intros k1 hk1,
+    unfold row_cols_alternate_at_parity at halt,
+    apply halt,
+    { linarith },
+    { rw nat.add_mul_mod_self_left,
+      have ham := (nat.mod_add_div (a : ℕ) 2).symm,
+      rw hapar at ham,
+      rw [ham, add_assoc, add_comm _ 1, ←add_assoc],
+      norm_num } },
+  { apply row_odd_imbalance_cols_alternate_0 c a k ha,
+    intros k1 hk1,
+    unfold row_cols_alternate_at_parity at halt,
+    apply halt,
+    { linarith },
+    { simpa } }
+end
+
 -- TODO: rest of solution.
 
 -- The remaining two parts of the sum for the result.
