@@ -2369,6 +2369,111 @@ begin
     { simpa } }
 end
 
+-- If an odd number of columns of a row alternate in colour except
+-- possibly at the ends, the middle part alternates in colour.
+theorem row_cols_alternate_ends_middle_alt (c : row_colouring) (a : fin 2019) (k2 : ℕ)
+    (hk2 : (a : ℕ) + 2 * k2 + 3 ≤ 2019)
+    (halt : ∀ k : ℕ, 0 < k → k < 2 * k2 + 1 →
+                     (fin.of_nat (a + k) ∈ c ↔ ¬ fin.of_nat (a + k + 1) ∈ c)) :
+  ∀ (k : ℕ), k + 1 < 2 * k2 + 1 → (fin.of_nat ((a : ℕ) + 1 + k) ∈ c ↔ ¬ fin.of_nat ((a : ℕ) + 1 + k + 1) ∈ c) :=
+begin
+  intros k hk,
+  rw (show (a : ℕ) + 1 + k = (a : ℕ) + (k + 1), by ring),
+  apply halt (k + 1),
+  { linarith },
+  { exact hk }
+end
+
+-- The number of black cells in an odd number of columns of a row that
+-- alternate in colour except at the ends.
+theorem row_sub_black_cols_alternate_ends (c : row_colouring) (a : fin 2019) (k2 : ℕ)
+    (hk2 : (a : ℕ) + 2 * k2 + 3 ≤ 2019)
+    (halt : ∀ k : ℕ, 0 < k → k < 2 * k2 + 1 →
+                     (fin.of_nat (a + k) ∈ c ↔ ¬ fin.of_nat (a + k + 1) ∈ c))
+    (hnalt1 : a ∈ c ↔ fin.of_nat (a + 1) ∈ c)
+    (hnalt2 : fin.of_nat (a + 2 * k2 + 1) ∈ c ↔ fin.of_nat (a + 2 * k2 + 2) ∈ c) :
+  row_sub_black c a (2 * k2 + 3) = ite (a ∈ c) (k2 + 3) k2 :=
+begin
+  rw (show 2 * k2 + 3 = 1 + (2 * k2 + 1) + 1, by ring),
+  have hs1 : (a : ℕ) + (1 + (2 * k2 + 1)) < 2019, {linarith},
+  rw [row_sub_black_split_cols _ _ _ _ hs1, row_sub_black_one_col,
+      (show (a : ℕ) + (1 + (2 * k2 + 1)) = (a : ℕ) + 2 * k2 + 2, by ring)],
+  have hs2 : (a : ℕ) + 1 < 2019, {linarith},
+  have hendcol : fin.of_nat (a + 2 * k2 + 2) ∈ c ↔ a ∈ c,
+  { rw [hnalt1, ←hnalt2, (show (a : ℕ) + 2 * k2 + 1 = (a : ℕ) + 1 + 2 * k2, by ring)],
+    conv
+    begin
+      to_lhs,
+      congr,
+      congr,
+      rw ←of_nat_coe _ hs2
+    end,
+    rw row_cols_alternate_colour c (fin.of_nat ((a : ℕ) + 1)) (2 * k2 + 1) _ _ (2 * k2) _,
+    all_goals { try { rw of_nat_coe _ hs2 } },
+    { simp },
+    { linarith },
+    { exact row_cols_alternate_ends_middle_alt c a k2 hk2 halt },
+    { linarith } },
+  conv
+  begin
+    to_lhs,
+    congr,
+    skip,
+    congr,
+    rw hendcol
+  end,
+  rw [row_sub_black_split_cols _ _ _ _ hs2, row_sub_black_one_col],
+  rw row_sub_black_cols_alternate c (fin.of_nat ((a : ℕ) + 1)) (2 * k2 + 1) _ _,
+  all_goals { try { rw of_nat_coe _ hs2 } },
+  { conv
+    begin
+      to_lhs,
+      congr,
+      congr,
+      skip,
+      congr,
+      rw ←hnalt1
+    end,
+    by_cases h : a ∈ c,
+    { simp [h, nat.succ_eq_add_one],
+      ring },
+    { conv
+      begin
+        to_lhs,
+        congr,
+        congr,
+        skip,
+        congr,
+        skip,
+        skip,
+        rw [add_comm, nat.add_mul_div_left 1 k2 (show 2 > 0, by norm_num)],
+        norm_num
+      end,
+      simp [h] } },
+  { linarith },
+  { exact row_cols_alternate_ends_middle_alt c a k2 hk2 halt }
+end
+
+-- Thus, the odd imbalance in that case.
+theorem row_odd_imbalance_cols_alternate_ends (c : row_colouring) (a : fin 2019) (k2 : ℕ)
+    (hk2 : (a : ℕ) + 2 * k2 + 3 ≤ 2019)
+    (halt : ∀ k : ℕ, 0 < k → k < 2 * k2 + 1 →
+                     (fin.of_nat (a + k) ∈ c ↔ ¬ fin.of_nat (a + k + 1) ∈ c))
+    (hnalt1 : a ∈ c ↔ fin.of_nat (a + 1) ∈ c)
+    (hnalt2 : fin.of_nat (a + 2 * k2 + 1) ∈ c ↔ fin.of_nat (a + 2 * k2 + 2) ∈ c) :
+  row_odd_imbalance c a (k2 + 1) hk2 = 3 :=
+begin
+  unfold row_odd_imbalance,
+  erw row_sub_black_cols_alternate_ends c a k2 hk2 halt hnalt1 hnalt2,
+  by_cases h : a ∈ c,
+  { rw if_pos h,
+    push_cast,
+    ring },
+  { rw if_neg h,
+    push_cast,
+    ring }
+end
+
 -- TODO: rest of solution.
 
 -- The remaining two parts of the sum for the result.
