@@ -544,7 +544,10 @@ begin
   unfold balanced_colourings_r_no_c balanced_colourings_no_r_c balanced_colourings_r
     balanced_colourings_no_r,
   rw [filter_filter, filter_filter],
-  convert card_image_of_injective (filter (λ (a : colouring), not_rows_alternate a ∧ cols_alternate a) balanced_colourings) transpose_colouring_bijective.1,
+  convert card_image_of_injective
+          (filter (λ (a : colouring), not_rows_alternate a ∧ cols_alternate a)
+                  balanced_colourings)
+          transpose_colouring_bijective.1,
   ext,
   rw [mem_image, mem_filter],
   split,
@@ -2375,7 +2378,8 @@ theorem row_cols_alternate_ends_middle_alt (c : row_colouring) (a : fin 2019) (k
     (hk2 : (a : ℕ) + 2 * k2 + 3 ≤ 2019)
     (halt : ∀ k : ℕ, 0 < k → k < 2 * k2 + 1 →
                      (fin.of_nat (a + k) ∈ c ↔ ¬ fin.of_nat (a + k + 1) ∈ c)) :
-  ∀ (k : ℕ), k + 1 < 2 * k2 + 1 → (fin.of_nat ((a : ℕ) + 1 + k) ∈ c ↔ ¬ fin.of_nat ((a : ℕ) + 1 + k + 1) ∈ c) :=
+  ∀ (k : ℕ), k + 1 < 2 * k2 + 1 →
+             (fin.of_nat ((a : ℕ) + 1 + k) ∈ c ↔ ¬ fin.of_nat ((a : ℕ) + 1 + k + 1) ∈ c) :=
 begin
   intros k hk,
   rw (show (a : ℕ) + 1 + k = (a : ℕ) + (k + 1), by ring),
