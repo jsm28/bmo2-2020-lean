@@ -2864,9 +2864,117 @@ begin
   sorry
 end
 
+-- The following argument relies on 2019 being odd; for a grid with
+-- even side, the numbers of row colourings alternating at each parity
+-- would not be equal.
+
+-- Reverse the order of a row colouring.
+def reverse_row_colouring (c : row_colouring) : row_colouring :=
+finset.univ.filter (λ p : row, fin.of_nat (2018 - (p : ℕ)) ∈ c)
+
+-- Reversing twice produces the original row colouring.
+theorem reverse_row_colouring_involutive : function.involutive reverse_row_colouring :=
+begin
+  intro c,
+  unfold reverse_row_colouring,
+  ext,
+  erw [mem_filter, mem_filter],
+  have hlt : 2018 - (a : ℕ) < 2019, {linarith [nat.sub_le 2018 (a : ℕ)]},
+  rw of_nat_coe (2018 - (a : ℕ)) hlt,
+  rw nat.sub_sub_assoc (show 2018 ≤ 2018, by refl),
+  { rw [(show (2018 - 2018) = 0, by ring), zero_add, fin.coe_eq_val, of_nat_eq_self a],
+    simp },
+  { rw fin.coe_eq_val,
+    linarith [a.is_lt] }
+end
+
+-- And reversing is thus bijective.
+theorem reverse_row_colouring_bijective: function.bijective reverse_row_colouring :=
+function.involutive.bijective reverse_row_colouring_involutive
+
+-- And the composition is the identity.
+theorem reverse_row_colouring_twice_id : reverse_row_colouring ∘ reverse_row_colouring = id :=
+begin
+  rw ←function.involutive_iff_iter_2_eq_id.elim_left reverse_row_colouring_involutive,
+  refl
+end
+
+-- And the composition is the identity, variant form.
+theorem reverse_row_colouring_twice_id' (c : row_colouring) :
+  reverse_row_colouring (reverse_row_colouring c) = c :=
+begin
+  change (reverse_row_colouring ∘ reverse_row_colouring) c = c,
+  rw reverse_row_colouring_twice_id,
+  refl
+end
+
+-- Row colourings alternating at odd parity are the reverse of those
+-- alternating at even parity.
+theorem row_alt_colourings_1_eq_reverse_row_alt_colourings_0 :
+  row_alt_colourings_1 = image reverse_row_colouring row_alt_colourings_0 :=
+begin
+  ext c,
+  split,
+  { intro hc1,
+    rw mem_image,
+    use reverse_row_colouring c,
+    rw reverse_row_colouring_twice_id',
+    split,
+    { unfold row_alt_colourings_1 at hc1,
+      rw mem_filter at hc1,
+      cases hc1 with hc1u hc1,
+      unfold row_alt_colourings_0,
+      rw mem_filter,
+      split,
+      { exact mem_univ _ },
+      { intros k hk hpar,
+        unfold reverse_row_colouring,
+        erw [mem_filter, mem_filter],
+        rw [of_nat_coe k (by linarith only [hk]), of_nat_coe (k + 1) (by linarith only [hk]),
+            add_comm k 1, ←nat.sub_sub 2018 1 k],
+        norm_num,
+        rw [iff.comm, not_iff_comm, iff.comm],
+        convert hc1 (2017 - k) _ _,
+        { rw [(show 2018 = 1 + 2017, by norm_num),
+              nat.add_sub_assoc (show k ≤ 2017, by linarith only [hk]), add_comm] },
+        { linarith only [nat.sub_le 2017 k] },
+        { rw [←nat.not_even_iff, nat.even_sub (show k ≤ 2017, by linarith only [hk]),
+              nat.even_iff, nat.even_iff],
+          norm_num,
+          exact hpar } } },
+    { refl } },
+  { intro hc0,
+    rw mem_image at hc0,
+    rcases hc0 with ⟨c0, hc0, hcr⟩,
+    rw ←hcr,
+    unfold row_alt_colourings_0 at hc0,
+    rw mem_filter at hc0,
+    cases hc0 with hc0u hc0,
+    unfold row_alt_colourings_1,
+    rw mem_filter,
+    split,
+    { exact mem_univ _ },
+    { intros k hk hpar,
+      unfold reverse_row_colouring,
+      erw [mem_filter, mem_filter],
+      rw [of_nat_coe k (by linarith only [hk]), of_nat_coe (k + 1) (by linarith only [hk]),
+          add_comm k 1, ←nat.sub_sub 2018 1 k],
+      norm_num,
+      rw [iff.comm, not_iff_comm, iff.comm],
+      convert hc0 (2017 - k) _ _,
+      { rw [(show 2018 = 1 + 2017, by norm_num),
+            nat.add_sub_assoc (show k ≤ 2017, by linarith only [hk]), add_comm] },
+      { linarith only [nat.sub_le 2017 k] },
+      { rw [←nat.even_iff, nat.even_sub (show k ≤ 2017, by linarith only [hk]),
+            nat.even_iff, nat.even_iff],
+        norm_num,
+        exact hpar } } }
+end
+
 theorem result_1 : card row_alt_colourings_1 = 2^1010 :=
 begin
-  sorry
+  rw [←result_0, row_alt_colourings_1_eq_reverse_row_alt_colourings_0,
+      card_image_of_injective _ reverse_row_colouring_bijective.1]
 end
 
 -- The colour of individual cells in a row_cols_alternate colouring.
