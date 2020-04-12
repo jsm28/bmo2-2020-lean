@@ -2869,9 +2869,87 @@ begin
   sorry
 end
 
+-- The colour of individual cells in a row_cols_alternate colouring.
+theorem row_cols_alternate_colour' (c : row_colouring) (halt: row_cols_alternate c)
+    (a : fin 2019) : a ∈ c ↔ (fin.of_nat 0 ∈ c ↔ (a : ℕ) % 2 = 0) :=
+begin
+  set a0 : fin 2019 := fin.of_nat 0 with ha0,
+  set k : ℕ := (a : ℕ) with hk,
+  have ha : a = fin.of_nat ((a0 : ℕ) + k),
+  { rw [ha0, of_nat_coe 0 (by norm_num), zero_add, hk, fin.coe_eq_val, of_nat_eq_self a] },
+  rw ha,
+  apply row_cols_alternate_colour c a0 2019,
+  { rw [ha0, of_nat_coe 0 (by norm_num), zero_add] },
+  { intros k2 hk2,
+    rw [ha0, of_nat_coe 0 (by norm_num), zero_add],
+    convert halt (fin.of_nat k2) _,
+    { exact (of_nat_coe k2 (by linarith)).symm },
+    { rw of_nat_coe k2 (by linarith),
+      linarith } },
+  { rw hk,
+    exact a.is_lt }
+end
+
 theorem result_01 : card row_alt_colourings_01 = 2 :=
 begin
-  sorry
+  refine card_eq_of_bijective (λ i h, finset.univ.filter (λ x, (x : ℕ) % 2 = i % 2)) _ _ _,
+  { intros c hc,
+    unfold row_alt_colourings_01 at hc,
+    rw mem_filter at hc,
+    cases hc with hcu hc,
+    use ite (fin.of_nat 0 ∈ c) 0 1,
+    split,
+    { by_cases h : fin.of_nat 0 ∈ c,
+      all_goals { simp [h] } },
+    { ext x,
+      rw [mem_filter, row_cols_alternate_colour' c hc x],
+      by_cases h : fin.of_nat 0 ∈ c,
+      all_goals { simp [h] },
+      all_goals { norm_num } } },
+  { intros i hi,
+    unfold row_alt_colourings_01,
+    rw mem_filter,
+    split,
+    { exact mem_univ _ },
+    { intros a ha,
+      erw [mem_filter, mem_filter],
+      split,
+      { intro h,
+        cases h with hau hai,
+        intro ha1,
+        cases ha1 with ha1u ha1i,
+        rw of_nat_coe _ (show (a : ℕ) + 1 < 2019, by linarith only [ha]) at ha1i,
+        rw ←hai at ha1i,
+        have ha1ib := sub_mod_eq_zero_of_mod_eq _ _ _ ha1i,
+        simp at ha1ib,
+        norm_num at ha1ib },
+      { intro h,
+        rw not_and at h,
+        replace h := h (mem_univ _),
+        use mem_univ _,
+        rw of_nat_coe _ (show (a : ℕ) + 1 < 2019, by linarith only [ha]) at h,
+        by_cases hpar : i % 2 = 0,
+        { rw [hpar, ←nat.even_iff, nat.even_succ, not_not, nat.even_iff] at h,
+          rw [hpar, h] },
+        { rw [←nat.even_iff, nat.not_even_iff] at hpar,
+          rw [hpar, ←nat.not_even_iff, not_not, nat.even_succ, nat.not_even_iff] at h,
+          rw [hpar, h] } } } },
+  { intros i j hi hj heq,
+    rw ext at heq,
+    have heq0 := heq (fin.of_nat 0),
+    rw [mem_filter, mem_filter, of_nat_coe 0 (by norm_num)] at heq0,
+    norm_num at heq0,
+    by_cases h : i = 0,
+    { rw h at heq0,
+      norm_num at heq0,
+      rw nat.mod_eq_of_lt hj at heq0,
+      cc },
+    { have h1 : 0 < i := nat.pos_of_ne_zero h,
+      have h2 : i = 1, {linarith only [h1, hi]},
+      rw h2 at heq0,
+      norm_num at heq0,
+      rw [eq_comm, ←nat.even_iff, nat.not_even_iff, nat.mod_eq_of_lt hj] at heq0,
+      cc } }
 end
 
 -- The result of the problem.
