@@ -2478,16 +2478,254 @@ begin
     ring }
 end
 
+-- Thus, not row_balanced in that case.
+theorem not_row_balanced_cols_alternate_ends (c : row_colouring) (a : fin 2019) (k2 : ℕ)
+    (hk2 : (a : ℕ) + 2 * k2 + 3 ≤ 2019)
+    (halt : ∀ k : ℕ, 0 < k → k < 2 * k2 + 1 →
+                     (fin.of_nat (a + k) ∈ c ↔ ¬ fin.of_nat (a + k + 1) ∈ c))
+    (hnalt1 : a ∈ c ↔ fin.of_nat (a + 1) ∈ c)
+    (hnalt2 : fin.of_nat (a + 2 * k2 + 1) ∈ c ↔ fin.of_nat (a + 2 * k2 + 2) ∈ c) :
+  ¬ row_balanced c :=
+begin
+  intro hbal,
+  have hbal2 := hbal (k2 + 1) (by linarith) a hk2,
+  rw row_odd_imbalance_cols_alternate_ends c a k2 hk2 halt hnalt1 hnalt2 at hbal2,
+  norm_num at hbal2
+end
+
+-- Given two non-alternating places an odd distance apart, we can find
+-- such places for which the columns alternate in between.
+theorem row_middle_alt_if_not_alternate_ends (c : row_colouring) (a : fin 2019) (k2 : ℕ)
+    (hk2 : (a : ℕ) + 2 * k2 + 3 ≤ 2019)
+    (hnalt1 : a ∈ c ↔ fin.of_nat (a + 1) ∈ c)
+    (hnalt2 : fin.of_nat (a + 2 * k2 + 1) ∈ c ↔ fin.of_nat (a + 2 * k2 + 2) ∈ c) :
+  ∃ (b : fin 2019) (k3 : ℕ), (b : ℕ) + 2 * k3 + 3 ≤ 2019 ∧
+    (∀ k : ℕ, 0 < k → k < 2 * k3 + 1 →
+              (fin.of_nat (b + k) ∈ c ↔ ¬ fin.of_nat (b + k + 1) ∈ c)) ∧
+    (b ∈ c ↔ fin.of_nat (b + 1) ∈ c) ∧
+    (fin.of_nat (b + 2 * k3 + 1) ∈ c ↔ fin.of_nat (b + 2 * k3 + 2) ∈ c) :=
+begin
+  induction k2 using nat.case_strong_induction_on with k2a hk2a generalizing a,
+  { use a,
+    use 0,
+    use hk2,
+    split,
+    { intros k hk0 hk1,
+      exfalso,
+      linarith },
+    { exact and.intro hnalt1 hnalt2 } },
+  { by_cases hnalt : ∃ k : ℕ, 0 < k ∧ k < 2 * (nat.succ k2a) + 1 ∧
+        (fin.of_nat ((a : ℕ) + k) ∈ c ↔ fin.of_nat ((a : ℕ) + k + 1) ∈ c),
+    { rcases hnalt with ⟨k, hk0, hk1, halt⟩,
+      by_cases hpar : k % 2 = 0,
+      { set k3 := k / 2 with hk3,
+        have hk3a : 2 * k3 = k,
+        { rw ←nat.dvd_iff_mod_eq_zero at hpar,
+          rw [hk3, nat.mul_div_cancel' hpar] },
+        set a2 : fin 2019 := fin.of_nat ((a : ℕ) + 2 * k3) with ha2,
+        have ha2a : (a : ℕ) + 2 * k3 < 2019,
+        { rw hk3a,
+          linarith only [hk1, hk2] },
+        set k4 : ℕ := nat.succ k2a - k3 with hk4,
+        have hk3b : k3 ≤ nat.succ k2a,
+        { rw ←hk3a at hk1,
+          linarith only [hk1] },
+        have hk3c : 1 ≤ k3,
+        { linarith only [hk0, hk3a] },
+        have hk4b : k4 ≤ k2a,
+        { rw [hk4, nat.succ_eq_add_one],
+          apply nat.sub_le_right_of_le_add,
+          linarith only [hk3c] },
+        have hk4c : k4 + k3 = nat.succ k2a,
+        { rw hk4,
+          apply nat.sub_add_cancel,
+          exact hk3b },
+        have hk4d : (a2 : ℕ) + 2 * k4 + 3 ≤ 2019,
+        { rw [ha2, of_nat_coe _ ha2a,
+              (show (a : ℕ) + 2 * k3 + 2 * k4 = (a : ℕ) + 2 * (k4 + k3), by ring), hk4c],
+          exact hk2 },
+        rw [←hk3a, ←ha2, ←of_nat_coe _ ha2a, ←ha2] at halt,
+        apply hk2a k4 hk4b a2 hk4d halt,
+        rw [ha2, of_nat_coe _ ha2a,
+            (show (a : ℕ) + 2 * k3 + 2 * k4 = (a : ℕ) + 2 * (k4 + k3), by ring), hk4c],
+        exact hnalt2 },
+      { rw [←nat.even_iff, nat.not_even_iff] at hpar,
+        set k3 := k / 2 with hk3,
+        have hk3a : 2 * k3 + 1 = k,
+        { rw [hk3, add_comm],
+          conv
+          begin
+            to_lhs,
+            congr,
+            rw ←hpar
+          end,
+          rw nat.mod_add_div },
+        have hk3b : k3 ≤ k2a,
+        { rw [←hk3a, nat.succ_eq_add_one] at hk1,
+          linarith only [hk1] },
+        rw [←hk3a, ←add_assoc,
+            (show (a : ℕ) + 2 * k3 + 1 + 1 = (a : ℕ) + 2 * k3 + 2, by ring)] at halt,
+        exact hk2a k3 hk3b a (by linarith) hnalt1 halt } },
+    { use a,
+      use nat.succ k2a,
+      use hk2,
+      rw not_exists at hnalt,
+      split,
+      { intros k hk0 hk1,
+        rw [iff.comm, ←not_iff, iff.comm],
+        intro halt,
+        exact hnalt k (and.intro hk0 (and.intro hk1 halt)) },
+      { exact and.intro hnalt1 hnalt2 } } }
+end
+
+-- Thus, not row_balanced in that case.
+theorem not_row_balanced_if_not_alternate_ends (c : row_colouring) (a : fin 2019) (k2 : ℕ)
+    (hk2 : (a : ℕ) + 2 * k2 + 3 ≤ 2019)
+    (hnalt1 : a ∈ c ↔ fin.of_nat (a + 1) ∈ c)
+    (hnalt2 : fin.of_nat (a + 2 * k2 + 1) ∈ c ↔ fin.of_nat (a + 2 * k2 + 2) ∈ c) :
+  ¬ row_balanced c :=
+begin
+  have h := row_middle_alt_if_not_alternate_ends c a k2 hk2 hnalt1 hnalt2,
+  rcases h with ⟨b, k3, ⟨hk3, halt, hbnalt1, hbnalt2⟩⟩,
+  exact not_row_balanced_cols_alternate_ends c b k3 hk3 halt hbnalt1 hbnalt2
+end
+
+-- If a row colouring does not alternate at some parity, we can find
+-- two non-alternating places an odd distance apart.
+
+theorem not_alternate_ends_if_not_alt_some_parity (c : row_colouring)
+  (h : ¬ row_cols_alternate_some_parity c) : ∃ (a : fin 2019) (k2 : ℕ),
+    ((a : ℕ) + 2 * k2 + 3 ≤ 2019) ∧
+    (a ∈ c ↔ fin.of_nat (a + 1) ∈ c) ∧
+    (fin.of_nat (a + 2 * k2 + 1) ∈ c ↔ fin.of_nat (a + 2 * k2 + 2) ∈ c) :=
+begin
+  unfold row_cols_alternate_some_parity at h,
+  rw not_or_distrib at h,
+  unfold row_cols_alternate_at_parity at h,
+  rw [not_forall, not_forall] at h,
+  rcases h with ⟨⟨a1, ha1⟩, ⟨a2, ha2⟩⟩,
+  rw [not_imp, not_imp] at ha1,
+  rw [not_imp, not_imp] at ha2,
+  rcases ha1 with ⟨ha1, ha1p, ha1nalt⟩,
+  rcases ha2 with ⟨ha2, ha2p, ha2nalt⟩,
+  rw [iff.comm, not_iff, iff.comm, not_not] at ha1nalt,
+  rw [iff.comm, not_iff, iff.comm, not_not] at ha2nalt,
+  by_cases h : a1 < a2,
+  { set k2 := (a2 - a1) / 2 with hk2,
+    use fin.of_nat a1,
+    use k2,
+    rw of_nat_coe a1 (by linarith),
+    have ha2a1 : a2 - a1 = 2 * k2 + 1,
+    { rw hk2,
+      rw add_comm,
+      conv
+      begin
+        to_lhs,
+        rw ←nat.mod_add_div (a2 - a1) 2
+      end,
+      congr,
+      rw [←nat.not_even_iff, nat.even_sub (le_of_lt h), nat.even_iff, nat.even_iff, ha1p, ha2p],
+      norm_num },
+    rw [(show a1 + 2 * k2 + 3 = a1 + (2 * k2 + 1) + 2, by ring),
+        (show a1 + 2 * k2 + 2 = a1 + (2 * k2 + 1) + 1, by ring),
+        (show a1 + 2 * k2 + 1 = a1 + (2 * k2 + 1), by ring), ←ha2a1, add_comm a1 (a2 - a1),
+        nat.sub_add_cancel (le_of_lt h)],
+    exact and.intro (by linarith) (and.intro ha1nalt ha2nalt) },
+  { set k2 := (a1 - a2) / 2 with hk2,
+    use fin.of_nat a2,
+    use k2,
+    rw of_nat_coe a2 (by linarith),
+    have ha1a2 : a1 - a2 = 2 * k2 + 1,
+    { rw hk2,
+      rw add_comm,
+      conv
+      begin
+        to_lhs,
+        rw ←nat.mod_add_div (a1 - a2) 2
+      end,
+      congr,
+      rw [←nat.not_even_iff, nat.even_sub (le_of_not_lt h), nat.even_iff, nat.even_iff, ha1p,
+          ha2p],
+      norm_num },
+    rw [(show a2 + 2 * k2 + 3 = a2 + (2 * k2 + 1) + 2, by ring),
+        (show a2 + 2 * k2 + 2 = a2 + (2 * k2 + 1) + 1, by ring),
+        (show a2 + 2 * k2 + 1 = a2 + (2 * k2 + 1), by ring), ←ha1a2, add_comm a2 (a1 - a2),
+        nat.sub_add_cancel (le_of_not_lt h)],
+    exact and.intro (by linarith) (and.intro ha2nalt ha1nalt) }
+end
+
+-- Thus, not row_balanced in that case.
+theorem not_row_balanced_if_not_alt_some_parity (c : row_colouring)
+  (h : ¬ row_cols_alternate_some_parity c) : ¬ row_balanced c :=
+begin
+  have h2 := not_alternate_ends_if_not_alt_some_parity c h,
+  rcases h2 with ⟨a, k2, ⟨hk2, hnalt1, hnalt2⟩⟩,
+  exact not_row_balanced_if_not_alternate_ends c a k2 hk2 hnalt1 hnalt2
+end
+
+-- Thus, row_cols_alternate_some_parity if and only if row_balanced.
+theorem row_cols_alternate_some_parity_iff_row_balanced (c : row_colouring) :
+  row_cols_alternate_some_parity c ↔ row_balanced c :=
+begin
+  split,
+  { exact row_balanced_if_row_cols_alternate_at_some_parity c },
+  { contrapose,
+    exact not_row_balanced_if_not_alt_some_parity c }
+end
+
+-- So now rewrite the split in terms of
+-- row_cols_alternate_some_parity.
+
+def row_alt_colourings : finset row_colouring :=
+finset.univ.filter row_cols_alternate_some_parity
+
+theorem row_balanced_eq_row_alt : row_balanced_colourings = row_alt_colourings :=
+begin
+  unfold row_balanced_colourings row_alt_colourings,
+  ext,
+  rw [mem_filter, mem_filter],
+  rw row_cols_alternate_some_parity_iff_row_balanced
+end
+
+def row_alt_colourings_r_c : finset row_colouring :=
+row_alt_colourings.filter row_cols_alternate
+
+def row_alt_colourings_r_no_c : finset row_colouring :=
+row_alt_colourings.filter row_not_cols_alternate
+
+theorem card_row_balanced_r_c_eq :
+  card row_balanced_colourings_r_c = card row_alt_colourings_r_c :=
+begin
+  unfold row_balanced_colourings_r_c row_alt_colourings_r_c,
+  rw row_balanced_eq_row_alt
+end
+
+theorem card_row_balanced_r_no_c_eq :
+  card row_balanced_colourings_r_no_c = card row_alt_colourings_r_no_c :=
+begin
+  unfold row_balanced_colourings_r_no_c row_alt_colourings_r_no_c,
+  rw row_balanced_eq_row_alt
+end
+
+-- Thus the cardinality of the set of balanced colourings, in two
+-- parts based on row_balanced.
+theorem card_split_2_alt :
+  card balanced_colourings = card row_alt_colourings_r_c +
+    2 * card row_alt_colourings_r_no_c :=
+begin
+  rw [card_split_2_row, card_row_balanced_r_c_eq, card_row_balanced_r_no_c_eq]
+end
+
 -- TODO: rest of solution.
 
 -- The remaining two parts of the sum for the result.
 
-theorem result_r_c : card row_balanced_colourings_r_c = 2 :=
+theorem result_r_c : card row_alt_colourings_r_c = 2 :=
 begin
   sorry
 end
 
-theorem result_r_no_c : card row_balanced_colourings_r_no_c = 2^1011 - 4 :=
+theorem result_r_no_c : card row_alt_colourings_r_no_c = 2^1011 - 4 :=
 begin
   sorry
 end
@@ -2495,6 +2733,6 @@ end
 -- The result of the problem.
 theorem p3_result : finset.card balanced_colourings = 2^1012 - 6 :=
 begin
-  rw [card_split_2_row, result_r_c, result_r_no_c],
+  rw [card_split_2_alt, result_r_c, result_r_no_c],
   norm_num
 end
