@@ -2708,7 +2708,7 @@ begin
 end
 
 -- Thus the cardinality of the set of balanced colourings, in two
--- parts based on row_balanced.
+-- parts based on row_cols_alternate_some_parity.
 theorem card_split_2_alt :
   card balanced_colourings = card row_alt_colourings_r_c +
     2 * card row_alt_colourings_r_no_c :=
@@ -2716,16 +2716,160 @@ begin
   rw [card_split_2_row, card_row_balanced_r_c_eq, card_row_balanced_r_no_c_eq]
 end
 
+-- The most convenient form to calculate is in terms of those
+-- alternating at odd parity, even parity or both parities, so now
+-- convert into that form.
+
+-- Columns alternate if and only if they alternate at both parities.
+theorem row_cols_alternate_iff_alternate_both_parities (c : row_colouring) :
+  row_cols_alternate c ↔ (row_cols_alternate_at_parity c 0 ∧ row_cols_alternate_at_parity c 1) :=
+begin
+  split,
+  { intro h,
+    split,
+    { intros k hk hpar,
+      set a : fin 2019 := fin.of_nat k with ha,
+      have hk2 : k = (a : ℕ),
+      { rw ha,
+        symmetry,
+        exact of_nat_coe k (by linarith only [hk]) },
+      rw hk2,
+      rw hk2 at hk,
+      exact h a hk },
+    { intros k hk hpar,
+      set a : fin 2019 := fin.of_nat k with ha,
+      have hk2 : k = (a : ℕ),
+      { rw ha,
+        symmetry,
+        exact of_nat_coe k (by linarith only [hk]) },
+      rw hk2,
+      rw hk2 at hk,
+      exact h a hk } },
+  { intro h,
+    cases h with h0 h1,
+    intros a ha,
+    by_cases hpar : (a : ℕ) % 2 = 0,
+    { set k := (a : ℕ) with hk,
+      have hk2 : a = fin.of_nat k := (of_nat_eq_self a).symm,
+      rw hk2,
+      exact h0 k ha hpar },
+    { rw [←nat.even_iff, nat.not_even_iff] at hpar,
+      set k := (a : ℕ) with hk,
+      have hk2 : a = fin.of_nat k := (of_nat_eq_self a).symm,
+      rw hk2,
+      exact h1 k ha hpar } }
+end
+
+def row_cols_alternate_at_parity_0 (c : row_colouring) : Prop :=
+row_cols_alternate_at_parity c 0
+
+def row_cols_alternate_at_parity_1 (c : row_colouring) : Prop :=
+row_cols_alternate_at_parity c 1
+
+def row_alt_colourings_0 : finset row_colouring :=
+finset.univ.filter row_cols_alternate_at_parity_0
+
+def row_alt_colourings_1 : finset row_colouring :=
+finset.univ.filter row_cols_alternate_at_parity_1
+
+def row_alt_colourings_01 : finset row_colouring :=
+finset.univ.filter row_cols_alternate
+
+theorem row_alt_colourings_union :
+  row_alt_colourings = row_alt_colourings_0 ∪ row_alt_colourings_1 :=
+filter_or _
+
+theorem row_alt_colourings_inter :
+  row_alt_colourings_01 = row_alt_colourings_0 ∩ row_alt_colourings_1 :=
+begin
+  ext,
+  erw [mem_inter, mem_filter, mem_filter, mem_filter,
+       row_cols_alternate_iff_alternate_both_parities],
+  unfold row_cols_alternate_at_parity_0 row_cols_alternate_at_parity_1,
+  simp
+end
+
+theorem row_alt_colourings_r_c_eq_row_alt_colourings_01 :
+  row_alt_colourings_r_c = row_alt_colourings_01 :=
+begin
+  ext,
+  erw [mem_filter, mem_filter, mem_filter, row_cols_alternate_iff_alternate_both_parities],
+  unfold row_cols_alternate_some_parity,
+  tauto
+end
+
+theorem row_alt_colourings_01_subset : row_alt_colourings_01 ⊆ row_alt_colourings :=
+begin
+  rw subset_iff,
+  intro x,
+  erw [mem_filter, mem_filter, row_cols_alternate_iff_alternate_both_parities],
+  unfold row_cols_alternate_some_parity,
+  tauto
+end
+
+theorem row_alt_colourings_r_no_c_eq_sdiff :
+  row_alt_colourings_r_no_c = row_alt_colourings \ row_alt_colourings_01 :=
+begin
+  ext,
+  erw [mem_sdiff, mem_filter, mem_filter, mem_filter],
+  unfold row_not_cols_alternate,
+  tauto
+end
+
+theorem card_row_alt_r_c_eq :
+  card row_alt_colourings_r_c = card row_alt_colourings_01 :=
+begin
+  rw row_alt_colourings_r_c_eq_row_alt_colourings_01
+end
+
+theorem card_row_alt_eq :
+  card row_alt_colourings =
+    card row_alt_colourings_0 + card row_alt_colourings_1 - card row_alt_colourings_01 :=
+begin
+  rw [row_alt_colourings_union, row_alt_colourings_inter],
+  have h := card_union_add_card_inter row_alt_colourings_0 row_alt_colourings_1,
+  rw ←h,
+  simp
+end
+
+theorem card_row_alt_r_no_c_eq :
+  card row_alt_colourings_r_no_c =
+    card row_alt_colourings_0 + card row_alt_colourings_1 - 2 * card row_alt_colourings_01 :=
+begin
+  rw [row_alt_colourings_r_no_c_eq_sdiff, card_sdiff row_alt_colourings_01_subset,
+      card_row_alt_eq, nat.sub_sub],
+  ring
+end
+
+-- Thus the cardinality of the set of balanced colourings, in two
+-- parts based on the parity at which the row alternates.  (The form
+-- here with a subtraction and addition not fully cancelled avoids
+-- needing to prove inequalities required here for cancellation with ℕ
+-- subtraction.)
+theorem card_split_2_parity :
+  card balanced_colourings = 2 * card row_alt_colourings_0 + 2 * card row_alt_colourings_1 -
+    4 * card row_alt_colourings_01 + card row_alt_colourings_01 :=
+begin
+  rw [card_split_2_alt, card_row_alt_r_c_eq, card_row_alt_r_no_c_eq, nat.mul_sub_left_distrib,
+      nat.left_distrib, add_comm, ←mul_assoc],
+  norm_num
+end
+
 -- TODO: rest of solution.
 
--- The remaining two parts of the sum for the result.
+-- The remaining parts of the expression for the result.
 
-theorem result_r_c : card row_alt_colourings_r_c = 2 :=
+theorem result_0 : card row_alt_colourings_0 = 2^1010 :=
 begin
   sorry
 end
 
-theorem result_r_no_c : card row_alt_colourings_r_no_c = 2^1011 - 4 :=
+theorem result_1 : card row_alt_colourings_1 = 2^1010 :=
+begin
+  sorry
+end
+
+theorem result_01 : card row_alt_colourings_01 = 2 :=
 begin
   sorry
 end
@@ -2733,6 +2877,6 @@ end
 -- The result of the problem.
 theorem p3_result : finset.card balanced_colourings = 2^1012 - 6 :=
 begin
-  rw [card_split_2_alt, result_r_c, result_r_no_c],
+  rw [card_split_2_parity, result_0, result_1, result_01],
   norm_num
 end
