@@ -1158,9 +1158,6 @@ theorem colouring_of_row_colouring_rows_alternate (c : row_colouring) :
   rows_alternate (colouring_of_row_colouring c) :=
 begin
   unfold colouring_of_row_colouring,
-  -- Why is unfolding filter here needed for the second rewrite to
-  -- work?
-  unfold filter,
   intros a b ha,
   have halt : (a : ℕ) + 1 < 2018 + 1 := add_lt_add_right ha 1,
   norm_num at halt,
