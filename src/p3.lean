@@ -2855,13 +2855,183 @@ begin
   norm_num
 end
 
--- TODO: rest of solution.
+-- Define a mapping from finset ℕ to infinite sequences of whether a
+-- given natural number is in a set, where 0 is present if and only if
+-- in the finset and subsequent elements say which odd n are positions
+-- where the set alternates.  This is used in turn to define such a
+-- mapping to row colourings.
+
+def map_to_infinite_seq : finset ℕ → ℕ → Prop
+| x 0 := 0 ∈ x
+| x (n + 1) :=
+    ite (n % 2 = 0 ∨ n / 2 + 1 ∈ x) (¬ map_to_infinite_seq x n) (map_to_infinite_seq x n)
+
+def map_to_alt_colouring (x : finset ℕ) : row_colouring :=
+finset.univ.filter (λ p : row, map_to_infinite_seq x (p : ℕ))
+
+def map_to_alt_colouring_domain : finset (finset ℕ) :=
+powerset (Ico 0 1010)
+
+theorem card_map_to_alt_colouring_domain : card map_to_alt_colouring_domain = 2^1010 :=
+begin
+  unfold map_to_alt_colouring_domain,
+  rw [card_powerset, Ico.card]
+end
+
+theorem map_to_alt_colouring_image :
+  image map_to_alt_colouring map_to_alt_colouring_domain = row_alt_colourings_0 :=
+begin
+  ext c,
+  split,
+  { intro h,
+    rw mem_image at h,
+    rcases h with ⟨x, hx, hmx⟩,
+    rw ←hmx,
+    erw mem_filter,
+    use mem_univ _,
+    intros k hk hpar,
+    erw [mem_filter, mem_filter],
+    rw [of_nat_coe k (by linarith), of_nat_coe (k + 1) (by linarith)],
+    have hmk1 : map_to_infinite_seq x (k + 1) =
+      ite (k % 2 = 0 ∨ k / 2 + 1 ∈ x) (¬ map_to_infinite_seq x k) (map_to_infinite_seq x k),
+    { refl },
+    rw [hmk1, hpar],
+    simp },
+  { intro h,
+    rw mem_image,
+    use (Ico 0 1010).filter
+      (λ x, ((x = 0 ∧ fin.of_nat 0 ∈ c) ∨
+            (0 < x ∧ (fin.of_nat (2 * x - 1) ∈ c ↔ ¬ fin.of_nat (2 * x) ∈ c)))),
+    erw mem_powerset,
+    use filter_subset _,
+    have hn : ∀ k : ℕ, k < 2019 → (fin.of_nat k ∈ map_to_alt_colouring ((Ico 0 1010).filter
+      (λ x, ((x = 0 ∧ fin.of_nat 0 ∈ c) ∨
+            (0 < x ∧ (fin.of_nat (2 * x - 1) ∈ c ↔ ¬ fin.of_nat (2 * x) ∈ c))))) ↔
+      fin.of_nat k ∈ c),
+    { intro k,
+      induction k with t ht,
+      { erw mem_filter,
+        intro h0,
+        rw of_nat_coe 0 (by norm_num),
+        unfold map_to_infinite_seq,
+        rw mem_filter,
+        norm_num },
+      { intro hst,
+        erw mem_filter,
+        erw mem_filter at ht,
+        rw of_nat_coe _ hst,
+        unfold map_to_infinite_seq,
+        rw nat.succ_eq_add_one at hst,
+        replace ht := ht (by linarith only [hst]),
+        rw [iff_true_intro (mem_univ _), true_and, of_nat_coe t (by linarith only [hst])] at ht,
+        rw [ht, iff_true_intro (mem_univ _), true_and],
+        have ht0 : 0 ≤ t / 2 + 1, {linarith only []},
+        have ht1 : 0 < t / 2 + 1, {linarith only []},
+        have ht2 : t / 2 + 1 < 1010,
+        { by_contradiction htx,
+          rw not_lt at htx,
+          have hty : 1009 ≤ t / 2, {linarith only [htx]},
+          rw nat.le_div_iff_mul_le _ _ (show 2 > 0, by norm_num) at hty,
+          linarith },
+        have ht3 : t / 2 + 1 ≠ 0,
+        { exact nat.succ_ne_zero _ },
+        conv
+        begin
+          to_lhs,
+          congr,
+          rw [mem_filter, Ico.mem, iff_true_intro ht0, iff_true_intro ht1, iff_true_intro ht2,
+              iff_false_intro ht3, true_and, true_and, true_and, false_and, false_or]
+        end,
+        erw mem_filter at h,
+        cases h with hcu h,
+        unfold row_cols_alternate_at_parity_0 row_cols_alternate_at_parity at h,
+        by_cases hpar : t % 2 = 0,
+        { rw nat.succ_eq_add_one t,
+          have hht := h t (by linarith only [hst]) hpar,
+          simp [hpar],
+          tauto },
+        { conv
+          begin
+            to_lhs,
+            congr,
+            rw [iff_false_intro hpar, false_or, nat.left_distrib]
+          end,
+          rw [←nat.even_iff, nat.not_even_iff] at hpar,
+          have ht4 := nat.mod_add_div t 2,
+          rw [hpar, add_comm] at ht4,
+          conv
+          begin
+            to_lhs,
+            congr,
+            rw [(show 2 * (t / 2) + 2 * 1 - 1 = 2 * (t / 2) + 1, by ring), ht4,
+                (show 2 * (t / 2) + 2 * 1 = 2 * (t / 2) + 1 + 1, by ring), ht4]
+          end,
+          rw nat.succ_eq_add_one t,
+          by_cases halt : fin.of_nat t ∈ c ↔ ¬ fin.of_nat (t + 1) ∈ c,
+          { simp [halt] },
+          { simp [halt],
+            tauto } } } },
+    ext a,
+    rw ←of_nat_eq_self a,
+    exact hn a.val a.is_lt }
+end
 
 -- The remaining parts of the expression for the result.
 
 theorem result_0 : card row_alt_colourings_0 = 2^1010 :=
 begin
-  sorry
+  rw [←map_to_alt_colouring_image, ←card_map_to_alt_colouring_domain],
+  apply card_image_of_inj_on,
+  intros x hx y hy heq,
+  ext,
+  by_cases h : a = 0,
+  { rw h,
+    have h0 : fin.of_nat 0 ∈ map_to_alt_colouring x ↔ fin.of_nat 0 ∈ map_to_alt_colouring y,
+    { rw heq },
+    erw [mem_filter, mem_filter] at h0,
+    rw of_nat_coe 0 (by norm_num) at h0,
+    unfold map_to_infinite_seq at h0,
+    simp only [true_and, mem_univ] at h0,
+    exact h0 },
+  { have ha : (fin.of_nat (2 * a - 1) ∈ map_to_alt_colouring x ↔
+               fin.of_nat (2 * a) ∈ map_to_alt_colouring x) ↔
+              (fin.of_nat (2 * a - 1) ∈ map_to_alt_colouring y ↔
+               fin.of_nat (2 * a) ∈ map_to_alt_colouring y), {rw heq},
+    erw [mem_filter, mem_filter, mem_filter, mem_filter] at ha,
+    have h1 : 1 ≤ a, {linarith only [nat.pos_of_ne_zero h]},
+    set b := a - 1 with hb,
+    have hb1 : a = b + 1, {rw [hb, nat.sub_add_cancel h1]},
+    rw [hb1, (show 2 * (b + 1) = 2 * b + 1 + 1, by ring), nat.add_sub_cancel] at ha,
+    by_cases hble : b ≤ 1008,
+    { rw [of_nat_coe (2 * b + 1) (by linarith only [hble]),
+          of_nat_coe (2 * b + 1 + 1) (by linarith only [hble])] at ha,
+      have hux : map_to_infinite_seq x (2 * b + 1 + 1) =
+        ite ((2 * b + 1) % 2 = 0 ∨ (2 * b + 1) / 2 + 1 ∈ x)
+            (¬ map_to_infinite_seq x (2 * b + 1)) (map_to_infinite_seq x (2 * b + 1)), {refl},
+      have huy : map_to_infinite_seq y (2 * b + 1 + 1) =
+        ite ((2 * b + 1) % 2 = 0 ∨ (2 * b + 1) / 2 + 1 ∈ y)
+            (¬ map_to_infinite_seq y (2 * b + 1)) (map_to_infinite_seq y (2 * b + 1)), {refl},
+      rw [hux, huy, add_comm (2 * b) 1, nat.add_mul_mod_self_left 1 2 b,
+          nat.add_mul_div_left _ _ (show 2 > 0, by norm_num)] at ha,
+      norm_num at ha,
+      rw ←hb1 at ha,
+      by_cases hax : a ∈ x; by_cases hay : a ∈ y; simp [hax, hay] at ha; tauto },
+    { have hage : 1010 ≤ a, {linarith},
+      erw mem_powerset at hx,
+      erw mem_powerset at hy,
+      have hnx : ¬ a ∈ x,
+      { intro hax,
+        have hax2 := mem_of_subset hx hax,
+        rw Ico.mem at hax2,
+        cases hax2 with hax2a hax2b,
+        linarith only [hage, hax2b] },
+      have hny : ¬ a ∈ y,
+      { intro hay,
+        have hay2 := mem_of_subset hy hay,
+        rw Ico.mem at hay2,
+        cases hay2 with hay2a hay2b,
+        linarith only [hage, hay2b] },
+      tauto } }
 end
 
 -- The following argument relies on 2019 being odd; for a grid with
