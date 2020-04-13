@@ -60,22 +60,31 @@ def balanced (c : colouring) : Prop :=
 def balanced_colourings : finset colouring :=
 finset.univ.filter balanced
 
--- Some lemmas about fin 2019 that are of use below.
+-- Some lemmas about fin.of_nat that are of use below.
 
-theorem of_nat_val (a : ℕ) (h : a < 2019) : ((fin.of_nat a) : fin 2019).val = a :=
+theorem of_nat_val {n : ℕ} (a : ℕ) (h : a < nat.succ n) :
+  ((fin.of_nat a) : fin (nat.succ n)).val = a :=
 nat.mod_eq_of_lt h
 
-theorem of_nat_val_self (a : fin 2019) : ((fin.of_nat a.val) : fin 2019).val = a.val :=
+theorem of_nat_val_self {n : ℕ} (a : fin (nat.succ n)) :
+  ((fin.of_nat a.val) : fin (nat.succ n)).val = a.val :=
 of_nat_val a.val a.is_lt
 
-theorem of_nat_eq_self (a : fin 2019) : fin.of_nat a.val = a :=
+theorem of_nat_val_eq_self {n : ℕ} (a : fin (nat.succ n)) : fin.of_nat a.val = a :=
 begin
   rw fin.eq_iff_veq,
   exact of_nat_val_self a
 end
 
-theorem of_nat_coe (a : ℕ) (h : a < 2019) : (((fin.of_nat a) : fin 2019) : ℕ) = a :=
+theorem of_nat_coe_eq_self {n : ℕ} (a : fin (nat.succ n)) : fin.of_nat (a : ℕ) = a :=
+of_nat_val_eq_self a
+
+theorem of_nat_coe {n : ℕ} (a : ℕ) (h : a < nat.succ n) :
+  (((fin.of_nat a) : fin (nat.succ n)) : ℕ) = a :=
 nat.mod_eq_of_lt h
+
+theorem of_nat_coe_zero {n : ℕ} : (((fin.of_nat 0) : fin (nat.succ n)) : ℕ) = 0 :=
+rfl
 
 -- Adding the numbers of black and white cells in a subgrid.
 theorem sub_black_add_sub_white (c : colouring) (a b : fin 2019) (k : ℕ)
@@ -641,11 +650,11 @@ begin
   have hao : fin.of_nat (a_val + 1) = ⟨a_val + 1, hao1⟩,
   { apply fin.eq_of_veq,
     unfold fin.val,
-    exact of_nat_val _ (by linarith only [ha]) },
+    exact of_nat_val _ (show a_val + 1 < 2019, by linarith only [ha]) },
   have hbo : fin.of_nat (b_val + 1) = ⟨b_val + 1, hbo1⟩,
   { apply fin.eq_of_veq,
     unfold fin.val,
-    exact of_nat_val _ (by linarith only [hb]) },
+    exact of_nat_val _ (show b_val + 1 < 2019, by linarith only [hb]) },
   repeat { unfold prod.fst prod.snd fin.val, rw [fin.le_def, prod.mk.inj_iff, fin.eq_iff_veq,
                                                  hao, hbo] },
   repeat { unfold fin.val, rw [prod.mk.inj_iff, fin.eq_iff_veq] },
@@ -750,11 +759,11 @@ begin
         cases h with h1 h2,
         repeat { rw h2 at h1 },
         repeat { rw prod.mk.inj_iff at h1 },
-        repeat { unfold fin.of_nat at h1 },
-        repeat { rw fin.eq_iff_veq at h1, unfold fin.val at h1 },
+        repeat { rw fin.eq_iff_veq at h1 },
         repeat { rw fin.coe_eq_val at h1 },
         repeat { rw hao2 at h1 },
         repeat { rw hbo2 at h1 },
+        rw [of_nat_val _ hao1, of_nat_val _ hbo1] at h1,
         repeat { cases h1 },
         { exact nat.succ_ne_self a.val h1_left },
         { exact nat.succ_ne_self a.val h1_left },
@@ -783,13 +792,9 @@ begin
           cases h with h1 h2,
           repeat { rw h2 at h1 },
           repeat { rw prod.mk.inj_iff at h1 },
-          repeat { unfold fin.of_nat at h1 },
-          repeat { rw fin.eq_iff_veq at h1, unfold fin.val at h1 },
-          repeat { rw fin.coe_eq_val at h1 },
           repeat { rw fin.eq_iff_veq at h1 },
-          unfold fin.val at h1,
-          repeat { rw hao2 at h1 },
-          repeat { rw hbo2 at h1 },
+          repeat { rw fin.coe_eq_val at h1 },
+          rw [of_nat_val _ hao1, of_nat_val _ hbo1] at h1,
           repeat { cases h1 },
           { exact nat.succ_ne_self a.val h1_left },
           { exact nat.succ_ne_self a.val h1_left } },
@@ -814,10 +819,8 @@ begin
         { intro h,
           cases h with h1 h2,
           rw [h2, prod.mk.inj_iff, fin.coe_eq_val] at h1,
-          unfold fin.of_nat at h1,
           repeat { rw fin.eq_iff_veq at h1 },
-          unfold fin.val at h1,
-          rw hbo2 at h1,
+          rw of_nat_val _ hbo1 at h1,
           exact nat.succ_ne_self b.val h1.2 },
         { exact false.elim } },
       { exact classical.dec_pred _ } } }
@@ -893,15 +896,15 @@ begin
       have hmx := hm (by linarith) h,
       rw hmx,
       have hb2ax : ((fin.of_nat m : fin 2019) : ℕ) < 2018,
-      { rw of_nat_coe m (by linarith),
+      { rw of_nat_coe m (show m < 2019, by linarith),
         linarith },
       convert rows_alternate_two_cols c hbal2 a (fin.of_nat m) ha hb2ax,
-      { exact (of_nat_coe m (by linarith)).symm },
-      { exact (of_nat_coe m (by linarith)).symm } },
+      { exact (of_nat_coe m (show m < 2019, by linarith)).symm },
+      { exact (of_nat_coe m (show m < 2019, by linarith)).symm } },
     { have hbv : b.val = m := nat.eq_of_lt_succ_of_not_lt hb2 h,
       have hbv2 : b = fin.of_nat m,
       { rw ← hbv,
-        exact (of_nat_eq_self b).symm },
+        exact (of_nat_val_eq_self b).symm },
       have hb2ax : ((fin.of_nat m : fin 2019) : ℕ) < 2018,
       { rw [fin.coe_eq_val, ←hbv, of_nat_val_self _, hbv],
         linarith },
@@ -916,7 +919,7 @@ theorem rows_alternate_two_cols_later' (c : colouring) (hbal2 : balanced_k c 2) 
   ((a, b) ∈ c ↔ ¬ (fin.of_nat (a + 1), b) ∈ c) ↔
     ((a, b2) ∈ c ↔ ¬ (fin.of_nat (a + 1), b2) ∈ c) :=
 begin
-  have hb2b : b2 = (fin.of_nat (b2 : ℕ)) := (of_nat_eq_self b2).symm,
+  have hb2b : b2 = (fin.of_nat (b2 : ℕ)) := (of_nat_val_eq_self b2).symm,
   convert rows_alternate_two_cols_later c hbal2 a b (b2 : ℕ) ha _ _,
   { norm_cast,
     exact hb2 },
@@ -1092,12 +1095,12 @@ theorem row_alternating_first_row (c : colouring) (h : rows_alternate c) (a : �
   (fin.of_nat a, b) ∈ c ↔ (((0 : fin (nat.succ 2018)), b) ∈ c ↔ a % 2 = 0) :=
 begin
   induction a with k hk,
-  { unfold fin.of_nat,
-    norm_num,
-    exact iff.rfl },
+  { rw fin.of_nat_zero,
+    norm_num },
   { rw ←not_iff_not,
     rw nat.succ_eq_add_one at ha,
-    have hf : ((fin.of_nat k : fin 2019) : ℕ) = k := of_nat_coe _ (by linarith only [ha]),
+    have hf : ((fin.of_nat k : fin 2019) : ℕ) = k :=
+      of_nat_coe _ (show k < 2019, by linarith only [ha]),
     have ha1 : ((fin.of_nat k : fin 2019) : ℕ) < 2018,
     { rw hf,
       linarith },
@@ -1231,7 +1234,8 @@ begin
     have ha2 := h (fin.of_nat 0) a ha,
     unfold colouring_of_row_colouring at ha2,
     erw [mem_filter, mem_filter] at ha2,
-    unfold prod.fst prod.snd fin.of_nat at ha2,
+    unfold prod.fst prod.snd at ha2,
+    rw of_nat_coe_zero at ha2,
     norm_num at ha2,
     exact ha2 }
 end
@@ -1480,7 +1484,7 @@ begin
     split,
     { exact (nat.sub_lt_left_iff_lt_add hpa).mpr hpa2 },
     { rw nat.add_sub_of_le hpa,
-      exact of_nat_eq_self p } },
+      exact of_nat_val_eq_self p } },
   { intros i hi,
     rw mem_filter,
     have hai : (a : ℕ) + i < 2019, {linarith},
@@ -1670,7 +1674,7 @@ begin
   have hf : ((fin.of_nat ((a : ℕ) + 1) : fin 2019) : ℕ) = (a : ℕ) + 1,
   { repeat { rw fin.coe_eq_val },
     rw fin.coe_eq_val at ha,
-    exact of_nat_val _ (by linarith) },
+    exact of_nat_val _ (show a.val + 1 < 2019, by linarith) },
   have hle : row_sub_black c b k2 ≤ k2 := nat.le.intro (row_sub_black_add_complement c b k2 hk2),
   by_cases ha2 : (a : ℕ) % 2 = 0,
   { rw sub_black_even_row c a b k2 ha2 hk2,
@@ -2022,7 +2026,7 @@ begin
   intros k,
   induction k with x hx,
   { intro h0,
-    rw [add_zero, fin.coe_eq_val, of_nat_eq_self],
+    rw [add_zero, of_nat_coe_eq_self],
     simp },
   { intro hx2,
     rw nat.succ_eq_add_one at hx2,
@@ -2614,7 +2618,7 @@ begin
   { set k2 := (a2 - a1) / 2 with hk2,
     use fin.of_nat a1,
     use k2,
-    rw of_nat_coe a1 (by linarith),
+    rw of_nat_coe a1 (show a1 < 2019, by linarith),
     have ha2a1 : a2 - a1 = 2 * k2 + 1,
     { rw hk2,
       rw add_comm,
@@ -2634,7 +2638,7 @@ begin
   { set k2 := (a1 - a2) / 2 with hk2,
     use fin.of_nat a2,
     use k2,
-    rw of_nat_coe a2 (by linarith),
+    rw of_nat_coe a2 (show a2 < 2019, by linarith),
     have ha1a2 : a1 - a2 = 2 * k2 + 1,
     { rw hk2,
       rw add_comm,
@@ -2732,7 +2736,7 @@ begin
       have hk2 : k = (a : ℕ),
       { rw ha,
         symmetry,
-        exact of_nat_coe k (by linarith only [hk]) },
+        exact of_nat_coe k (show k < 2019, by linarith only [hk]) },
       rw hk2,
       rw hk2 at hk,
       exact h a hk },
@@ -2741,7 +2745,7 @@ begin
       have hk2 : k = (a : ℕ),
       { rw ha,
         symmetry,
-        exact of_nat_coe k (by linarith only [hk]) },
+        exact of_nat_coe k (show k < 2019, by linarith only [hk]) },
       rw hk2,
       rw hk2 at hk,
       exact h a hk } },
@@ -2750,12 +2754,12 @@ begin
     intros a ha,
     by_cases hpar : (a : ℕ) % 2 = 0,
     { set k := (a : ℕ) with hk,
-      have hk2 : a = fin.of_nat k := (of_nat_eq_self a).symm,
+      have hk2 : a = fin.of_nat k := (of_nat_val_eq_self a).symm,
       rw hk2,
       exact h0 k ha hpar },
     { rw [←nat.even_iff, nat.not_even_iff] at hpar,
       set k := (a : ℕ) with hk,
-      have hk2 : a = fin.of_nat k := (of_nat_eq_self a).symm,
+      have hk2 : a = fin.of_nat k := (of_nat_val_eq_self a).symm,
       rw hk2,
       exact h1 k ha hpar } }
 end
@@ -2891,7 +2895,8 @@ begin
     use mem_univ _,
     intros k hk hpar,
     erw [mem_filter, mem_filter],
-    rw [of_nat_coe k (by linarith), of_nat_coe (k + 1) (by linarith)],
+    rw [of_nat_coe k (show k < 2019, by linarith),
+        of_nat_coe (k + 1) (show k + 1 < 2019, by linarith)],
     have hmk1 : map_to_infinite_seq x (k + 1) =
       ite (k % 2 = 0 ∨ k / 2 + 1 ∈ x) (¬ map_to_infinite_seq x k) (map_to_infinite_seq x k),
     { refl },
@@ -2912,7 +2917,7 @@ begin
       induction k with t ht,
       { erw mem_filter,
         intro h0,
-        rw of_nat_coe 0 (by norm_num),
+        rw of_nat_coe_zero,
         unfold map_to_infinite_seq,
         rw mem_filter,
         norm_num },
@@ -2923,7 +2928,8 @@ begin
         unfold map_to_infinite_seq,
         rw nat.succ_eq_add_one at hst,
         replace ht := ht (by linarith only [hst]),
-        rw [iff_true_intro (mem_univ _), true_and, of_nat_coe t (by linarith only [hst])] at ht,
+        rw [iff_true_intro (mem_univ _), true_and,
+            of_nat_coe t (show t < 2019, by linarith only [hst])] at ht,
         rw [ht, iff_true_intro (mem_univ _), true_and],
         have ht0 : 0 ≤ t / 2 + 1, {linarith only []},
         have ht1 : 0 < t / 2 + 1, {linarith only []},
@@ -2972,7 +2978,7 @@ begin
           { simp [halt],
             tauto } } } },
     ext a,
-    rw ←of_nat_eq_self a,
+    rw ←of_nat_val_eq_self a,
     exact hn a.val a.is_lt }
 end
 
@@ -2989,7 +2995,7 @@ begin
     have h0 : fin.of_nat 0 ∈ map_to_alt_colouring x ↔ fin.of_nat 0 ∈ map_to_alt_colouring y,
     { rw heq },
     erw [mem_filter, mem_filter] at h0,
-    rw of_nat_coe 0 (by norm_num) at h0,
+    rw of_nat_coe_zero at h0,
     unfold map_to_infinite_seq at h0,
     simp only [true_and, mem_univ] at h0,
     exact h0 },
@@ -3003,8 +3009,8 @@ begin
     have hb1 : a = b + 1, {rw [hb, nat.sub_add_cancel h1]},
     rw [hb1, (show 2 * (b + 1) = 2 * b + 1 + 1, by ring), nat.add_sub_cancel] at ha,
     by_cases hble : b ≤ 1008,
-    { rw [of_nat_coe (2 * b + 1) (by linarith only [hble]),
-          of_nat_coe (2 * b + 1 + 1) (by linarith only [hble])] at ha,
+    { rw [of_nat_coe (2 * b + 1) (show 2 * b + 1 < 2019, by linarith only [hble]),
+          of_nat_coe (2 * b + 1 + 1) (show 2 * b + 1 + 1 < 2019, by linarith only [hble])] at ha,
       have hux : map_to_infinite_seq x (2 * b + 1 + 1) =
         ite ((2 * b + 1) % 2 = 0 ∨ (2 * b + 1) / 2 + 1 ∈ x)
             (¬ map_to_infinite_seq x (2 * b + 1)) (map_to_infinite_seq x (2 * b + 1)), {refl},
@@ -3052,7 +3058,7 @@ begin
   have hlt : 2018 - (a : ℕ) < 2019, {linarith [nat.sub_le 2018 (a : ℕ)]},
   rw of_nat_coe (2018 - (a : ℕ)) hlt,
   rw nat.sub_sub_assoc (show 2018 ≤ 2018, by refl),
-  { rw [(show (2018 - 2018) = 0, by ring), zero_add, fin.coe_eq_val, of_nat_eq_self a],
+  { rw [(show (2018 - 2018) = 0, by ring), zero_add, of_nat_coe_eq_self a],
     simp },
   { rw fin.coe_eq_val,
     linarith [a.is_lt] }
@@ -3100,7 +3106,8 @@ begin
       { intros k hk hpar,
         unfold reverse_row_colouring,
         erw [mem_filter, mem_filter],
-        rw [of_nat_coe k (by linarith only [hk]), of_nat_coe (k + 1) (by linarith only [hk]),
+        rw [of_nat_coe k (show k < 2019, by linarith only [hk]),
+            of_nat_coe (k + 1) (show k + 1 < 2019, by linarith only [hk]),
             add_comm k 1, ←nat.sub_sub 2018 1 k],
         norm_num,
         rw [iff.comm, not_iff_comm, iff.comm],
@@ -3127,8 +3134,9 @@ begin
     { intros k hk hpar,
       unfold reverse_row_colouring,
       erw [mem_filter, mem_filter],
-      rw [of_nat_coe k (by linarith only [hk]), of_nat_coe (k + 1) (by linarith only [hk]),
-          add_comm k 1, ←nat.sub_sub 2018 1 k],
+      rw [of_nat_coe k (show k < 2019, by linarith only [hk]),
+          of_nat_coe (k + 1) (show k + 1 < 2019, by linarith only [hk]), add_comm k 1,
+          ←nat.sub_sub 2018 1 k],
       norm_num,
       rw [iff.comm, not_iff_comm, iff.comm],
       convert hc0 (2017 - k) _ _,
@@ -3154,15 +3162,15 @@ begin
   set a0 : fin 2019 := fin.of_nat 0 with ha0,
   set k : ℕ := (a : ℕ) with hk,
   have ha : a = fin.of_nat ((a0 : ℕ) + k),
-  { rw [ha0, of_nat_coe 0 (by norm_num), zero_add, hk, fin.coe_eq_val, of_nat_eq_self a] },
+  { rw [ha0, of_nat_coe_zero, zero_add, hk, of_nat_coe_eq_self a] },
   rw ha,
   apply row_cols_alternate_colour c a0 2019,
-  { rw [ha0, of_nat_coe 0 (by norm_num), zero_add] },
+  { rw [ha0, of_nat_coe_zero, zero_add] },
   { intros k2 hk2,
-    rw [ha0, of_nat_coe 0 (by norm_num), zero_add],
+    rw [ha0, of_nat_coe_zero, zero_add],
     convert halt (fin.of_nat k2) _,
-    { exact (of_nat_coe k2 (by linarith)).symm },
-    { rw of_nat_coe k2 (by linarith),
+    { exact (of_nat_coe k2 (show k2 < 2019, by linarith)).symm },
+    { rw of_nat_coe k2 (show k2 < 2019, by linarith),
       linarith } },
   { rw hk,
     exact a.is_lt }
@@ -3215,7 +3223,7 @@ begin
   { intros i j hi hj heq,
     rw ext at heq,
     have heq0 := heq (fin.of_nat 0),
-    rw [mem_filter, mem_filter, of_nat_coe 0 (by norm_num)] at heq0,
+    rw [mem_filter, mem_filter, of_nat_coe_zero] at heq0,
     norm_num at heq0,
     by_cases h : i = 0,
     { rw h at heq0,
