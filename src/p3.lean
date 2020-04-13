@@ -60,32 +60,6 @@ def balanced (c : colouring) : Prop :=
 def balanced_colourings : finset colouring :=
 finset.univ.filter balanced
 
--- Some lemmas about fin.of_nat that are of use below.
-
-theorem of_nat_val {n : ℕ} (a : ℕ) (h : a < nat.succ n) :
-  ((fin.of_nat a) : fin (nat.succ n)).val = a :=
-nat.mod_eq_of_lt h
-
-theorem of_nat_val_self {n : ℕ} (a : fin (nat.succ n)) :
-  ((fin.of_nat a.val) : fin (nat.succ n)).val = a.val :=
-of_nat_val a.val a.is_lt
-
-theorem of_nat_val_eq_self {n : ℕ} (a : fin (nat.succ n)) : fin.of_nat a.val = a :=
-begin
-  rw fin.eq_iff_veq,
-  exact of_nat_val_self a
-end
-
-theorem of_nat_coe_eq_self {n : ℕ} (a : fin (nat.succ n)) : fin.of_nat (a : ℕ) = a :=
-of_nat_val_eq_self a
-
-theorem of_nat_coe {n : ℕ} (a : ℕ) (h : a < nat.succ n) :
-  (((fin.of_nat a) : fin (nat.succ n)) : ℕ) = a :=
-nat.mod_eq_of_lt h
-
-theorem of_nat_coe_zero {n : ℕ} : (((fin.of_nat 0) : fin (nat.succ n)) : ℕ) = 0 :=
-rfl
-
 -- Adding the numbers of black and white cells in a subgrid.
 theorem sub_black_add_sub_white (c : colouring) (a b : fin 2019) (k : ℕ)
     (ha : (a : ℕ) + k ≤ 2019) (hb : (b : ℕ) + k ≤ 2019) :
