@@ -1752,9 +1752,7 @@ begin
   { rw if_pos hae,
     congr' 1,
     push_cast,
-    ring,
-    norm_cast,
-    norm_num },
+    ring },
   { rw if_neg hae,
     rw ←int.nat_abs_neg,
     have hcoe : (((2 * k + 1 : ℕ) - row_sub_black c b (2 * k + 1) : ℕ) : ℤ) =
@@ -1770,10 +1768,6 @@ begin
     rw hcoe2,
     congr' 1,
     push_cast,
-    ring,
-    norm_cast,
-    norm_num,
-    norm_cast,
     ring }
 end
 

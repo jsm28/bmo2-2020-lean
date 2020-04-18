@@ -8,12 +8,12 @@ import tactic.norm_cast
 open fin
 
 /-- `a < b` as natural numbers if and only if `a < b` in `fin n`. -/
-@[elim_cast]
+@[norm_cast]
 lemma coe_fin_lt {n : ℕ} {a b : fin n} : (a : ℕ) < (b : ℕ) ↔ a < b :=
 iff.rfl
 
 /-- `a ≤ b` as natural numbers if and only if `a ≤ b` in `fin n`. -/
-@[elim_cast]
+@[norm_cast]
 lemma coe_fin_le {n : ℕ} {a b : fin n} : (a : ℕ) ≤ (b : ℕ) ↔ a ≤ b :=
 iff.rfl
 
