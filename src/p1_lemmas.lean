@@ -12,7 +12,7 @@ lemma mod_mul_eq_cases (n : ℤ) (a : ℤ) (b : ℤ) (c : ℤ) (hbpos : 0 < b) (
   (hmod : n % b = a) :
   ∃ d : ℤ, 0 ≤ d ∧ d < c ∧ n % (c * b) = a + d * b :=
 begin
-  use ((n % (c * b)) / b),
+  existsi ((n % (c * b)) / b),
   split,
   { exact int.div_nonneg (mod_nonneg _ (mul_ne_zero (ne_of_gt hcpos) (ne_of_gt hbpos)))
                          (int.le_of_lt hbpos) },
