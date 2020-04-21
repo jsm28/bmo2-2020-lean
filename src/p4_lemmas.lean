@@ -12,7 +12,7 @@ open real
 -- topological fields or semifields.
 
 /-- Continuity at a point of the result of dividing two functions
-    continuous at that point, where the denominator is nonzero. -/
+continuous at that point, where the denominator is nonzero. -/
 lemma continuous_at.div {α : Type} [topological_space α] {f : α → ℝ} {g : α → ℝ} {x : α}
     (hf : continuous_at f x) (hg : continuous_at g x) (hnz : g x ≠ 0) :
   continuous_at (λ x, f x / g x) x :=
