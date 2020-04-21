@@ -23,33 +23,3 @@ begin
         mul_comm b (n % (c * b) / b)],
     simp }
 end
-
-/-- If `a % b = c` then `b` divides `a - c`. -/
-lemma dvd_sub_of_mod_eq (a b c : ℤ) (h : a % b = c) : b ∣ a - c :=
-begin
-  have hx : a % b % b = c % b, {rw h},
-  rw [mod_mod, ←mod_sub_cancel_right c, sub_self, zero_mod] at hx,
-  exact dvd_of_mod_eq_zero hx
-end
-
-/-- If a larger number divides a natural number, it is zero. -/
-lemma eq_zero_of_dvd_of_gt {a b : ℕ} (w : a ∣ b) (h : b < a) : b = 0 :=
-nat.eq_zero_of_dvd_of_div_eq_zero w
-  ((nat.div_eq_zero_iff (lt_of_le_of_lt (zero_le b) h)).elim_right h)
-
-/-- If a number with larger absolute value divides an integer, it is
-    zero. -/
-lemma eq_zero_of_dvd_of_nat_abs_gt_nat_abs {a b : ℤ} (w : a ∣ b) (h : nat_abs b < nat_abs a) :
-  b = 0 :=
-begin
-  rw [←nat_abs_dvd, ←dvd_nat_abs, coe_nat_dvd] at w,
-  rw ←nat_abs_eq_zero,
-  exact eq_zero_of_dvd_of_gt w h
-end
-
-/-- If two integers are congruent to a sufficiently large modulus,
-    they are equal. -/
-lemma eq_of_mod_eq_of_nat_abs_gt_nat_abs_sub {a b c : ℤ} (h1 : a % b = c)
-    (h2 : nat_abs (a - c) < nat_abs b) :
-  a = c :=
-eq_of_sub_eq_zero (eq_zero_of_dvd_of_nat_abs_gt_nat_abs (dvd_sub_of_mod_eq a b c h1) h2)

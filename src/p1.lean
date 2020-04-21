@@ -222,7 +222,7 @@ begin
     norm_num,
     exact three_mod_all_powers a hodd hrec (2 + nat_abs (a 0 + -3)) (by linarith) 0 },
   rw ←nat_abs_of_nat k at hltk,
-  exact eq_of_mod_eq_of_nat_abs_gt_nat_abs_sub hmod (by linarith)
+  exact eq_of_mod_eq_of_nat_abs_sub_lt_nat_abs hmod (by linarith)
 end
 
 -- The actual result of the problem.

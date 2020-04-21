@@ -51,10 +51,3 @@ nat.mod_eq_of_lt h
 /-- `fin.of_nat 0`, converted to `ℕ`, is 0. -/
 lemma of_nat_coe_zero {n : ℕ} : (((fin.of_nat 0) : fin (nat.succ n)) : ℕ) = 0 :=
 rfl
-
-/--  If `a` and `b` are equal mod `c`, `a - b` is zero mod `c`. -/
-lemma sub_mod_eq_zero_of_mod_eq (a b c : ℕ) (h : a % c = b % c) : (a - b) % c = 0 :=
-begin
-  rw [←nat.mod_add_div a c, ←nat.mod_add_div b c, ←h, ←nat.sub_sub, nat.add_sub_cancel_left,
-      ←nat.mul_sub_left_distrib, nat.mul_mod_right]
-end

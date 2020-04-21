@@ -3171,7 +3171,7 @@ begin
         cases ha1 with ha1u ha1i,
         rw of_nat_coe _ (show (a : ℕ) + 1 < 2019, by linarith only [ha]) at ha1i,
         rw ←hai at ha1i,
-        have ha1ib := sub_mod_eq_zero_of_mod_eq _ _ _ ha1i,
+        have ha1ib := nat.sub_mod_eq_zero_of_mod_eq ha1i,
         simp at ha1ib,
         norm_num at ha1ib },
       { intro h,
