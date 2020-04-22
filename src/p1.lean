@@ -30,7 +30,7 @@ def all_odd (a : ℕ → ℤ) : Prop := ∀ n : ℕ, odd (a n)
 theorem mod_mul_2 (n : ℤ) (a : ℤ) (b : ℤ) (hbpos : 0 < b) (hmod : n % b = a) :
   n % (2 * b) = a ∨ n % (2 * b) = a + b :=
 begin
-  cases mod_mul_eq_cases n a b 2 hbpos dec_trivial hmod with d hd,
+  cases mod_mul_eq_cases hbpos (dec_trivial : (0 : ℤ) < 2) hmod with d hd,
   cases hd with hd0 hd2,
   cases hd2 with hd2 hdmod,
   have hd01 : d = 0 ∨ d = 1,

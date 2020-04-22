@@ -100,7 +100,7 @@ begin
 end
 
 /-- Any open interval of reals is uncountable. -/
-lemma not_countable_real_interval_open (k1 k2 : ℝ) (h : k1 < k2) :
+lemma not_countable_real_interval_open {k1 k2 : ℝ} (h : k1 < k2) :
   ¬ set.countable {x : ℝ | k1 < x ∧ x < k2} :=
 begin
   intro h,

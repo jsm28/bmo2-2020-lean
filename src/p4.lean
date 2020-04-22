@@ -516,7 +516,7 @@ theorem interval_open_not_in_set (k1 k2 : ℝ) (h : k1 < k2) :
 begin
   have hns : ¬ {x : ℝ | k1 < x ∧ x < k2} ⊆ p4_countable_zero_set,
   { intro hsub,
-    exact not_countable_real_interval_open k1 k2 h
+    exact not_countable_real_interval_open h
       (set.countable_subset hsub p4_countable_zero_set_prop.left) },
   rw set.not_subset at hns,
   cases hns with k hk,

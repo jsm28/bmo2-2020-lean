@@ -17,7 +17,7 @@ iff.rfl
 
 /-- Converting an in-range number to `fin n` with `fin.of_nat`
 produces a result whose value is the original number.  -/
-lemma of_nat_val {n : ℕ} (a : ℕ) (h : a < nat.succ n) :
+lemma of_nat_val {n : ℕ} {a : ℕ} (h : a < nat.succ n) :
   ((fin.of_nat a) : fin (nat.succ n)).val = a :=
 nat.mod_eq_of_lt h
 
@@ -25,7 +25,7 @@ nat.mod_eq_of_lt h
 produces a result whose value is the original number.  -/
 lemma of_nat_val_self {n : ℕ} (a : fin (nat.succ n)) :
   ((fin.of_nat a.val) : fin (nat.succ n)).val = a.val :=
-of_nat_val a.val a.is_lt
+of_nat_val a.is_lt
 
 /-- Converting the value of a `fin n` to `fin n` with `fin.of_nat`
 results in the same value.  -/
@@ -42,7 +42,7 @@ of_nat_val_eq_self a
 
 /-- `fin.of_nat` of an in-range number, converted back to `ℕ`, is that
 number. -/
-lemma of_nat_coe {n : ℕ} (a : ℕ) (h : a < nat.succ n) :
+lemma of_nat_coe {n : ℕ} {a : ℕ} (h : a < nat.succ n) :
   (((fin.of_nat a) : fin (nat.succ n)) : ℕ) = a :=
 nat.mod_eq_of_lt h
 

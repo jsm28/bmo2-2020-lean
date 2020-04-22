@@ -8,8 +8,7 @@ open int
 
 /-- If an integer is `a` mod `b`, there are corresponding cases for its
 value mod `c * b`. -/
-lemma mod_mul_eq_cases (n : ℤ) (a : ℤ) (b : ℤ) (c : ℤ) (hbpos : 0 < b) (hcpos : 0 < c)
-  (hmod : n % b = a) :
+lemma mod_mul_eq_cases {n a b c : ℤ} (hbpos : 0 < b) (hcpos : 0 < c) (hmod : n % b = a) :
   ∃ d : ℤ, 0 ≤ d ∧ d < c ∧ n % (c * b) = a + d * b :=
 begin
   existsi ((n % (c * b)) / b),
