@@ -512,11 +512,11 @@ classical.some_spec p4_countable_zero
 
 -- Any open interval of reals contains one not in that set.
 theorem interval_open_not_in_set (k1 k2 : ℝ) (h : k1 < k2) :
-  ∃ k : ℝ, k ∈ {x : ℝ | k1 < x ∧ x < k2} ∧ ¬ k ∈ p4_countable_zero_set :=
+  ∃ k : ℝ, k ∈ set.Ioo k1 k2 ∧ ¬ k ∈ p4_countable_zero_set :=
 begin
-  have hns : ¬ {x : ℝ | k1 < x ∧ x < k2} ⊆ p4_countable_zero_set,
+  have hns : ¬ set.Ioo k1 k2 ⊆ p4_countable_zero_set,
   { intro hsub,
-    exact not_countable_real_interval_open h
+    exact not_countable_real_Ioo h
       (set.countable_subset hsub p4_countable_zero_set_prop.left) },
   rw set.not_subset at hns,
   cases hns with k hk,
@@ -532,7 +532,7 @@ theorem p4_interval_terms_nonzero (kb : ℝ) (h1 : 1 ≤ kb) (h2 : kb < 2) :
 begin
   cases interval_open_not_in_set kb 2 h2 with k hk,
   cases hk with hk1 hk2,
-  rw set.mem_set_of_eq at hk1,
+  erw set.mem_set_of_eq at hk1,
   cases hk1 with hk1a hk1b,
   use k,
   use hk1a,
