@@ -39,7 +39,3 @@ nat.mod_eq_of_lt h
 the same value. -/
 lemma of_nat_coe_eq_self {n : ℕ} (a : fin (n + 1)) : fin.of_nat (a : ℕ) = a :=
 of_nat_val_eq_self a
-
-/-- `fin.of_nat 0`, converted to `ℕ`, is 0. -/
-lemma of_nat_coe_zero {n : ℕ} : (((fin.of_nat 0) : fin (n + 1)) : ℕ) = 0 :=
-rfl
