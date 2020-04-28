@@ -2881,12 +2881,9 @@ begin
   simp
 end
 
--- As written, this depends on the side of the grid being odd (2 * n +
--- 1), but not in any essential way.
-
 theorem map_to_alt_colouring_image (n : ℕ) :
-  image (map_to_alt_colouring (2 * n + 1)) (map_to_alt_colouring_domain (n + 1)) =
-    row_alt_colourings_0 (2 * n) :=
+  image (map_to_alt_colouring (n + 1)) (map_to_alt_colouring_domain (n / 2 + 1)) =
+    row_alt_colourings_0 n :=
 begin
   ext c,
   split,
@@ -2898,8 +2895,8 @@ begin
     use mem_univ _,
     intros k hk hpar,
     erw [mem_filter, mem_filter],
-    rw [coe_coe_of_lt (show k < 2 * n + 1, by linarith),
-        coe_coe_of_lt (show k + 1 < 2 * n + 1, by linarith)],
+    rw [coe_coe_of_lt (show k < n + 1, by linarith),
+        coe_coe_of_lt (show k + 1 < n + 1, by linarith)],
     have hmk1 : map_to_infinite_seq x (k + 1) =
       ite (k % 2 = 0 ∨ k / 2 + 1 ∈ x) (¬ map_to_infinite_seq x k) (map_to_infinite_seq x k),
     { refl },
@@ -2907,18 +2904,18 @@ begin
     simp },
   { intro h,
     rw mem_image,
-    use (Ico 0 (n + 1)).filter
-      (λ x, ((x = 0 ∧ (0 : fin (2 * n + 1)) ∈ c) ∨
-            (0 < x ∧ (((2 * x - 1 : ℕ) : fin (2 * n + 1)) ∈ c ↔
-               ¬ ((2 * x : ℕ) : fin (2 * n + 1)) ∈ c)))),
+    use (Ico 0 (n / 2 + 1)).filter
+      (λ x, ((x = 0 ∧ (0 : fin (n + 1)) ∈ c) ∨
+            (0 < x ∧ (((2 * x - 1 : ℕ) : fin (n + 1)) ∈ c ↔
+               ¬ ((2 * x : ℕ) : fin (n + 1)) ∈ c)))),
     erw mem_powerset,
     use filter_subset _,
-    have hn : ∀ k : ℕ, k < 2 * n + 1 →
-      ((k : fin (2 * n + 1)) ∈ map_to_alt_colouring (2 * n + 1) ((Ico 0 (n + 1)).filter
-      (λ x, ((x = 0 ∧ (0 : fin (2 * n + 1)) ∈ c) ∨
-            (0 < x ∧ (((2 * x - 1 : ℕ) : fin (2 * n + 1)) ∈ c ↔
-              ¬ ((2 * x : ℕ) : fin (2 * n + 1)) ∈ c))))) ↔
-      (k : fin (2 * n + 1)) ∈ c),
+    have hn : ∀ k : ℕ, k < n + 1 →
+      ((k : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) ((Ico 0 (n / 2 + 1)).filter
+      (λ x, ((x = 0 ∧ (0 : fin (n + 1)) ∈ c) ∨
+            (0 < x ∧ (((2 * x - 1 : ℕ) : fin (n + 1)) ∈ c ↔
+              ¬ ((2 * x : ℕ) : fin (n + 1)) ∈ c))))) ↔
+      (k : fin (n + 1)) ∈ c),
     { intro k,
       induction k with t ht,
       { erw mem_filter,
@@ -2935,24 +2932,18 @@ begin
         rw nat.succ_eq_add_one at hst,
         replace ht := ht (by linarith only [hst]),
         rw [iff_true_intro (mem_univ _), true_and,
-            coe_coe_of_lt (show t < 2 * n + 1, by linarith only [hst])] at ht,
+            coe_coe_of_lt (show t < n + 1, by linarith only [hst])] at ht,
         rw [ht, iff_true_intro (mem_univ _), true_and],
         have ht0 : 0 ≤ t / 2 + 1, { linarith only [] },
         have ht1 : 0 < t / 2 + 1, { linarith only [] },
-        have ht2 : t / 2 + 1 < n + 1,
-        { by_contradiction htx,
-          rw not_lt at htx,
-          have hty : n ≤ t / 2, { linarith only [htx] },
-          rw nat.le_div_iff_mul_le _ _ (show 2 > 0, by norm_num) at hty,
-          linarith },
         have ht3 : t / 2 + 1 ≠ 0,
         { exact nat.succ_ne_zero _ },
         conv
         begin
           to_lhs,
           congr,
-          rw [mem_filter, Ico.mem, iff_true_intro ht0, iff_true_intro ht1, iff_true_intro ht2,
-              iff_false_intro ht3, true_and, true_and, true_and, false_and, false_or]
+          rw [mem_filter, Ico.mem, iff_true_intro ht0, iff_true_intro ht1,
+              iff_false_intro ht3, true_and, true_and, false_and, false_or]
         end,
         erw mem_filter at h,
         cases h with hcu h,
@@ -2979,7 +2970,18 @@ begin
                 (show 2 * (t / 2) + 2 * 1 = 2 * (t / 2) + 1 + 1, by ring), ht4]
           end,
           rw nat.succ_eq_add_one t,
-          by_cases halt : (t : fin (2 * n + 1)) ∈ c ↔ ¬ ((t + 1 : ℕ) : fin (2 * n + 1)) ∈ c,
+          have hst2 : t + 1 ≤ n, { linarith only [hst] },
+          rw [←ht4, (show 2 * (t / 2) + 1 + 1 = 2 * (t / 2 + 1), by ring)] at hst2,
+          have hst3 : 2 * (t / 2 + 1) / 2 ≤ n / 2 := nat.div_le_div_right hst2,
+          rw nat.mul_div_right _ (show 2 > 0, by norm_num) at hst3,
+          have hst4 : t / 2 + 1 < n / 2 + 1, { linarith only [hst3] },
+          conv
+          begin
+            congr,
+            congr,
+            rw iff_true_intro hst4
+          end,
+          by_cases halt : (t : fin (n + 1)) ∈ c ↔ ¬ ((t + 1 : ℕ) : fin (n + 1)) ∈ c,
           { simp [halt] },
           { simp [halt, -nat.cast_succ],
             tauto } } } },
@@ -2990,9 +2992,13 @@ end
 
 -- The remaining parts of the expression for the result.
 
+-- As written, this depends on the side of the grid being odd (2 * n +
+-- 1), but not in any essential way.
+
 theorem result_0 (n : ℕ) : card (row_alt_colourings_0 (2 * n)) = 2 ^ (n + 1) :=
 begin
-  rw [←map_to_alt_colouring_image, ←card_map_to_alt_colouring_domain],
+  rw [←map_to_alt_colouring_image, nat.mul_div_right _ (show 2 > 0, by norm_num),
+      ←card_map_to_alt_colouring_domain],
   apply card_image_of_inj_on,
   intros x hx y hy heq,
   ext,
