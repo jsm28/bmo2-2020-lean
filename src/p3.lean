@@ -2992,38 +2992,34 @@ end
 
 -- The remaining parts of the expression for the result.
 
--- As written, this depends on the side of the grid being odd (2 * n +
--- 1), but not in any essential way.
-
-theorem result_0 (n : ℕ) : card (row_alt_colourings_0 (2 * n)) = 2 ^ (n + 1) :=
+theorem result_0 (n : ℕ) : card (row_alt_colourings_0 n) = 2 ^ (n / 2 + 1) :=
 begin
-  rw [←map_to_alt_colouring_image, nat.mul_div_right _ (show 2 > 0, by norm_num),
-      ←card_map_to_alt_colouring_domain],
+  rw [←map_to_alt_colouring_image, ←card_map_to_alt_colouring_domain],
   apply card_image_of_inj_on,
   intros x hx y hy heq,
   ext,
   by_cases h : a = 0,
   { rw h,
-    have h0 : (0 : fin (2 * n + 1)) ∈ map_to_alt_colouring (2 * n + 1) x ↔
-      (0 : fin (2 * n + 1)) ∈ map_to_alt_colouring (2 * n + 1) y,
+    have h0 : (0 : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) x ↔
+      (0 : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) y,
     { rw heq },
     erw [mem_filter, mem_filter] at h0,
     rw fin.coe_zero at h0,
     unfold map_to_infinite_seq at h0,
     simp only [true_and, mem_univ] at h0,
     exact h0 },
-  { have ha : (((2 * a - 1 : ℕ) : fin (2 * n + 1)) ∈ map_to_alt_colouring (2 * n + 1) x ↔
-               ((2 * a : ℕ) : fin (2 * n + 1)) ∈ map_to_alt_colouring (2 * n + 1) x) ↔
-              (((2 * a - 1 : ℕ) : fin (2 * n + 1)) ∈ map_to_alt_colouring (2 * n + 1) y ↔
-               ((2 * a : ℕ) : fin (2 * n + 1)) ∈ map_to_alt_colouring (2 * n + 1) y), { rw heq },
+  { have ha : (((2 * a - 1 : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) x ↔
+               ((2 * a : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) x) ↔
+              (((2 * a - 1 : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) y ↔
+               ((2 * a : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) y), { rw heq },
     erw [mem_filter, mem_filter, mem_filter, mem_filter] at ha,
     have h1 : 1 ≤ a, { linarith only [nat.pos_of_ne_zero h] },
     set b := a - 1 with hb,
     have hb1 : a = b + 1, { rw [hb, nat.sub_add_cancel h1] },
     rw [hb1, (show 2 * (b + 1) = 2 * b + 1 + 1, by ring), nat.add_sub_cancel] at ha,
-    by_cases hble : b + 1 ≤ n,
-    { rw [fin.coe_coe_of_lt (show 2 * b + 1 < 2 * n + 1, by linarith only [hble]),
-          fin.coe_coe_of_lt (show 2 * b + 1 + 1 < 2 * n + 1, by linarith only [hble])] at ha,
+    by_cases hble : 2 * b + 1 + 1 ≤ n,
+    { rw [fin.coe_coe_of_lt (show 2 * b + 1 < n + 1, by linarith only [hble]),
+          fin.coe_coe_of_lt (show 2 * b + 1 + 1 < n + 1, by linarith only [hble])] at ha,
       have hux : map_to_infinite_seq x (2 * b + 1 + 1) =
         ite ((2 * b + 1) % 2 = 0 ∨ (2 * b + 1) / 2 + 1 ∈ x)
             (¬ map_to_infinite_seq x (2 * b + 1)) (map_to_infinite_seq x (2 * b + 1)), { refl },
@@ -3035,7 +3031,7 @@ begin
       norm_num at ha,
       rw ←hb1 at ha,
       by_cases hax : a ∈ x; by_cases hay : a ∈ y; simp [hax, hay] at ha; tauto },
-    { have hage : n + 1 ≤ a, { linarith },
+    { have hage : n + 1 ≤ 2 * a, { linarith },
       erw mem_powerset at hx,
       erw mem_powerset at hy,
       have hnx : ¬ a ∈ x,
@@ -3043,13 +3039,17 @@ begin
         have hax2 := mem_of_subset hx hax,
         rw Ico.mem at hax2,
         cases hax2 with hax2a hax2b,
-        linarith only [hage, hax2b] },
+        have hax2b2 : a ≤ n / 2, { linarith only [hax2b] },
+        rw nat.le_div_iff_mul_le _ _ (show 2 > 0, by norm_num) at hax2b2,
+        linarith only [hage, hax2b2] },
       have hny : ¬ a ∈ y,
       { intro hay,
         have hay2 := mem_of_subset hy hay,
         rw Ico.mem at hay2,
         cases hay2 with hay2a hay2b,
-        linarith only [hage, hay2b] },
+        have hay2b2 : a ≤ n / 2, { linarith only [hay2b] },
+        rw nat.le_div_iff_mul_le _ _ (show 2 > 0, by norm_num) at hay2b2,
+        linarith only [hage, hay2b2] },
       tauto } }
 end
 
@@ -3169,6 +3169,12 @@ end
 
 theorem result_1 (n : ℕ) : card (row_alt_colourings_1 (2 * (n + 1))) = 2 ^ (n + 2) :=
 begin
+  conv
+  begin
+    to_rhs,
+    rw [(show n + 2 = n + 1 + 1, by ring),
+        ←nat.mul_div_right (n + 1) (show 2 > 0, by norm_num)],
+  end,
   rw [←result_0, row_alt_colourings_1_eq_reverse_row_alt_colourings_0,
       card_image_of_injective _ (reverse_row_colouring_bijective (2 * (n + 1))).1]
 end
@@ -3262,7 +3268,8 @@ end
 theorem p3_result_2n3 (n : ℕ) : finset.card (balanced_colourings (2 * (n + 1) + 1)) =
   2 ^ (n + 4) - 8 + 2 :=
 begin
-  rw [card_split_2_parity, result_0, result_1, result_01,
+  rw [card_split_2_parity, result_0, nat.mul_div_right (n + 1) (show 2 > 0, by norm_num),
+      result_1, result_01,
       (show 2 ^ (n + 1 + 1) = 2 ^ (n + 2), by ring), mul_comm 2 _,
       (show 2 ^ (n + 2) * 2 = 2 ^ (n + 2 + 1), by refl), ←mul_two],
   ring
