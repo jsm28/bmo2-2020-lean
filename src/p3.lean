@@ -4,6 +4,7 @@ import data.finset
 import data.fintype.basic
 import data.nat.parity
 import logic.function
+import tactic.interval_cases
 import tactic.linarith
 import tactic.ring_exp
 
@@ -2770,6 +2771,17 @@ finset.univ.filter row_cols_alternate_at_parity_0
 def row_alt_colourings_1 (n : ℕ) : finset (row_colouring (n + 1)) :=
 finset.univ.filter row_cols_alternate_at_parity_1
 
+def row_alt_colourings_parity (n : ℕ) (parity : ℕ) : finset (row_colouring (n + 1)) :=
+finset.univ.filter (λ c, row_cols_alternate_at_parity c parity)
+
+theorem row_alt_colourings_0_eq (n : ℕ) :
+  row_alt_colourings_0 n = row_alt_colourings_parity n 0 :=
+rfl
+
+theorem row_alt_colourings_1_eq (n : ℕ) :
+  row_alt_colourings_1 n = row_alt_colourings_parity n 1 :=
+rfl
+
 def row_alt_colourings_01 (n : ℕ) : finset (row_colouring (n + 1)) :=
 finset.univ.filter row_cols_alternate
 
@@ -2858,17 +2870,18 @@ end
 
 -- Define a mapping from finset ℕ to infinite sequences of whether a
 -- given natural number is in a set, where 0 is present if and only if
--- in the finset and subsequent elements say which odd n are positions
--- where the set alternates.  This is used in turn to define such a
--- mapping to row colourings.
+-- in the finset and subsequent elements say which odd n (parity = 0)
+-- or even n (parity = 1) are positions where the set alternates.
+-- This is used in turn to define such a mapping to row colourings.
 
-def map_to_infinite_seq : finset ℕ → ℕ → Prop
-| x 0 := 0 ∈ x
-| x (n + 1) :=
-    ite (n % 2 = 0 ∨ n / 2 + 1 ∈ x) (¬ map_to_infinite_seq x n) (map_to_infinite_seq x n)
+def map_to_infinite_seq : ℕ → finset ℕ → ℕ → Prop
+| parity x 0 := 0 ∈ x
+| parity x (n + 1) :=
+    ite (n % 2 = parity ∨ n / 2 + 1 ∈ x) (¬ map_to_infinite_seq parity x n)
+                                         (map_to_infinite_seq parity x n)
 
-def map_to_alt_colouring (n : ℕ) (x : finset ℕ) : row_colouring n :=
-finset.univ.filter (λ p : row n, map_to_infinite_seq x (p : ℕ))
+def map_to_alt_colouring (n : ℕ) (parity : ℕ) (x : finset ℕ) : row_colouring n :=
+finset.univ.filter (λ p : row n, map_to_infinite_seq parity x (p : ℕ))
 
 def map_to_alt_colouring_domain (n : ℕ) : finset (finset ℕ) :=
 powerset (Ico 0 n)
@@ -2881,9 +2894,10 @@ begin
   simp
 end
 
-theorem map_to_alt_colouring_image (n : ℕ) :
-  image (map_to_alt_colouring (n + 1)) (map_to_alt_colouring_domain (n / 2 + 1)) =
-    row_alt_colourings_0 n :=
+theorem map_to_alt_colouring_image (n : ℕ) (parity : ℕ) (hparity : parity < 2) :
+  image (map_to_alt_colouring (n + 1) parity)
+        (map_to_alt_colouring_domain ((n + parity) / 2 + 1)) =
+    row_alt_colourings_parity n parity :=
 begin
   ext c,
   split,
@@ -2897,24 +2911,26 @@ begin
     erw [mem_filter, mem_filter],
     rw [fin.coe_coe_of_lt (show k < n + 1, by linarith),
         fin.coe_coe_of_lt (show k + 1 < n + 1, by linarith)],
-    have hmk1 : map_to_infinite_seq x (k + 1) =
-      ite (k % 2 = 0 ∨ k / 2 + 1 ∈ x) (¬ map_to_infinite_seq x k) (map_to_infinite_seq x k),
+    have hmk1 : map_to_infinite_seq parity x (k + 1) =
+      ite (k % 2 = parity ∨ k / 2 + 1 ∈ x) (¬ map_to_infinite_seq parity x k)
+                                           (map_to_infinite_seq parity x k),
     { refl },
     rw [hmk1, hpar],
     simp },
   { intro h,
     rw mem_image,
-    use (Ico 0 (n / 2 + 1)).filter
+    use (Ico 0 ((n + parity) / 2 + 1)).filter
       (λ x, ((x = 0 ∧ (0 : fin (n + 1)) ∈ c) ∨
-            (0 < x ∧ (((2 * x - 1 : ℕ) : fin (n + 1)) ∈ c ↔
-               ¬ ((2 * x : ℕ) : fin (n + 1)) ∈ c)))),
+            (0 < x ∧ (((2 * x - 1 - parity : ℕ) : fin (n + 1)) ∈ c ↔
+               ¬ ((2 * x - parity : ℕ) : fin (n + 1)) ∈ c)))),
     erw mem_powerset,
     use filter_subset _,
     have hn : ∀ k : ℕ, k < n + 1 →
-      ((k : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) ((Ico 0 (n / 2 + 1)).filter
+      ((k : fin (n + 1)) ∈
+        map_to_alt_colouring (n + 1) parity ((Ico 0 ((n + parity) / 2 + 1)).filter
       (λ x, ((x = 0 ∧ (0 : fin (n + 1)) ∈ c) ∨
-            (0 < x ∧ (((2 * x - 1 : ℕ) : fin (n + 1)) ∈ c ↔
-              ¬ ((2 * x : ℕ) : fin (n + 1)) ∈ c))))) ↔
+            (0 < x ∧ (((2 * x - 1 - parity : ℕ) : fin (n + 1)) ∈ c ↔
+              ¬ ((2 * x - parity : ℕ) : fin (n + 1)) ∈ c))))) ↔
       (k : fin (n + 1)) ∈ c),
     { intro k,
       induction k with t ht,
@@ -2923,7 +2939,7 @@ begin
         rw [nat.cast_zero, fin.coe_zero],
         unfold map_to_infinite_seq,
         rw mem_filter,
-        norm_num },
+        interval_cases parity; norm_num },
       { intro hst,
         erw mem_filter,
         erw mem_filter at ht,
@@ -2947,40 +2963,63 @@ begin
         end,
         erw mem_filter at h,
         cases h with hcu h,
-        unfold row_cols_alternate_at_parity_0 row_cols_alternate_at_parity at h,
-        by_cases hpar : t % 2 = 0,
+        unfold row_cols_alternate_at_parity at h,
+        by_cases hpar : t % 2 = parity,
         { rw nat.succ_eq_add_one t,
           have hht := h t (by linarith only [hst]) hpar,
-          simp [hpar],
-          tauto },
+          interval_cases parity; simp [hpar]; tauto },
         { conv
           begin
             to_lhs,
             congr,
             rw [iff_false_intro hpar, false_or, nat.left_distrib]
           end,
-          rw [←nat.even_iff, nat.not_even_iff] at hpar,
+          have hpar2 : t % 2 = 1 - parity,
+          { interval_cases parity,
+            { rw [←nat.even_iff, nat.not_even_iff] at hpar,
+              rw nat.sub_zero,
+              exact hpar },
+            { rw [←nat.not_even_iff, not_not, nat.even_iff] at hpar,
+              rw nat.sub_self,
+              exact hpar } },
           have ht4 := nat.mod_add_div t 2,
-          rw [hpar, add_comm] at ht4,
-          conv
-          begin
-            to_lhs,
-            congr,
-            rw [(show 2 * (t / 2) + 2 * 1 - 1 = 2 * (t / 2) + 1, by ring), ht4,
-                (show 2 * (t / 2) + 2 * 1 = 2 * (t / 2) + 1 + 1, by ring), ht4]
-          end,
+          rw [hpar2, add_comm] at ht4,
           rw nat.succ_eq_add_one t,
-          have hst2 : t + 1 ≤ n, { linarith only [hst] },
-          rw [←ht4, (show 2 * (t / 2) + 1 + 1 = 2 * (t / 2 + 1), by ring)] at hst2,
-          have hst3 : 2 * (t / 2 + 1) / 2 ≤ n / 2 := nat.div_le_div_right hst2,
-          rw nat.mul_div_right _ (show 2 > 0, by norm_num) at hst3,
-          have hst4 : t / 2 + 1 < n / 2 + 1, { linarith only [hst3] },
+          have hst4 : t / 2 + 1 < (n + parity) / 2 + 1,
+          { interval_cases parity,
+            { have hst2 : t + 1 ≤ n, { linarith only [hst] },
+              rw [←ht4, (show 2 * (t / 2) + 1 + 1 = 2 * (t / 2 + 1), by ring)] at hst2,
+              have hst3 : 2 * (t / 2 + 1) / 2 ≤ n / 2 := nat.div_le_div_right hst2,
+              rw nat.mul_div_right _ (show 2 > 0, by norm_num) at hst3,
+              conv
+              begin
+                to_rhs,
+                congr,
+                rw add_zero,
+              end,
+              linarith only [hst3] },
+            { have hst2 : t + 1 + 1 ≤ n + 1, { linarith only [hst] },
+              rw [nat.sub_self, add_zero] at ht4,
+              rw [←ht4, (show 2 * (t / 2) + 1 + 1 = 2 * (t / 2 + 1), by ring),
+                  ←nat.mod_add_div (n + 1) 2] at hst2,
+              have hst3 : 2 * (t / 2 + 1) / 2 ≤ ((n + 1) % 2 + 2 * ((n + 1) / 2)) / 2 :=
+                nat.div_le_div_right hst2,
+              rw [nat.mul_div_right _ (show 2 > 0, by norm_num),
+                  nat.add_mul_div_left _ _ (show 2 > 0, by norm_num),
+                  nat.div_eq_of_lt (nat.mod_lt _ (show 2 > 0, by norm_num))] at hst3,
+              linarith only [hst3] } },
           conv
           begin
             congr,
             congr,
             rw iff_true_intro hst4
           end,
+          norm_num,
+          rw [nat.add_sub_assoc (show parity ≤ 1, by linarith only [hparity]),
+              nat.add_sub_assoc (show parity ≤ 2, by linarith only [hparity]),
+              (show 2 - parity = 1 + 1 - parity, by ring),
+              nat.add_sub_assoc (show parity ≤ 1, by linarith only [hparity]) 1,
+              add_comm 1 _, ←add_assoc, ht4],
           by_cases halt : (t : fin (n + 1)) ∈ c ↔ ¬ ((t + 1 : ℕ) : fin (n + 1)) ∈ c,
           { simp [halt] },
           { simp [halt, -nat.cast_succ],
@@ -2994,24 +3033,25 @@ end
 
 theorem result_0 (n : ℕ) : card (row_alt_colourings_0 n) = 2 ^ (n / 2 + 1) :=
 begin
-  rw [←map_to_alt_colouring_image, ←card_map_to_alt_colouring_domain],
+  rw [row_alt_colourings_0_eq, ←map_to_alt_colouring_image n 0 (show 0 < 2, by norm_num),
+      ←card_map_to_alt_colouring_domain],
   apply card_image_of_inj_on,
   intros x hx y hy heq,
   ext,
   by_cases h : a = 0,
   { rw h,
-    have h0 : (0 : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) x ↔
-      (0 : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) y,
+    have h0 : (0 : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) 0 x ↔
+      (0 : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) 0 y,
     { rw heq },
     erw [mem_filter, mem_filter] at h0,
     rw fin.coe_zero at h0,
     unfold map_to_infinite_seq at h0,
     simp only [true_and, mem_univ] at h0,
     exact h0 },
-  { have ha : (((2 * a - 1 : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) x ↔
-               ((2 * a : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) x) ↔
-              (((2 * a - 1 : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) y ↔
-               ((2 * a : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) y), { rw heq },
+  { have ha : (((2 * a - 1 : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) 0 x ↔
+               ((2 * a : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) 0 x) ↔
+              (((2 * a - 1 : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) 0 y ↔
+               ((2 * a : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) 0 y), { rw heq },
     erw [mem_filter, mem_filter, mem_filter, mem_filter] at ha,
     have h1 : 1 ≤ a, { linarith only [nat.pos_of_ne_zero h] },
     set b := a - 1 with hb,
@@ -3020,12 +3060,14 @@ begin
     by_cases hble : 2 * b + 1 + 1 ≤ n,
     { rw [fin.coe_coe_of_lt (show 2 * b + 1 < n + 1, by linarith only [hble]),
           fin.coe_coe_of_lt (show 2 * b + 1 + 1 < n + 1, by linarith only [hble])] at ha,
-      have hux : map_to_infinite_seq x (2 * b + 1 + 1) =
+      have hux : map_to_infinite_seq 0 x (2 * b + 1 + 1) =
         ite ((2 * b + 1) % 2 = 0 ∨ (2 * b + 1) / 2 + 1 ∈ x)
-            (¬ map_to_infinite_seq x (2 * b + 1)) (map_to_infinite_seq x (2 * b + 1)), { refl },
-      have huy : map_to_infinite_seq y (2 * b + 1 + 1) =
+            (¬ map_to_infinite_seq 0 x (2 * b + 1))
+            (map_to_infinite_seq 0 x (2 * b + 1)), { refl },
+      have huy : map_to_infinite_seq 0 y (2 * b + 1 + 1) =
         ite ((2 * b + 1) % 2 = 0 ∨ (2 * b + 1) / 2 + 1 ∈ y)
-            (¬ map_to_infinite_seq y (2 * b + 1)) (map_to_infinite_seq y (2 * b + 1)), { refl },
+            (¬ map_to_infinite_seq 0 y (2 * b + 1))
+            (map_to_infinite_seq 0 y (2 * b + 1)), { refl },
       rw [hux, huy, add_comm (2 * b) 1, nat.add_mul_mod_self_left 1 2 b,
           nat.add_mul_div_left _ _ (show 2 > 0, by norm_num)] at ha,
       norm_num at ha,
@@ -3039,6 +3081,12 @@ begin
         have hax2 := mem_of_subset hx hax,
         rw Ico.mem at hax2,
         cases hax2 with hax2a hax2b,
+        conv at hax2b
+        begin
+          to_rhs,
+          congr,
+          rw add_zero,
+        end,
         have hax2b2 : a ≤ n / 2, { linarith only [hax2b] },
         rw nat.le_div_iff_mul_le _ _ (show 2 > 0, by norm_num) at hax2b2,
         linarith only [hage, hax2b2] },
@@ -3047,6 +3095,12 @@ begin
         have hay2 := mem_of_subset hy hay,
         rw Ico.mem at hay2,
         cases hay2 with hay2a hay2b,
+        conv at hay2b
+        begin
+          to_rhs,
+          congr,
+          rw add_zero,
+        end,
         have hay2b2 : a ≤ n / 2, { linarith only [hay2b] },
         rw nat.le_div_iff_mul_le _ _ (show 2 > 0, by norm_num) at hay2b2,
         linarith only [hage, hay2b2] },
