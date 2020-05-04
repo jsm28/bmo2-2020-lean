@@ -3031,49 +3031,59 @@ end
 
 -- The remaining parts of the expression for the result.
 
-theorem result_0 (n : ℕ) : card (row_alt_colourings_0 n) = 2 ^ (n / 2 + 1) :=
+theorem result_parity (n : ℕ) (parity : ℕ) (hparity : parity < 2) :
+  card (row_alt_colourings_parity n parity) = 2 ^ ((n + parity) / 2 + 1) :=
 begin
-  rw [row_alt_colourings_0_eq, ←map_to_alt_colouring_image n 0 (show 0 < 2, by norm_num),
-      ←card_map_to_alt_colouring_domain],
+  rw [←map_to_alt_colouring_image n parity hparity, ←card_map_to_alt_colouring_domain],
   apply card_image_of_inj_on,
   intros x hx y hy heq,
   ext,
   by_cases h : a = 0,
   { rw h,
-    have h0 : (0 : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) 0 x ↔
-      (0 : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) 0 y,
+    have h0 : (0 : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) parity x ↔
+      (0 : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) parity y,
     { rw heq },
     erw [mem_filter, mem_filter] at h0,
     rw fin.coe_zero at h0,
     unfold map_to_infinite_seq at h0,
     simp only [true_and, mem_univ] at h0,
     exact h0 },
-  { have ha : (((2 * a - 1 : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) 0 x ↔
-               ((2 * a : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) 0 x) ↔
-              (((2 * a - 1 : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) 0 y ↔
-               ((2 * a : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) 0 y), { rw heq },
+  { have ha : (((2 * a - 1 - parity : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) parity x ↔
+               ((2 * a - parity : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) parity x) ↔
+              (((2 * a - 1 - parity : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) parity y ↔
+               ((2 * a - parity : ℕ) : fin (n + 1)) ∈ map_to_alt_colouring (n + 1) parity y),
+    { rw heq },
     erw [mem_filter, mem_filter, mem_filter, mem_filter] at ha,
     have h1 : 1 ≤ a, { linarith only [nat.pos_of_ne_zero h] },
     set b := a - 1 with hb,
     have hb1 : a = b + 1, { rw [hb, nat.sub_add_cancel h1] },
-    rw [hb1, (show 2 * (b + 1) = 2 * b + 1 + 1, by ring), nat.add_sub_cancel] at ha,
-    by_cases hble : 2 * b + 1 + 1 ≤ n,
-    { rw [fin.coe_coe_of_lt (show 2 * b + 1 < n + 1, by linarith only [hble]),
-          fin.coe_coe_of_lt (show 2 * b + 1 + 1 < n + 1, by linarith only [hble])] at ha,
-      have hux : map_to_infinite_seq 0 x (2 * b + 1 + 1) =
-        ite ((2 * b + 1) % 2 = 0 ∨ (2 * b + 1) / 2 + 1 ∈ x)
-            (¬ map_to_infinite_seq 0 x (2 * b + 1))
-            (map_to_infinite_seq 0 x (2 * b + 1)), { refl },
-      have huy : map_to_infinite_seq 0 y (2 * b + 1 + 1) =
-        ite ((2 * b + 1) % 2 = 0 ∨ (2 * b + 1) / 2 + 1 ∈ y)
-            (¬ map_to_infinite_seq 0 y (2 * b + 1))
-            (map_to_infinite_seq 0 y (2 * b + 1)), { refl },
-      rw [hux, huy, add_comm (2 * b) 1, nat.add_mul_mod_self_left 1 2 b,
-          nat.add_mul_div_left _ _ (show 2 > 0, by norm_num)] at ha,
-      norm_num at ha,
-      rw ←hb1 at ha,
-      by_cases hax : a ∈ x; by_cases hay : a ∈ y; simp [hax, hay] at ha; tauto },
-    { have hage : n + 1 ≤ 2 * a, { linarith },
+    rw [hb1, (show 2 * (b + 1) = 2 * b + 1 + 1, by ring), nat.add_sub_cancel,
+        nat.add_sub_assoc (show parity ≤ 1, by linarith only [hparity]),
+        nat.add_sub_assoc (show parity ≤ 1, by linarith only [hparity]) (2 * b + 1),
+        (show 2 * b + 1 + (1 - parity) = 2 * b + (1 - parity) + 1, by ring)] at ha,
+    by_cases hble : 2 * b + 1 + (1 - parity) ≤ n,
+    { rw [fin.coe_coe_of_lt (show 2 * b + (1 - parity) < n + 1, by linarith only [hble]),
+          fin.coe_coe_of_lt (show 2 * b + (1 - parity) + 1 < n + 1,
+                             by linarith only [hble])] at ha,
+      have hux : map_to_infinite_seq parity x (2 * b + (1 - parity) + 1) =
+        ite ((2 * b + (1 - parity)) % 2 = parity ∨ (2 * b + (1 - parity)) / 2 + 1 ∈ x)
+            (¬ map_to_infinite_seq parity x (2 * b + (1 - parity)))
+            (map_to_infinite_seq parity x (2 * b + (1 - parity))), { refl },
+      have huy : map_to_infinite_seq parity y (2 * b + (1 - parity) + 1) =
+        ite ((2 * b + (1 - parity)) % 2 = parity ∨ (2 * b + (1 - parity)) / 2 + 1 ∈ y)
+            (¬ map_to_infinite_seq parity y (2 * b + (1 - parity)))
+            (map_to_infinite_seq parity y (2 * b + (1 - parity))), { refl },
+      have h1p : ¬ (1 - parity) % 2 = parity,
+      { interval_cases parity; norm_num },
+      have h1p2 : (1 - parity) / 2 = 0,
+      { apply nat.div_eq_of_lt,
+        apply nat.sub_lt_succ },
+      rw [hux, huy, add_comm (2 * b) (1 - parity), nat.add_mul_mod_self_left (1 - parity) 2 b,
+          nat.add_mul_div_left _ _ (show 2 > 0, by norm_num), iff_true_intro (mem_univ _),
+          iff_true_intro (mem_univ _), true_and, true_and, true_and, true_and, add_assoc,
+          ←hb1, h1p2, zero_add] at ha,
+      by_cases hax : a ∈ x; by_cases hay : a ∈ y; simp [hax, hay, h1p] at ha; tauto },
+    { have hage : n + 1 ≤ 2 * b + (1 - parity) + 1, { linarith },
       erw mem_powerset at hx,
       erw mem_powerset at hy,
       have hnx : ¬ a ∈ x,
@@ -3081,156 +3091,31 @@ begin
         have hax2 := mem_of_subset hx hax,
         rw Ico.mem at hax2,
         cases hax2 with hax2a hax2b,
-        conv at hax2b
-        begin
-          to_rhs,
-          congr,
-          rw add_zero,
-        end,
-        have hax2b2 : a ≤ n / 2, { linarith only [hax2b] },
+        rw hb1 at hax2b,
+        have hax2b2 : b + 1 ≤ (n + parity) / 2, { linarith only [hax2b] },
         rw nat.le_div_iff_mul_le _ _ (show 2 > 0, by norm_num) at hax2b2,
-        linarith only [hage, hax2b2] },
+        interval_cases parity; linarith only [hage, hax2b2] },
       have hny : ¬ a ∈ y,
       { intro hay,
         have hay2 := mem_of_subset hy hay,
         rw Ico.mem at hay2,
         cases hay2 with hay2a hay2b,
-        conv at hay2b
-        begin
-          to_rhs,
-          congr,
-          rw add_zero,
-        end,
-        have hay2b2 : a ≤ n / 2, { linarith only [hay2b] },
+        rw hb1 at hay2b,
+        have hay2b2 : b + 1 ≤ (n + parity) / 2, { linarith only [hay2b] },
         rw nat.le_div_iff_mul_le _ _ (show 2 > 0, by norm_num) at hay2b2,
-        linarith only [hage, hay2b2] },
+        interval_cases parity; linarith only [hage, hay2b2] },
       tauto } }
 end
 
--- The following argument relies on the side of the grid being odd;
--- for a grid with even side, the numbers of row colourings
--- alternating at each parity would not be equal.
-
--- Reverse the order of a row colouring.
-def reverse_row_colouring {n : ℕ} (c : row_colouring (n + 1)) : row_colouring (n + 1) :=
-finset.univ.filter (λ p : row (n + 1), ((n - (p : ℕ) : ℕ) : fin (n + 1)) ∈ c)
-
--- Reversing twice produces the original row colouring.
-theorem reverse_row_colouring_involutive (n : ℕ) :
-  function.involutive (@reverse_row_colouring n) :=
+theorem result_0 (n : ℕ) : card (row_alt_colourings_0 n) = 2 ^ (n / 2 + 1) :=
 begin
-  intro c,
-  unfold reverse_row_colouring,
-  ext,
-  erw [mem_filter, mem_filter],
-  have hlt : n - (a : ℕ) < n + 1, { linarith [nat.sub_le n (a : ℕ)] },
-  rw fin.coe_coe_of_lt hlt,
-  rw nat.sub_sub_assoc (show n ≤ n, by refl),
-  { rw [nat.sub_self, zero_add, fin.coe_coe_eq_self a],
-    simp },
-  { rw fin.coe_eq_val,
-    linarith [a.is_lt] }
-end
-
--- And reversing is thus bijective.
-theorem reverse_row_colouring_bijective (n : ℕ) :
-  function.bijective (@reverse_row_colouring n) :=
-function.involutive.bijective (reverse_row_colouring_involutive n)
-
--- And the composition is the identity.
-theorem reverse_row_colouring_twice_id (n : ℕ) :
-  (@reverse_row_colouring n) ∘ (@reverse_row_colouring n) = id :=
-begin
-  rw ←function.involutive_iff_iter_2_eq_id.elim_left (reverse_row_colouring_involutive n),
+  rw [row_alt_colourings_0_eq, result_parity _ _ (show 0 < 2, by norm_num)],
   refl
 end
 
--- And the composition is the identity, variant form.
-theorem reverse_row_colouring_twice_id' {n : ℕ} (c : row_colouring (n + 1)) :
-  reverse_row_colouring (reverse_row_colouring c) = c :=
+theorem result_1 (n : ℕ) : card (row_alt_colourings_1 n) = 2 ^ ((n + 1) / 2 + 1) :=
 begin
-  change (reverse_row_colouring ∘ reverse_row_colouring) c = c,
-  rw reverse_row_colouring_twice_id,
-  refl
-end
-
--- Row colourings alternating at odd parity are the reverse of those
--- alternating at even parity.  This requires an odd side at least 3;
--- the "at least 3" requirement is not essential.
-theorem row_alt_colourings_1_eq_reverse_row_alt_colourings_0 (n : ℕ) :
-  row_alt_colourings_1 (2 * (n + 1)) =
-    image reverse_row_colouring (row_alt_colourings_0 (2 * (n + 1))) :=
-begin
-  ext c,
-  split,
-  { intro hc1,
-    rw mem_image,
-    use reverse_row_colouring c,
-    rw reverse_row_colouring_twice_id',
-    split,
-    { unfold row_alt_colourings_1 at hc1,
-      rw mem_filter at hc1,
-      cases hc1 with hc1u hc1,
-      unfold row_alt_colourings_0,
-      rw mem_filter,
-      split,
-      { exact mem_univ _ },
-      { intros k hk hpar,
-        unfold reverse_row_colouring,
-        erw [mem_filter, mem_filter],
-        rw [fin.coe_coe_of_lt (show k < 2 * (n + 1) + 1, by linarith only [hk]),
-            fin.coe_coe_of_lt (show k + 1 < 2 * (n + 1) + 1, by linarith only [hk]),
-            add_comm k 1, ←nat.sub_sub (2 * (n + 1)) 1 k],
-        norm_num,
-        rw [iff.comm, not_iff_comm, iff.comm],
-        convert hc1 (2 * n + 1 - k) _ _,
-        { rw [(show (2 * (n + 1)) = 1 + (2 * n + 1), by ring),
-              nat.add_sub_assoc (show k ≤ 2 * n + 1, by linarith only [hk]), add_comm] },
-        { linarith only [nat.sub_le (2 * n + 1) k] },
-        { rw [←nat.not_even_iff, nat.even_sub (show k ≤ (2 * n + 1), by linarith only [hk]),
-              nat.even_iff, nat.even_iff, add_comm],
-          norm_num,
-          exact hpar } } },
-    { refl } },
-  { intro hc0,
-    rw mem_image at hc0,
-    rcases hc0 with ⟨c0, hc0, hcr⟩,
-    rw ←hcr,
-    unfold row_alt_colourings_0 at hc0,
-    rw mem_filter at hc0,
-    cases hc0 with hc0u hc0,
-    unfold row_alt_colourings_1,
-    rw mem_filter,
-    split,
-    { exact mem_univ _ },
-    { intros k hk hpar,
-      unfold reverse_row_colouring,
-      erw [mem_filter, mem_filter],
-      rw [fin.coe_coe_of_lt (show k < 2 * (n + 1) + 1, by linarith only [hk]),
-          fin.coe_coe_of_lt (show k + 1 < 2 * (n + 1) + 1, by linarith only [hk]), add_comm k 1,
-          ←nat.sub_sub (2 * (n + 1)) 1 k],
-      norm_num,
-      rw [iff.comm, not_iff_comm, iff.comm],
-      convert hc0 (2 * n + 1 - k) _ _,
-      { rw [(show (2 * (n + 1)) = 1 + (2 * n + 1), by ring),
-            nat.add_sub_assoc (show k ≤ 2 * n + 1, by linarith only [hk]), add_comm] },
-      { linarith only [nat.sub_le (2 * n + 1) k] },
-      { rw [←nat.even_iff, nat.even_sub (show k ≤ (2 * n + 1), by linarith only [hk]),
-            nat.even_iff, nat.even_iff, add_comm],
-        norm_num,
-        exact hpar } } }
-end
-
-theorem result_1 (n : ℕ) : card (row_alt_colourings_1 (2 * (n + 1))) = 2 ^ (n + 2) :=
-begin
-  conv
-  begin
-    to_rhs,
-    rw [(show n + 2 = n + 1 + 1, by ring),
-        ←nat.mul_div_right (n + 1) (show 2 > 0, by norm_num)],
-  end,
-  rw [←result_0, row_alt_colourings_1_eq_reverse_row_alt_colourings_0,
-      card_image_of_injective _ (reverse_row_colouring_bijective (2 * (n + 1))).1]
+  rw [row_alt_colourings_1_eq, result_parity _ _ (show 1 < 2, by norm_num)]
 end
 
 -- The colour of individual cells in a row_cols_alternate colouring.
@@ -3317,21 +3202,19 @@ begin
       cc } }
 end
 
--- The result of the problem, for 2n + 3 (and in a slightly odd form
+-- The result of the problem, for n + 1 (and in a slightly odd form
 -- because of Lean's ℕ subtraction).
-theorem p3_result_2n3 (n : ℕ) : finset.card (balanced_colourings (2 * (n + 1) + 1)) =
-  2 ^ (n + 4) - 8 + 2 :=
+theorem p3_result_n1 (n : ℕ) : finset.card (balanced_colourings (n + 1)) =
+  2 ^ (n / 2 + 2) + 2 ^ ((n + 1) / 2 + 2) - 8 + 2 :=
 begin
-  rw [card_split_2_parity, result_0, nat.mul_div_right (n + 1) (show 2 > 0, by norm_num),
-      result_1, result_01,
-      (show 2 ^ (n + 1 + 1) = 2 ^ (n + 2), by ring), mul_comm 2 _,
-      (show 2 ^ (n + 2) * 2 = 2 ^ (n + 2 + 1), by refl), ←mul_two],
+  rw [card_split_2_parity, result_0, result_1, result_01,
+      mul_comm 2 _, mul_comm 2 _],
   ring
 end
 
 -- The result of the problem, for 2019.
 theorem p3_result : finset.card (balanced_colourings 2019) = 2 ^ 1012 - 6 :=
 begin
-  rw [(show 2019 = 2 * (1008 + 1) + 1, by norm_num), p3_result_2n3],
+  rw [(show 2019 = 2018 + 1, by norm_num), p3_result_n1],
   norm_num
 end
