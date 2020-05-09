@@ -13,7 +13,7 @@ begin
   intro h,
   have hm : ∀ m : ℝ, set.countable (set.Ico m (m + 1)),
   { intro m,
-    convert set.countable_image (λ x : ℝ, m + x) h,
+    convert set.countable.image h (λ x : ℝ, m + x),
     ext,
     split,
     { intro h,
@@ -81,7 +81,7 @@ begin
         { linarith } } } },
   apply not_countable_real_Ico_0_1,
   rw hu,
-  apply set.countable_union h,
+  apply set.countable.union h,
   exact set.countable_singleton 0,
 end
 
@@ -91,7 +91,7 @@ lemma not_countable_real_Ioo {k1 k2 : ℝ} (h : k1 < k2) :
 begin
   intro h,
   apply not_countable_real_Ioo_0_1,
-  convert set.countable_image (λ x, (x - k1) / (k2 - k1)) h,
+  convert set.countable.image h (λ x, (x - k1) / (k2 - k1)),
   ext,
   split,
   { intro hx,

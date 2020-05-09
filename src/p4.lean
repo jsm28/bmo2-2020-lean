@@ -462,7 +462,7 @@ begin
   cases p4_finset_zero n with fs hfs,
   use (↑fs),
   split,
-  { apply set.countable_finite,
+  { apply set.finite.countable,
     exact finset.finite_to_set fs },
   { intro k,
     intro h,
@@ -517,7 +517,7 @@ begin
   have hns : ¬ set.Ioo k1 k2 ⊆ p4_countable_zero_set,
   { intro hsub,
     exact not_countable_real_Ioo h
-      (set.countable_subset hsub p4_countable_zero_set_prop.left) },
+      (set.countable.mono hsub p4_countable_zero_set_prop.left) },
   rw set.not_subset at hns,
   cases hns with k hk,
   cases hk with hk1 hk2,
