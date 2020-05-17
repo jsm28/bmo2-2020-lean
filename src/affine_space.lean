@@ -21,12 +21,13 @@ This file is very minimal and many things are surely omitted. Most
 results can be deduced from corresponding results for vector spaces.
 It may be appropriate to refactor in future as a special case of
 torsors of additive group actions (currently mathlib only has
-multiplicative group actions).  The variables `k` and `V` are explicit
-rather than implicit arguments to lemmas because otherwise the
-elaborator has problems inferring appropriate types and type class
-instances.  Definitions of affine spaces vary as to whether a space
-with no points is permitted; here, we require a nonempty type of
-points.
+multiplicative group actions); although called `affine_space`, the
+definition is actually one of torsors of additive commutative group
+actions.  The variables `k` and `V` are explicit rather than implicit
+arguments to lemmas because otherwise the elaborator has problems
+inferring appropriate types and type class instances.  Definitions of
+affine spaces vary as to whether a space with no points is permitted;
+here, we require a nonempty type of points.
 
 ## References
 
