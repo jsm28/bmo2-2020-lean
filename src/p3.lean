@@ -1177,7 +1177,7 @@ end
 theorem colouring_of_row_colouring_injective (n : ℕ) :
   function.injective (@colouring_of_row_colouring (n + 1)) :=
 begin
-  apply function.injective_of_has_left_inverse,
+  apply function.has_left_inverse.injective,
   use row_colouring_of_colouring,
   intro c,
   unfold colouring_of_row_colouring row_colouring_of_colouring,
