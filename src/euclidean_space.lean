@@ -203,11 +203,29 @@ begin
   norm_num
 end
 
+/-- Pythagorean theorem, subtracting vectors, if-and-only-if vector
+inner product form. -/
+lemma norm_sub_square_eq_norm_square_add_norm_square_iff_inner_eq_zero (x y : V) :
+  ∥x - y∥ * ∥x - y∥ = ∥x∥ * ∥x∥ + ∥y∥ * ∥y∥ ↔ inner x y = 0 :=
+begin
+  rw [norm_sub_mul_self, add_right_cancel_iff, sub_eq_add_neg, add_right_eq_self, neg_eq_zero,
+      mul_eq_zero],
+  norm_num
+end
+
 /-- Pythagorean theorem, if-and-only-if vector angle form. -/
 lemma norm_add_square_eq_norm_square_add_norm_square_iff_angle_eq_pi_div_two (x y : V) :
   ∥x + y∥ * ∥x + y∥ = ∥x∥ * ∥x∥ + ∥y∥ * ∥y∥ ↔ angle_of_vectors x y = real.pi / 2 :=
 begin
   rw norm_add_square_eq_norm_square_add_norm_square_iff_inner_eq_zero,
+  exact inner_eq_zero_iff_angle_eq_pi_div_two x y
+end
+
+/-- Pythagorean theorem, subtracting vectors, if-and-only-if vector angle form. -/
+lemma norm_sub_square_eq_norm_square_add_norm_square_iff_angle_eq_pi_div_two (x y : V) :
+  ∥x - y∥ * ∥x - y∥ = ∥x∥ * ∥x∥ + ∥y∥ * ∥y∥ ↔ angle_of_vectors x y = real.pi / 2 :=
+begin
+  rw norm_sub_square_eq_norm_square_add_norm_square_iff_inner_eq_zero,
   exact inner_eq_zero_iff_angle_eq_pi_div_two x y
 end
 
@@ -243,13 +261,13 @@ instance euclidean_affine_space_is_metric_space : metric_space P :=
   dist_triangle := begin
     intros x y z,
     rw [euclidean_dist V x y, euclidean_dist V y z, euclidean_dist V x z],
-    rw ←affine_space.vadd_vsub_vsub_cancel ℝ V x y z,
+    rw ←affine_space.add_vsub_vsub_cancel ℝ V x y z,
     apply norm_add_le
   end }
 
 /-- The undirected angle at `p2` between the line segments to `p1` and
 `p3`. -/
-def angle_of_points (p1 p2 p3 : P) : ℝ := angle_of_vectors (p2 -ᵥ p1 : V) (p3 -ᵥ p1)
+def angle_of_points (p1 p2 p3 : P) : ℝ := angle_of_vectors (p1 -ᵥ p2 : V) (p3 -ᵥ p2)
 
 notation `∠` := angle_of_points
 
@@ -260,5 +278,15 @@ angle_of_vectors_nonneg _ _
 /-- The angle at a point is at most π. -/
 lemma angle_of_points_le_pi (p1 p2 p3 : P) : ∠ V p1 p2 p3 ≤ real.pi :=
 angle_of_vectors_le_pi _ _
+
+/-- Pythagorean theorem, if-and-only-if angle-at-point form. -/
+lemma dist_square_eq_dist_square_add_dist_square_iff_angle_eq_pi_div_two (p1 p2 p3 : P) :
+  dist p1 p3 * dist p1 p3 = dist p1 p2 * dist p1 p2 + dist p3 p2 * dist p3 p2 ↔
+    ∠ V p1 p2 p3 = real.pi / 2 :=
+by erw [metric_space.dist_comm p3 p2, euclidean_dist V p1 p3, euclidean_dist V p1 p2,
+        euclidean_dist V p2 p3,
+        ←norm_sub_square_eq_norm_square_add_norm_square_iff_angle_eq_pi_div_two,
+        affine_space.sub_vsub_vsub_cancel ℝ V p1, affine_space.vsub_rev_eq_neg_vsub ℝ V p2 p3,
+        norm_neg]
 
 end euclidean

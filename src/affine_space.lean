@@ -162,11 +162,17 @@ begin
 end
 
 /-- Cancellation adding the results of two subtractions. -/
-@[simp] lemma vadd_vsub_vsub_cancel (p1 p2 p3 : P) : (p1 -ᵥ p2 : V) + (p2 -ᵥ p3) = (p1 -ᵥ p3) :=
+@[simp] lemma add_vsub_vsub_cancel (p1 p2 p3 : P) : (p1 -ᵥ p2 : V) + (p2 -ᵥ p3) = (p1 -ᵥ p3) :=
 begin
   apply vadd_cancel_left k V p3,
   rw [add_comm, ←vadd_add_assoc k V p3, vadd_vsub_self k V p3, vadd_vsub_self k V p2,
       vadd_vsub_self k V p3]
+end
+
+/-- Cancellation subtracting the results of two subtractions. -/
+@[simp] lemma sub_vsub_vsub_cancel (p1 p2 p3 : P) : (p1 -ᵥ p3 : V) - (p2 -ᵥ p3) = (p1 -ᵥ p2) :=
+begin
+  rw [←vsub_vadd_eq_vsub_sub k V p1 p3, vadd_vsub_self k V p3]
 end
 
 /-- The pairwise differences of a set of points. -/
