@@ -319,3 +319,32 @@ def affine_span (k : Type*) (V : Type*) (P : Type*) [field k] [add_comm_group V]
   nonempty := span_points_nonempty_of_nonempty k V h,
   add := λ p v hp hv, vadd_mem_span_points_of_mem_span_points_of_mem_vector_span k V hp hv,
   sub := λ p1 p2 hp1 hp2, vsub_mem_vector_span_of_mem_span_points_of_mem_span_points k V hp1 hp2 }
+
+section affine_map
+
+variables  (k : Type*) (V1 : Type*) (P1 : Type*) (V2 : Type*) (P2 : Type*)
+    (V3 : Type*) (P3 : Type*) [field k]
+    [add_comm_group V1] [vector_space k V1] [nonempty P1] [has_vadd V1 P1] [affine_space k V1 P1]
+    [add_comm_group V2] [vector_space k V2] [nonempty P2] [has_vadd V2 P2] [affine_space k V2 P2]
+    [add_comm_group V3] [vector_space k V3] [nonempty P3] [has_vadd V3 P3] [affine_space k V3 P3]
+
+/-- An `affine_map k V1 P1 V2 P2` is a map from `P1` to `P2` that
+induces a corresponding linear map from `V1` to `V2`. -/
+structure affine_map :=
+(to_fun : P1 → P2)
+(linear : linear_map k V1 V2)
+(add : ∀ (p : P1) (v : V1), to_fun (p +ᵥ v) = to_fun p +ᵥ linear.to_fun v)
+
+/-- Composition of affine maps. -/
+def affine_map.comp (f : affine_map k V2 P2 V3 P3) (g : affine_map k V1 P1 V2 P2)
+  : affine_map k V1 P1 V3 P3 :=
+{ to_fun := f.to_fun ∘ g.to_fun,
+  linear := f.linear.comp g.linear,
+  add := begin
+    intros p v,
+    rw [function.comp_app, g.add, f.add],
+    refl
+  end
+}
+
+end affine_map
