@@ -112,7 +112,8 @@ begin
     rw [abs_mul, abs_of_nonneg (norm_nonneg x), abs_of_nonneg (norm_nonneg y), mul_one] }
 end
 
-/-- The undirected angle between two vectors. -/
+/-- The undirected angle between two vectors. If either vector is 0,
+this is π/2. -/
 def angle_of_vectors (x y : V) : ℝ := (inner x y / (∥x∥ * ∥y∥)).arccos
 
 /-- The angle between two vectors is nonnegative. -/
@@ -238,7 +239,7 @@ variables (V : Type*) {P : Type*} [inner_product_space V] [nonempty P] [has_dist
 include V
 
 /-- The undirected angle at `p2` between the line segments to `p1` and
-`p3`. -/
+`p3`. If either of those points equals `p2`, this is π/2. -/
 def angle_of_points (p1 p2 p3 : P) : ℝ := angle_of_vectors (p1 -ᵥ p2 : V) (p3 -ᵥ p2)
 
 notation `∠` := angle_of_points
