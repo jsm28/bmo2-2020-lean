@@ -1,6 +1,6 @@
 import algebra.big_operators
 import analysis.normed_space.real_inner_product
-import affine_space
+import normed_add_comm_torsor
 
 noncomputable theory
 open_locale big_operators
@@ -8,7 +8,7 @@ open_locale big_operators
 /-!
 # Euclidean spaces
 
-This file defines normed and Euclidean affine spaces.
+This file defines Euclidean affine spaces.
 
 ## Implementation notes
 
@@ -22,61 +22,10 @@ theorems that need it.
 
 -/
 
-/-- A `normed_affine_space V P` is an affine space (actually a torsor
-of an additive group action) with points `P` over a `normed_group
-V`. We bundle the distance and require it to be the same as results
-from the norm. -/
-class normed_affine_space (V : Type*) (P : Type*) [normed_group V] [nonempty P]
-    [has_dist P] extends affine_space V P :=
-(dist_eq_norm_vsub : ∀ (x y : P), dist x y = ∥(x -ᵥ y : V)∥)
-
-/-- The distance equals the norm of subtracting two points. This lemma
-is needed to make V an explicit rather than implicit argument. -/
-lemma norm_dist (V : Type*) {P : Type*} [normed_group V] [nonempty P] [has_dist P]
-    [normed_affine_space V P] (x y : P) :
-  dist x y = ∥(x -ᵥ y : V)∥ :=
-normed_affine_space.dist_eq_norm_vsub x y
-
-section normed
-
-variables (V : Type*) {P : Type*} [inner_product_space V] [nonempty P] [has_dist P]
-    [normed_affine_space V P]
-include V
-
-/-- If the underlying vector space is a normed space, this defines a
-metric space structure on the affine space. -/
-instance normed_affine_space_is_metric_space : metric_space P :=
-{ dist_self := begin
-    intro p,
-    rw norm_dist V p p,
-    rw [affine_space.vsub_self V p, norm_zero]
-  end,
-  eq_of_dist_eq_zero := begin
-    intros p1 p2 h,
-    rw norm_dist V p1 p2 at h,
-    rw norm_eq_zero at h,
-    exact affine_space.eq_of_vsub_eq_zero V h
-  end,
-  dist_comm := begin
-    intros x y,
-    rw [norm_dist V x y, norm_dist V y x],
-    convert norm_neg (y -ᵥ x),
-    exact affine_space.vsub_rev_eq_neg_vsub V y x
-  end,
-  dist_triangle := begin
-    intros x y z,
-    rw [norm_dist V x y, norm_dist V y z, norm_dist V x z],
-    rw ←affine_space.add_vsub_vsub_cancel V x y z,
-    apply norm_add_le
-  end }
-
-end normed
-
 /-- A `euclidean_affine_space V P` is an affine space with points `P`
-over an `inner_product_space V`. We bundle the distance and require
-it to be the same as results from the inner product. -/
+over an `inner_product_space V`. -/
 class euclidean_affine_space (V : Type*) (P : Type*) [inner_product_space V] [nonempty P]
-    [has_dist P] extends normed_affine_space V P
+    [has_dist P] extends normed_add_comm_torsor V P
 
 /-- The standard Euclidean space, fin n → ℝ. -/
 instance standard_euclidean_space_is_vector_space (n : ℕ) : vector_space ℝ (fin n → ℝ) :=
@@ -295,7 +244,7 @@ lemma dist_square_eq_dist_square_add_dist_square_iff_angle_eq_pi_div_two (p1 p2 
     ∠ V p1 p2 p3 = real.pi / 2 :=
 by erw [metric_space.dist_comm p3 p2, norm_dist V p1 p3, norm_dist V p1 p2, norm_dist V p2 p3,
         ←norm_sub_square_eq_norm_square_add_norm_square_iff_angle_eq_pi_div_two,
-        affine_space.sub_vsub_vsub_cancel V p1, affine_space.vsub_rev_eq_neg_vsub V p2 p3,
+        add_comm_torsor.sub_vsub_vsub_cancel V p1, add_comm_torsor.vsub_rev_eq_neg_vsub V p2 p3,
         norm_neg]
 
 end euclidean
