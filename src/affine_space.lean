@@ -31,6 +31,7 @@ points.
 ## References
 
 * https://en.wikipedia.org/wiki/Affine_space
+* https://en.wikipedia.org/wiki/Principal_homogeneous_space
 
 -/
 
@@ -39,34 +40,28 @@ class has_vadd (V : Type*) (P : Type*) :=
 (vadd : P → V → P)
 (vsub : P → P → V)
 
-/-- Addition of a vector to a point, yielding a point. -/
-def vadd {V : Type*} {P : Type*} [has_vadd V P] : P → V → P := has_vadd.vadd
+infix `+ᵥ`:65 := has_vadd.vadd
+infix `-ᵥ`:65 := has_vadd.vsub
 
-/-- Subtraction of two points, yielding a vector. -/
-def vsub {V : Type*} {P : Type*} [has_vadd V P] : P → P → V := has_vadd.vsub
-
-infix `+ᵥ`:65 := vadd
-infix `-ᵥ`:65 := vsub
-
-/-- An `affine_space k V P` gives an affine space structure to the
-nonempty type `P`, acted on by a `vector_space k V` with a transitive
-and free action given by the `+ᵥ` operation and a corresponding
-subtraction given by the `-ᵥ` operation. (The result of adding a zero
-vector does not need to be included here because it is deduced below
-from the other axioms for an affine space.) -/
-class affine_space (k : Type*) (V : Type*) (P : Type*) [field k] [add_comm_group V]
-    [vector_space k V] [nonempty P] [has_vadd V P] :=
+/-- An `affine_space V P` gives a structure to the nonempty type `P`,
+acted on by an `add_comm_group V` with a transitive and free action
+given by the `+ᵥ` operation and a corresponding subtraction given by
+the `-ᵥ` operation. In general this is a torsor for the additive group
+action; in the case of a vector space, it is an affine space.  (The
+result of adding a zero vector does not need to be included here
+because it is deduced below from the other axioms.) -/
+class affine_space (V : Type*) (P : Type*) [add_comm_group V] [nonempty P]
+    extends has_vadd V P :=
 (vadd_assoc : ∀ (p : P) (v1 v2 : V), p +ᵥ v1 +ᵥ v2 = p +ᵥ (v1 + v2))
 (vadd_vsub : ∀ (p1 p2 : P), p1 +ᵥ (p2 -ᵥ p1 : V) = p2)
 (vsub_vadd : ∀ (p : P) (v : V), p +ᵥ v -ᵥ p = v)
 
-/-- A vector space is an affine space over itself. -/
-instance vector_space_has_vadd (k : Type*) (V : Type*) [field k] [add_comm_group V]
-    [vector_space k V] : has_vadd V V :=
+/-- An `add_comm_group V` is an affine space over itself. -/
+instance add_comm_group_has_vadd (V : Type*) [add_comm_group V] : has_vadd V V :=
 { vadd := has_add.add,
   vsub := has_sub.sub }
-instance vector_space_is_affine_space (k : Type*) (V : Type*) [field k] [nonempty V]
-  [add_comm_group V] [vector_space k V] : affine_space k V V :=
+instance add_comm_group_is_affine_space (V : Type*) [nonempty V] [add_comm_group V] :
+  affine_space V V :=
 { vadd_assoc := add_assoc,
   vadd_vsub := λ a b, add_eq_of_eq_sub' rfl,
   vsub_vadd := add_sub_cancel' }
@@ -74,41 +69,41 @@ instance vector_space_is_affine_space (k : Type*) (V : Type*) [field k] [nonempt
 namespace affine_space
 
 variables (k : Type*) (V : Type*) {P : Type*} [field k] [add_comm_group V] [vector_space k V]
-          [nonempty P] [has_vadd V P] [S : affine_space k V P]
+          [nonempty P] [S : affine_space V P]
 include S
 
 /-- Adding two vectors to a point produces the same result as adding
 their sum. -/
 lemma vadd_add_assoc (p : P) (v1 v2 : V) : p +ᵥ v1 +ᵥ v2 = p +ᵥ (v1 + v2) :=
-affine_space.vadd_assoc k p v1 v2
+affine_space.vadd_assoc p v1 v2
 
 /-- Adding the result of subtracting from another point produces that
 point. -/
 @[simp] lemma vadd_vsub_self (p1 p2 : P) : p1 +ᵥ (p2 -ᵥ p1 : V) = p2 :=
-affine_space.vadd_vsub k p1 p2
+affine_space.vadd_vsub p1 p2
 
 /-- Adding a vector then subtracting the original point produces that
 vector. -/
 @[simp] lemma vsub_vadd_self (p : P) (v : V) : p +ᵥ v -ᵥ p = v :=
-affine_space.vsub_vadd k p v
+affine_space.vsub_vadd p v
 
 /-- Adding two vectors to a point produces the same result in either
 order. -/
 lemma vadd_comm (p : P) (v1 v2 : V) : p +ᵥ v1 +ᵥ v2 = p +ᵥ v2 +ᵥ v1 :=
-by rw [vadd_add_assoc k V p v1 v2, vadd_add_assoc k V p v2 v1, add_comm]
+by rw [vadd_add_assoc V p v1 v2, vadd_add_assoc V p v2 v1, add_comm]
 
 /-- If the same point added to two vectors produces equal results,
 those vectors are equal. -/
 lemma vadd_cancel_left (p : P) (v1 v2 : V) (h : p +ᵥ v1 = p +ᵥ v2) : v1 = v2 :=
-by rw [←vsub_vadd_self k V p v1, h, vsub_vadd_self k V p v2]
+by rw [←vsub_vadd_self V p v1, h, vsub_vadd_self V p v2]
 
 /-- Adding the zero vector to a point gives the same point. -/
 @[simp] lemma vadd_zero (p : P) : p +ᵥ (0 : V) = p :=
 begin
   have h : p +ᵥ (0 : V) +ᵥ (0 : V) +ᵥ (p -ᵥ (p +ᵥ (0 : V))) = p +ᵥ (0 : V) +ᵥ (p -ᵥ (p +ᵥ (0 : V))),
-  { rw [vadd_add_assoc k V p (0 : V) (0 : V), add_zero] },
-  rwa [vadd_vsub_self k V (p +ᵥ (0 : V)), vadd_comm k V (p +ᵥ (0 : V)),
-       vadd_vsub_self k V (p +ᵥ (0 : V))] at h
+  { rw [vadd_add_assoc V p (0 : V) (0 : V), add_zero] },
+  rwa [vadd_vsub_self V (p +ᵥ (0 : V)), vadd_comm V (p +ᵥ (0 : V)),
+       vadd_vsub_self V (p +ᵥ (0 : V))] at h
 end
 
 /-- Adding a vector to a point, then subtracting another point,
@@ -116,31 +111,31 @@ produces the same result as subtracting the points then adding the
 vector. -/
 lemma vadd_vsub_comm (p1 p2 : P) (v : V) : p1 +ᵥ v -ᵥ p2 = (p1 -ᵥ p2) + v :=
 begin
-  apply vadd_cancel_left k V p2,
-  rw [vadd_vsub_self k V p2, ←vadd_add_assoc k V p2, vadd_vsub_self k V p2]
+  apply vadd_cancel_left V p2,
+  rw [vadd_vsub_self V p2, ←vadd_add_assoc V p2, vadd_vsub_self V p2]
 end
 
 /-- Subtracting the result of adding a vector produces the same result
 as subtracting the points and subtracting that vector. -/
 lemma vsub_vadd_eq_vsub_sub (p1 p2 : P) (v : V) : p1 -ᵥ (p2 +ᵥ v) = (p1 -ᵥ p2) - v :=
 begin
-  apply vadd_cancel_left k V (p2 +ᵥ v),
-  rw [vadd_vsub_self k V (p2 +ᵥ v), vadd_comm k V p2, vadd_add_assoc k V p2, sub_add_cancel,
-      vadd_vsub_self k V p2]
+  apply vadd_cancel_left V (p2 +ᵥ v),
+  rw [vadd_vsub_self V (p2 +ᵥ v), vadd_comm V p2, vadd_add_assoc V p2, sub_add_cancel,
+      vadd_vsub_self V p2]
 end
 
 /-- Subtracting a point from itself produces 0. -/
 @[simp] lemma vsub_self (p : P) : p -ᵥ p = (0 : V) :=
-by rw [←add_zero (p -ᵥ p : V), ←vadd_vsub_comm k V p, vsub_vadd_self k V p]
+by rw [←add_zero (p -ᵥ p : V), ←vadd_vsub_comm V p, vsub_vadd_self V p]
 
 /-- If subtracting two points produces 0, they are equal. -/
 lemma eq_of_vsub_eq_zero {p1 p2 : P} (h : p1 -ᵥ p2 = (0 : V)) : p1 = p2 :=
-by rw [←vadd_vsub_self k V p2 p1, h, vadd_zero k V p2]
+by rw [←vadd_vsub_self V p2 p1, h, vadd_zero V p2]
 
 /-- Subtracting two points produces 0 if and only if they are
 equal. -/
 lemma vsub_eq_zero_iff_eq (p1 p2 : P) : p1 -ᵥ p2 = (0 : V) ↔ p1 = p2 :=
-iff.intro (eq_of_vsub_eq_zero k V) (λ h, h ▸ vsub_self k V _)
+iff.intro (eq_of_vsub_eq_zero V) (λ h, h ▸ vsub_self V _)
 
 /-- Subtracting two points in the reverse order produces the negation
 of subtracting them. -/
@@ -148,8 +143,8 @@ lemma vsub_rev_eq_neg_vsub (p1 p2 : P) : (p2 -ᵥ p1 : V) = -(p1 -ᵥ p2) :=
 begin
   symmetry,
   apply neg_eq_of_add_eq_zero,
-  apply vadd_cancel_left k V p2,
-  rw [vadd_zero k V p2, ←vadd_add_assoc k V p2, vadd_vsub_self k V p2, vadd_vsub_self k V p1]
+  apply vadd_cancel_left V p2,
+  rw [vadd_zero V p2, ←vadd_add_assoc V p2, vadd_vsub_self V p2, vadd_vsub_self V p1]
 end
 
 /-- If the same vector added to two points produces equal results,
@@ -157,22 +152,22 @@ those points are equal. -/
 lemma vadd_cancel_right (p1 p2 : P) (v : V) (h : p1 +ᵥ v = p2 +ᵥ v) : p1 = p2 :=
 begin
   have h2 : p1 +ᵥ v +ᵥ -v = p2 +ᵥ v +ᵥ -v, { rw h },
-  rwa [vadd_add_assoc k V p1 v (-v), vadd_add_assoc k V p2 v (-v), add_right_neg,
-      vadd_zero k V p1, vadd_zero k V p2] at h2
+  rwa [vadd_add_assoc V p1 v (-v), vadd_add_assoc V p2 v (-v), add_right_neg,
+      vadd_zero V p1, vadd_zero V p2] at h2
 end
 
 /-- Cancellation adding the results of two subtractions. -/
 @[simp] lemma add_vsub_vsub_cancel (p1 p2 p3 : P) : (p1 -ᵥ p2 : V) + (p2 -ᵥ p3) = (p1 -ᵥ p3) :=
 begin
-  apply vadd_cancel_left k V p3,
-  rw [add_comm, ←vadd_add_assoc k V p3, vadd_vsub_self k V p3, vadd_vsub_self k V p2,
-      vadd_vsub_self k V p3]
+  apply vadd_cancel_left V p3,
+  rw [add_comm, ←vadd_add_assoc V p3, vadd_vsub_self V p3, vadd_vsub_self V p2,
+      vadd_vsub_self V p3]
 end
 
 /-- Cancellation subtracting the results of two subtractions. -/
 @[simp] lemma sub_vsub_vsub_cancel (p1 p2 p3 : P) : (p1 -ᵥ p3 : V) - (p2 -ᵥ p3) = (p1 -ᵥ p2) :=
 begin
-  rw [←vsub_vadd_eq_vsub_sub k V p1 p3, vadd_vsub_self k V p3]
+  rw [←vsub_vadd_eq_vsub_sub V p1 p3, vadd_vsub_self V p3]
 end
 
 /-- The pairwise differences of a set of points. -/
@@ -180,7 +175,7 @@ def vsub_set (s : set P) : set V := ⋃₀((λ p1 : P, (λ p2 : P, p1 -ᵥ p2) '
 
 /-- The vector subspace spanning the differences of a (possibly empty)
 set of points. -/
-def vector_span (s : set P) : subspace k V := submodule.span k (vsub_set k V s)
+def vector_span (s : set P) : subspace k V := submodule.span k (vsub_set V s)
 
 /-- The points in the affine span of a (possibly empty) set of
 points. -/
@@ -201,7 +196,7 @@ begin
   use hp,
   rw set.mem_image,
   use 0,
-  exact and.intro (submodule.zero _) (vadd_zero k V p)
+  exact and.intro (submodule.zero _) (vadd_zero V p)
 end
 
 /-- Adding a point in the affine span and a vector in the spanning
@@ -216,7 +211,7 @@ begin
   cases hp2 with hp2 hp3,
   rw set.mem_image at hp3,
   rcases hp3 with ⟨v2, ⟨hv2, hv2p⟩⟩,
-  rw [←hv2p, vadd_add_assoc k V p2],
+  rw [←hv2p, vadd_add_assoc V p2],
   unfold span_points,
   rw [set.sUnion_image, set.mem_Union],
   use p2,
@@ -243,7 +238,7 @@ begin
   rw set.mem_image at hp1b hp2b,
   rcases hp1b with ⟨v1, ⟨hv1, hv1p⟩⟩,
   rcases hp2b with ⟨v2, ⟨hv2, hv2p⟩⟩,
-  rw [←hv1p, ←hv2p, vsub_vadd_eq_vsub_sub k V (p1a +ᵥ v1), vadd_vsub_comm k V p1a,
+  rw [←hv1p, ←hv2p, vsub_vadd_eq_vsub_sub V (p1a +ᵥ v1), vadd_vsub_comm V p1a,
       add_sub_assoc],
   have hv1v2 : v1 - v2 ∈ (vector_span k V s).carrier,
   { apply (vector_span k V s).add hv1,
@@ -251,8 +246,8 @@ begin
     exact (vector_span k V s).smul (-1 : k) hv2 },
   refine (vector_span k V s).add _ hv1v2,
   unfold vector_span,
-  change p1a -ᵥ p2a ∈ submodule.span k (vsub_set k V s),
-  have hp1p2 : p1a -ᵥ p2a ∈ vsub_set k V s,
+  change p1a -ᵥ p2a ∈ submodule.span k (vsub_set V s),
+  have hp1p2 : p1a -ᵥ p2a ∈ vsub_set V s,
   { unfold vsub_set,
     rw [set.sUnion_image, set.mem_Union],
     use p1a,
@@ -261,7 +256,7 @@ begin
     rw set.mem_image,
     use p2a,
     use hp2a },
-  have hp1p2s : vsub_set k V s ⊆ submodule.span k (vsub_set k V s) := submodule.subset_span,
+  have hp1p2s : vsub_set V s ⊆ submodule.span k (vsub_set V s) := submodule.subset_span,
   apply set.mem_of_mem_of_subset hp1p2 hp1p2s
 end
 
@@ -269,11 +264,11 @@ end affine_space
 
 open affine_space
 
-/-- An `affine_subspace k V P` is a subset of an `affine_space k V P`
+/-- An `affine_subspace k V P` is a subset of an `affine_space V P`
 which has an affine space structure induced by a corresponding
 subspace of the `vector_space k V`. -/
 structure affine_subspace (k : Type*) (V : Type*) (P : Type*) [field k] [add_comm_group V]
-    [vector_space k V] [nonempty P] [has_vadd V P] [affine_space k V P] :=
+    [vector_space k V] [nonempty P] [affine_space V P] :=
 (carrier : set P)
 (direction : subspace k V)
 (nonempty : carrier.nonempty)
@@ -284,7 +279,7 @@ structure affine_subspace (k : Type*) (V : Type*) (P : Type*) [field k] [add_com
 subspace containing those points. (Actually defined here in terms of
 spans in vector spaces.) -/
 def affine_span (k : Type*) (V : Type*) (P : Type*) [field k] [add_comm_group V]
-    [vector_space k V] [nonempty P] [has_vadd V P] [affine_space k V P] (s : set P)
+    [vector_space k V] [nonempty P] [affine_space V P] (s : set P)
     (h : s.nonempty) : affine_subspace k V P :=
 { carrier := span_points k V s,
   direction := vector_span k V s,
@@ -296,9 +291,9 @@ section affine_map
 
 variables  (k : Type*) (V1 : Type*) (P1 : Type*) (V2 : Type*) (P2 : Type*)
     (V3 : Type*) (P3 : Type*) [field k]
-    [add_comm_group V1] [vector_space k V1] [nonempty P1] [has_vadd V1 P1] [affine_space k V1 P1]
-    [add_comm_group V2] [vector_space k V2] [nonempty P2] [has_vadd V2 P2] [affine_space k V2 P2]
-    [add_comm_group V3] [vector_space k V3] [nonempty P3] [has_vadd V3 P3] [affine_space k V3 P3]
+    [add_comm_group V1] [vector_space k V1] [nonempty P1] [affine_space V1 P1]
+    [add_comm_group V2] [vector_space k V2] [nonempty P2] [affine_space V2 P2]
+    [add_comm_group V3] [vector_space k V3] [nonempty P3] [affine_space V3 P3]
 
 /-- An `affine_map k V1 P1 V2 P2` is a map from `P1` to `P2` that
 induces a corresponding linear map from `V1` to `V2`. -/
