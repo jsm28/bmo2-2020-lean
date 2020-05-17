@@ -8,7 +8,13 @@ open_locale big_operators
 /-!
 # Euclidean spaces
 
-This file defines Euclidean vector spaces and affine spaces.
+This file defines Euclidean affine spaces.
+
+## Implementation notes
+
+Rather than requiring Euclidean affine spaces to be finite-dimensional
+(as in the definition on Wikipedia), this is specified only for those
+theorems that need it.
 
 ## References
 
@@ -16,23 +22,19 @@ This file defines Euclidean vector spaces and affine spaces.
 
 -/
 
-/-- A `euclidean_vector_space V` is a finite-dimensional real inner
-product space structure on the vectors `V`. -/
-class euclidean_vector_space (V : Type*) [inner_product_space V] [finite_dimensional ℝ V]
-
 /-- A `euclidean_affine_space V P` is an affine space with points `P`
-over a `euclidean_vector_space V`. We bundle the distance and require
+over an `inner_product_space V`. We bundle the distance and require
 it to be the same as results from the inner product. -/
-class euclidean_affine_space (V : Type*) (P : Type*) [inner_product_space V]
-    [finite_dimensional ℝ V] [euclidean_vector_space V] [nonempty P] [has_dist P] [has_vadd V P]
-    [affine_space ℝ V P] :=
+class euclidean_affine_space (V : Type*) (P : Type*) [inner_product_space V] [nonempty P]
+    [has_dist P] [has_vadd V P] [affine_space ℝ V P] :=
 (dist_eq_norm_vsub : ∀ (x y : P), dist x y = ∥(x -ᵥ y : V)∥)
 
 /-- The distance equals the norm of subtracting two points. This lemma
 is needed to make V an explicit rather than implicit argument. -/
 lemma euclidean_dist (V : Type*) {P : Type*} [inner_product_space V]
-    [finite_dimensional ℝ V] [euclidean_vector_space V] [nonempty P] [has_dist P] [has_vadd V P]
-    [affine_space ℝ V P] [euclidean_affine_space V P] (x y : P) : dist x y = ∥(x -ᵥ y : V)∥ :=
+    [nonempty P] [has_dist P] [has_vadd V P] [affine_space ℝ V P]
+    [euclidean_affine_space V P] (x y : P) :
+  dist x y = ∥(x -ᵥ y : V)∥ :=
 euclidean_affine_space.dist_eq_norm_vsub x y
 
 /-- The standard Euclidean space, fin n → ℝ. -/
@@ -89,11 +91,6 @@ instance standard_euclidean_space_is_inner_product_space (n : ℕ) :
       rw [(show (r • x) i = r * x i, by refl), mul_assoc]
     }
   end }
-instance standard_euclidean_space_finite_dimensional (n : ℕ) :
-  finite_dimensional ℝ (fin n → ℝ) :=
-by apply_instance
-instance standard_euclidean_vector_space (n : ℕ) : euclidean_vector_space (fin n → ℝ) :=
-⟨⟩
 instance standard_euclidean_affine_space_has_dist (n : ℕ) : has_dist (fin n → ℝ) :=
 { dist := λ x y, ∥x - y∥ }
 instance standard_euclidean_affine_space (n : ℕ) :
@@ -233,9 +230,8 @@ end real_inner_product
 
 section euclidean
 
-variables (V : Type*) {P : Type*} [inner_product_space V]
-    [finite_dimensional ℝ V] [euclidean_vector_space V] [nonempty P] [has_dist P] [has_vadd V P]
-    [affine_space ℝ V P] [euclidean_affine_space V P]
+variables (V : Type*) {P : Type*} [inner_product_space V] [nonempty P] [has_dist P]
+    [has_vadd V P] [affine_space ℝ V P] [euclidean_affine_space V P]
 include V
 
 /-- If the underlying vector space is a normed space, this defines a
