@@ -1,6 +1,5 @@
 -- Affine spaces, to the extent needed for some Euclidean geometry.
 
-import analysis.normed_space.basic
 import linear_algebra.basis
 
 noncomputable theory
@@ -263,39 +262,6 @@ end
 end affine_space
 
 open affine_space
-
-/-- If the underlying vector space is a normed space, this defines a
-metric space structure on the affine space. -/
-instance affine_space_has_dist (k : Type*) (V : Type*) (P : Type*) [normed_field k]
-    [normed_group V] [normed_space k V] [nonempty P] [has_vadd V P] [affine_space k V P] :
-  has_dist P :=
-{ dist := λ x y, ∥(x -ᵥ y : V)∥ }
-instance affine_space_is_metric_space (k : Type*) (V : Type*) (P : Type*) [normed_field k]
-    [normed_group V] [normed_space k V] [nonempty P] [has_vadd V P] [affine_space k V P] :
-  metric_space P :=
-{ dist_self := begin
-    intro p,
-    unfold dist,
-    rw [vsub_self k V p, norm_zero]
-  end,
-  eq_of_dist_eq_zero := begin
-    intros p1 p2 h,
-    unfold dist at h,
-    rw norm_eq_zero at h,
-    exact eq_of_vsub_eq_zero k V h
-  end,
-  dist_comm := begin
-    intros x y,
-    unfold dist,
-    convert norm_neg (y -ᵥ x),
-    exact vsub_rev_eq_neg_vsub k V y x
-  end,
-  dist_triangle := begin
-    intros x y z,
-    unfold dist,
-    rw ←vadd_vsub_vsub_cancel k V x y z,
-    apply norm_add_le
-  end }
 
 /-- An `affine_subspace k V P` is a subset of an `affine_space k V P`
 which has an affine space structure induced by a corresponding
