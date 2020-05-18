@@ -1,10 +1,9 @@
--- Torsors of additive group actions, to the extent needed for affine
--- spaces.
-
+/-
+Copyright (c) 2020 Joseph Myers. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Author: Joseph Myers.
+-/
 import algebra.group.basic
-import data.set.basic
-
-noncomputable theory
 
 /-!
 # Torsors of additive commutative group actions
@@ -42,6 +41,8 @@ class has_vadd (V : Type*) (P : Type*) :=
 infix `+ᵥ`:65 := has_vadd.vadd
 infix `-ᵥ`:65 := has_vadd.vsub
 
+section prio
+set_option default_priority 100 -- see Note [default priority]
 /-- An `add_comm_torsor V P` gives a structure to the nonempty type
 `P`, acted on by an `add_comm_group V` with a transitive and free
 action given by the `+ᵥ` operation and a corresponding subtraction
@@ -53,6 +54,7 @@ class add_comm_torsor (V : Type*) (P : Type*) [add_comm_group V] [nonempty P]
 (vadd_assoc : ∀ (p : P) (v1 v2 : V), p +ᵥ v1 +ᵥ v2 = p +ᵥ (v1 + v2))
 (vadd_vsub : ∀ (p1 p2 : P), p1 +ᵥ (p2 -ᵥ p1 : V) = p2)
 (vsub_vadd : ∀ (p : P) (v : V), p +ᵥ v -ᵥ p = v)
+end prio
 
 /-- An `add_comm_group V` is a torsor for itself. -/
 instance add_comm_group_has_vadd (V : Type*) [add_comm_group V] : has_vadd V V :=
@@ -173,6 +175,6 @@ by rw [←vsub_vadd_eq_vsub_sub V p1 p3, vadd_vsub_self V p3]
 by rw [sub_eq_add_neg, ←vsub_rev_eq_neg_vsub, add_comm, add_vsub_vsub_cancel]
 
 /-- The pairwise differences of a set of points. -/
-def vsub_set (s : set P) : set V := ⋃₀((λ p1 : P, (λ p2 : P, p1 -ᵥ p2) '' s) '' s)
+def vsub_set (s : set P) : set V := {v | ∃ x ∈ s, ∃ y ∈ s, v = x -ᵥ y}
 
 end add_comm_torsor
