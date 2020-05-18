@@ -218,7 +218,7 @@ begin
 end
 
 /-- Law of cosines (cosine rule), vector angle form. -/
-lemma norm_sub_square_eq_norm_square_add_norm_square_sub_two_mul_norm_mul_norm_mul_angle
+lemma norm_sub_square_eq_norm_square_add_norm_square_sub_two_mul_norm_mul_norm_mul_cos_angle
     (x y : V) :
   ∥x - y∥ * ∥x - y∥ = ∥x∥ * ∥x∥ + ∥y∥ * ∥y∥ - 2 * ∥x∥ * ∥y∥ * (angle_of_vectors x y).cos :=
 begin
@@ -275,13 +275,13 @@ by erw [metric_space.dist_comm p3 p2, norm_dist V p1 p3, norm_dist V p1 p2, norm
         add_comm_torsor.vsub_rev_eq_neg_vsub V p2 p3, norm_neg]
 
 /-- Law of cosines (cosine rule), angle-at-point form. -/
-lemma dist_square_eq_dist_square_add_dist_square_sub_two_mul_dist_mul_dist_mul_angle
+lemma dist_square_eq_dist_square_add_dist_square_sub_two_mul_dist_mul_dist_mul_cos_angle
     (p1 p2 p3 : P) :
   dist p1 p3 * dist p1 p3 = dist p1 p2 * dist p1 p2 + dist p3 p2 * dist p3 p2 - 2 * dist p1 p2 * dist p3 p2 * (∠ V p1 p2 p3).cos :=
 begin
   rw [norm_dist V p1 p3, norm_dist V p1 p2, norm_dist V p3 p2],
   unfold angle_of_points,
-  convert norm_sub_square_eq_norm_square_add_norm_square_sub_two_mul_norm_mul_norm_mul_angle
+  convert norm_sub_square_eq_norm_square_add_norm_square_sub_two_mul_norm_mul_norm_mul_cos_angle
           (p1 -ᵥ p2 : V) (p3 -ᵥ p2 : V),
   { exact (add_comm_torsor.sub_vsub_vsub_cancel_right V p1 p3 p2).symm },
   { exact (add_comm_torsor.sub_vsub_vsub_cancel_right V p1 p3 p2).symm }
