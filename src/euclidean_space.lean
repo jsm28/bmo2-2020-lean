@@ -230,6 +230,19 @@ begin
   ring
 end
 
+/-- Pons asinorum, vector angle form. -/
+lemma angle_sub_eq_angle_sub_rev_of_norm_eq (x y : V) (h : ∥x∥ = ∥y∥) :
+  angle_of_vectors x (x - y) = angle_of_vectors y (y - x) :=
+begin
+  refine real.cos_inj_of_nonneg_of_le_pi (angle_of_vectors_nonneg _ _)
+                                         (angle_of_vectors_le_pi _ _)
+                                         (angle_of_vectors_nonneg _ _)
+                                         (angle_of_vectors_le_pi _ _) _,
+  rw [cos_angle_of_vectors, cos_angle_of_vectors, h, ←neg_sub, norm_neg, neg_sub,
+      inner_sub_right, inner_sub_right, inner_self_eq_norm_square, inner_self_eq_norm_square, h,
+      inner_comm x y]
+end
+
 end real_inner_product
 
 section euclidean
@@ -258,8 +271,8 @@ lemma dist_square_eq_dist_square_add_dist_square_iff_angle_eq_pi_div_two (p1 p2 
     ∠ V p1 p2 p3 = real.pi / 2 :=
 by erw [metric_space.dist_comm p3 p2, norm_dist V p1 p3, norm_dist V p1 p2, norm_dist V p2 p3,
         ←norm_sub_square_eq_norm_square_add_norm_square_iff_angle_eq_pi_div_two,
-        add_comm_torsor.sub_vsub_vsub_cancel V p1, add_comm_torsor.vsub_rev_eq_neg_vsub V p2 p3,
-        norm_neg]
+        add_comm_torsor.sub_vsub_vsub_cancel_right V p1,
+        add_comm_torsor.vsub_rev_eq_neg_vsub V p2 p3, norm_neg]
 
 /-- Law of cosines (cosine rule), angle-at-point form. -/
 lemma dist_square_eq_dist_square_add_dist_square_sub_two_mul_dist_mul_dist_mul_angle
@@ -270,8 +283,19 @@ begin
   unfold angle_of_points,
   convert norm_sub_square_eq_norm_square_add_norm_square_sub_two_mul_norm_mul_norm_mul_angle
           (p1 -ᵥ p2 : V) (p3 -ᵥ p2 : V),
-  { exact (add_comm_torsor.sub_vsub_vsub_cancel V p1 p3 p2).symm },
-  { exact (add_comm_torsor.sub_vsub_vsub_cancel V p1 p3 p2).symm }
+  { exact (add_comm_torsor.sub_vsub_vsub_cancel_right V p1 p3 p2).symm },
+  { exact (add_comm_torsor.sub_vsub_vsub_cancel_right V p1 p3 p2).symm }
+end
+
+/-- Pons asinorum, angle-at-point form. -/
+lemma angle_eq_angle_of_dist_eq (p1 p2 p3 : P) (h : dist p1 p2 = dist p1 p3) :
+  ∠ V p1 p2 p3 = ∠ V p1 p3 p2 :=
+begin
+  rw [norm_dist V p1 p2, norm_dist V p1 p3] at h,
+  unfold angle_of_points,
+  convert angle_sub_eq_angle_sub_rev_of_norm_eq (p1 -ᵥ p2 : V) (p1 -ᵥ p3 : V) h,
+  { exact (add_comm_torsor.sub_vsub_vsub_cancel_left V p3 p2 p1).symm },
+  { exact (add_comm_torsor.sub_vsub_vsub_cancel_left V p2 p3 p1).symm }
 end
 
 end euclidean
