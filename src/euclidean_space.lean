@@ -1,6 +1,6 @@
 import algebra.big_operators
 import analysis.normed_space.real_inner_product
-import normed_add_comm_torsor
+import normed_add_torsor
 
 noncomputable theory
 open_locale big_operators
@@ -25,7 +25,7 @@ theorems that need it.
 /-- A `euclidean_affine_space V P` is an affine space with points `P`
 over an `inner_product_space V`. -/
 class euclidean_affine_space (V : Type*) (P : Type*) [inner_product_space V] [nonempty P]
-    [has_dist P] extends normed_add_comm_torsor V P
+    [has_dist P] extends normed_add_torsor V P
 
 /-- The standard Euclidean space, fin n → ℝ. -/
 instance standard_euclidean_space_is_vector_space (n : ℕ) : vector_space ℝ (fin n → ℝ) :=
@@ -247,6 +247,8 @@ end real_inner_product
 
 section euclidean
 
+open add_torsor
+
 variables (V : Type*) {P : Type*} [inner_product_space V] [nonempty P] [has_dist P]
     [euclidean_affine_space V P]
 include V
@@ -271,20 +273,22 @@ lemma dist_square_eq_dist_square_add_dist_square_iff_angle_eq_pi_div_two (p1 p2 
     ∠ V p1 p2 p3 = real.pi / 2 :=
 by erw [metric_space.dist_comm p3 p2, norm_dist V p1 p3, norm_dist V p1 p2, norm_dist V p2 p3,
         ←norm_sub_square_eq_norm_square_add_norm_square_iff_angle_eq_pi_div_two,
-        add_comm_torsor.sub_vsub_vsub_cancel_right V p1,
-        add_comm_torsor.vsub_rev_eq_neg_vsub V p2 p3, norm_neg]
+        vsub_sub_vsub_cancel_right V p1,
+        vsub_rev_eq_neg_vsub V p2 p3, norm_neg]
 
 /-- Law of cosines (cosine rule), angle-at-point form. -/
 lemma dist_square_eq_dist_square_add_dist_square_sub_two_mul_dist_mul_dist_mul_cos_angle
     (p1 p2 p3 : P) :
-  dist p1 p3 * dist p1 p3 = dist p1 p2 * dist p1 p2 + dist p3 p2 * dist p3 p2 - 2 * dist p1 p2 * dist p3 p2 * (∠ V p1 p2 p3).cos :=
+  dist p1 p3 * dist p1 p3 =
+    dist p1 p2 * dist p1 p2 + dist p3 p2 * dist p3 p2 -
+      2 * dist p1 p2 * dist p3 p2 * (∠ V p1 p2 p3).cos :=
 begin
   rw [norm_dist V p1 p3, norm_dist V p1 p2, norm_dist V p3 p2],
   unfold angle_of_points,
   convert norm_sub_square_eq_norm_square_add_norm_square_sub_two_mul_norm_mul_norm_mul_cos_angle
           (p1 -ᵥ p2 : V) (p3 -ᵥ p2 : V),
-  { exact (add_comm_torsor.sub_vsub_vsub_cancel_right V p1 p3 p2).symm },
-  { exact (add_comm_torsor.sub_vsub_vsub_cancel_right V p1 p3 p2).symm }
+  { exact (vsub_sub_vsub_cancel_right V p1 p3 p2).symm },
+  { exact (vsub_sub_vsub_cancel_right V p1 p3 p2).symm }
 end
 
 /-- Pons asinorum, angle-at-point form. -/
@@ -294,8 +298,8 @@ begin
   rw [norm_dist V p1 p2, norm_dist V p1 p3] at h,
   unfold angle_of_points,
   convert angle_sub_eq_angle_sub_rev_of_norm_eq (p1 -ᵥ p2 : V) (p1 -ᵥ p3 : V) h,
-  { exact (add_comm_torsor.sub_vsub_vsub_cancel_left V p3 p2 p1).symm },
-  { exact (add_comm_torsor.sub_vsub_vsub_cancel_left V p2 p3 p1).symm }
+  { exact (vsub_sub_vsub_cancel_left V p3 p2 p1).symm },
+  { exact (vsub_sub_vsub_cancel_left V p2 p3 p1).symm }
 end
 
 end euclidean

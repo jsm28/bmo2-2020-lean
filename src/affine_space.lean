@@ -1,7 +1,7 @@
 -- Affine spaces, to the extent needed for some Euclidean geometry.
 
 import linear_algebra.basis
-import add_comm_torsor
+import add_torsor
 
 noncomputable theory
 
@@ -28,15 +28,15 @@ we require a nonempty type of points.
 
 -/
 
-/-- `affine_space` is an abbreviation for `add_comm_torsor` in the
+/-- `affine_space` is an abbreviation for `add_torsor` in the
 case where the group is a vector space. -/
 abbreviation affine_space (k : Type*) (V : Type*) (P : Type*) [field k] [add_comm_group V]
     [vector_space k V] [nonempty P] :=
-add_comm_torsor V P
+add_torsor V P
 
 namespace affine_space
 
-open add_comm_torsor
+open add_torsor
 
 variables (k : Type*) (V : Type*) {P : Type*} [field k] [add_comm_group V] [vector_space k V]
           [nonempty P] [S : affine_space k V P]
@@ -49,7 +49,7 @@ def vector_span (s : set P) : subspace k V := submodule.span k (vsub_set V s)
 /-- The points in the affine span of a (possibly empty) set of
 points. -/
 def span_points (s : set P) : set P :=
-⋃₀((λ p : P, (λ v : V, p +ᵥ v) '' (vector_span k V s).carrier) '' s)
+⋃₀((λ p : P, (λ v : V, v +ᵥ p) '' (vector_span k V s).carrier) '' s)
 
 /-- The set of points in the affine span of a nonempty set of points
 is nonempty. -/
@@ -65,13 +65,13 @@ begin
   use hp,
   rw set.mem_image,
   use 0,
-  exact and.intro (submodule.zero _) (vadd_zero V p)
+  exact and.intro (submodule.zero _) (zero_vadd V p)
 end
 
 /-- Adding a point in the affine span and a vector in the spanning
 subspace produces a point in the affine span. -/
 lemma vadd_mem_span_points_of_mem_span_points_of_mem_vector_span {s : set P} {p : P} {v : V}
-    (hp : p ∈ span_points k V s) (hv : v ∈ vector_span k V s) : p +ᵥ v ∈ span_points k V s :=
+    (hp : p ∈ span_points k V s) (hv : v ∈ vector_span k V s) : v +ᵥ p ∈ span_points k V s :=
 begin
   unfold span_points at hp,
   rw [set.sUnion_image, set.mem_Union] at hp,
@@ -80,15 +80,15 @@ begin
   cases hp2 with hp2 hp3,
   rw set.mem_image at hp3,
   rcases hp3 with ⟨v2, ⟨hv2, hv2p⟩⟩,
-  rw [←hv2p, vadd_add_assoc V p2],
+  rw [←hv2p, vadd_assoc],
   unfold span_points,
   rw [set.sUnion_image, set.mem_Union],
   use p2,
   rw set.mem_Union,
   use hp2,
   rw set.mem_image,
-  use v2 + v,
-  exact and.intro ((vector_span k V s).add hv2 hv) rfl
+  use v + v2,
+  exact and.intro ((vector_span k V s).add hv hv2) rfl
 end
 
 /-- Subtracting two points in the affine span produces a vector in the
@@ -107,7 +107,7 @@ begin
   rw set.mem_image at hp1b hp2b,
   rcases hp1b with ⟨v1, ⟨hv1, hv1p⟩⟩,
   rcases hp2b with ⟨v2, ⟨hv2, hv2p⟩⟩,
-  rw [←hv1p, ←hv2p, vsub_vadd_eq_vsub_sub V (p1a +ᵥ v1), vadd_vsub_comm V p1a,
+  rw [←hv1p, ←hv2p, vsub_vadd_eq_vsub_sub V (v1 +ᵥ p1a), vadd_vsub_assoc, add_comm,
       add_sub_assoc],
   have hv1v2 : v1 - v2 ∈ (vector_span k V s).carrier,
   { apply (vector_span k V s).add hv1,
@@ -128,7 +128,7 @@ end
 
 end affine_space
 
-open add_comm_torsor affine_space
+open add_torsor affine_space
 
 /-- An `affine_subspace k V P` is a subset of an `affine_space k V P`
 which has an affine space structure induced by a corresponding
@@ -138,7 +138,7 @@ structure affine_subspace (k : Type*) (V : Type*) (P : Type*) [field k] [add_com
 (carrier : set P)
 (direction : subspace k V)
 (nonempty : carrier.nonempty)
-(add : ∀ (p : P) (v : V), p ∈ carrier → v ∈ direction.carrier → p +ᵥ v ∈ carrier)
+(add : ∀ (p : P) (v : V), p ∈ carrier → v ∈ direction.carrier → v +ᵥ p ∈ carrier)
 (sub : ∀ (p1 p2 : P), p1 ∈ carrier → p2 ∈ carrier → p1 -ᵥ p2 ∈ direction.carrier)
 
 /-- The affine span of a nonempty set of points is the smallest affine
@@ -166,7 +166,7 @@ induces a corresponding linear map from `V1` to `V2`. -/
 structure affine_map :=
 (to_fun : P1 → P2)
 (linear : linear_map k V1 V2)
-(add : ∀ (p : P1) (v : V1), to_fun (p +ᵥ v) = to_fun p +ᵥ linear.to_fun v)
+(add : ∀ (p : P1) (v : V1), to_fun (v +ᵥ p) =  linear.to_fun v +ᵥ to_fun p)
 
 /-- Composition of affine maps. -/
 def affine_map.comp (f : affine_map k V2 P2 V3 P3) (g : affine_map k V1 P1 V2 P2)
