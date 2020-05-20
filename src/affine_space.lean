@@ -31,7 +31,7 @@ we require a nonempty type of points.
 /-- `affine_space` is an abbreviation for `add_torsor` in the
 case where the group is a vector space. -/
 abbreviation affine_space (k : Type*) (V : Type*) (P : Type*) [field k] [add_comm_group V]
-    [vector_space k V] [nonempty P] :=
+    [vector_space k V] :=
 add_torsor V P
 
 namespace affine_space
@@ -39,7 +39,7 @@ namespace affine_space
 open add_torsor
 
 variables (k : Type*) (V : Type*) {P : Type*} [field k] [add_comm_group V] [vector_space k V]
-          [nonempty P] [S : affine_space k V P]
+          [S : affine_space k V P]
 include S
 
 /-- The vector subspace spanning the differences of a (possibly empty)
@@ -134,7 +134,7 @@ open add_torsor affine_space
 which has an affine space structure induced by a corresponding
 subspace of the `vector_space k V`. -/
 structure affine_subspace (k : Type*) (V : Type*) (P : Type*) [field k] [add_comm_group V]
-    [vector_space k V] [nonempty P] [affine_space k V P] :=
+    [vector_space k V] [affine_space k V P] :=
 (carrier : set P)
 (direction : subspace k V)
 (nonempty : carrier.nonempty)
@@ -145,7 +145,7 @@ structure affine_subspace (k : Type*) (V : Type*) (P : Type*) [field k] [add_com
 subspace containing those points. (Actually defined here in terms of
 spans in vector spaces.) -/
 def affine_span (k : Type*) (V : Type*) (P : Type*) [field k] [add_comm_group V]
-    [vector_space k V] [nonempty P] [affine_space k V P] (s : set P)
+    [vector_space k V] [affine_space k V P] (s : set P)
     (h : s.nonempty) : affine_subspace k V P :=
 { carrier := span_points k V s,
   direction := vector_span k V s,
@@ -157,9 +157,9 @@ section affine_map
 
 variables  (k : Type*) (V1 : Type*) (P1 : Type*) (V2 : Type*) (P2 : Type*)
     (V3 : Type*) (P3 : Type*) [field k]
-    [add_comm_group V1] [vector_space k V1] [nonempty P1] [affine_space k V1 P1]
-    [add_comm_group V2] [vector_space k V2] [nonempty P2] [affine_space k V2 P2]
-    [add_comm_group V3] [vector_space k V3] [nonempty P3] [affine_space k V3 P3]
+    [add_comm_group V1] [vector_space k V1] [affine_space k V1 P1]
+    [add_comm_group V2] [vector_space k V2] [affine_space k V2 P2]
+    [add_comm_group V3] [vector_space k V3] [affine_space k V3 P3]
 
 /-- An `affine_map k V1 P1 V2 P2` is a map from `P1` to `P2` that
 induces a corresponding linear map from `V1` to `V2`. -/

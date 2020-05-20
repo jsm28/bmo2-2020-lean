@@ -20,10 +20,12 @@ defines the notation `+ᵥ` for adding a group element to a point and
 
 Affine spaces are the motivating example of torsors of additive group
 actions.  It may be appropriate to refactor in terms of the general
-definition of group actions (currently mathlib only has multiplicative
-group actions).  The variable `G` is an explicit rather than implicit
-argument to lemmas because otherwise the elaborator sometimes has
-problems inferring appropriate types and type class instances.
+definition of group actions, via `to_additive`, when there is a use
+for multiplicative torsors (currently mathlib only develops the theory
+of group actions for multiplicative group actions).  The variable `G`
+is an explicit rather than implicit argument to lemmas because
+otherwise the elaborator sometimes has problems inferring appropriate
+types and type class instances.
 
 ## References
 
@@ -151,6 +153,19 @@ begin
   rw [←vadd_assoc, vsub_vadd, vsub_vadd, vsub_vadd]
 end
 
+/-- Subtracting the result of adding a group element produces the same result
+as subtracting the points and subtracting that group element. -/
+lemma vsub_vadd_eq_vsub_sub (p1 p2 : P) (g : G) : p1 -ᵥ (g +ᵥ p2) = (p1 -ᵥ p2) - g :=
+begin
+  rw [←add_right_inj (p2 -ᵥ p1 : G), vsub_add_vsub_cancel, vsub_rev_eq_neg_vsub, vadd_vsub,
+      ←add_sub_assoc, vsub_rev_eq_neg_vsub, neg_add_self, zero_sub]
+end
+
+/-- Cancellation subtracting the results of two subtractions. -/
+@[simp] lemma vsub_sub_vsub_cancel_right (p1 p2 p3 : P) :
+  (p1 -ᵥ p3 : G) - (p2 -ᵥ p3) = (p1 -ᵥ p2) :=
+by rw [←vsub_vadd_eq_vsub_sub, vsub_vadd]
+
 /-- The pairwise differences of a set of points. -/
 def vsub_set (s : set P) : set G := {g | ∃ x ∈ s, ∃ y ∈ s, g = x -ᵥ y}
 
@@ -165,19 +180,6 @@ include S
 order. -/
 lemma vadd_comm (p : P) (g1 g2 : G) : g1 +ᵥ (g2 +ᵥ p) = g2 +ᵥ (g1 +ᵥ p) :=
 by rw [vadd_assoc, vadd_assoc, add_comm]
-
-/-- Subtracting the result of adding a group element produces the same result
-as subtracting the points and subtracting that group element. -/
-lemma vsub_vadd_eq_vsub_sub (p1 p2 : P) (g : G) : p1 -ᵥ (g +ᵥ p2) = (p1 -ᵥ p2) - g :=
-begin
-  apply vadd_cancel_right G _ _ (g +ᵥ p2),
-  rw [vsub_vadd, vadd_comm, vadd_assoc, add_comm, sub_add_cancel, vsub_vadd]
-end
-
-/-- Cancellation subtracting the results of two subtractions. -/
-@[simp] lemma vsub_sub_vsub_cancel_right (p1 p2 p3 : P) :
-  (p1 -ᵥ p3 : G) - (p2 -ᵥ p3) = (p1 -ᵥ p2) :=
-by rw [←vsub_vadd_eq_vsub_sub, vsub_vadd]
 
 /-- Cancellation subtracting the results of two subtractions. -/
 @[simp] lemma vsub_sub_vsub_cancel_left (p1 p2 p3 : P) :

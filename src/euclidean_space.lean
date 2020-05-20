@@ -24,8 +24,8 @@ theorems that need it.
 
 /-- A `euclidean_affine_space V P` is an affine space with points `P`
 over an `inner_product_space V`. -/
-class euclidean_affine_space (V : Type*) (P : Type*) [inner_product_space V] [nonempty P]
-    [has_dist P] extends normed_add_torsor V P
+class euclidean_affine_space (V : Type*) (P : Type*) [inner_product_space V] [has_dist P]
+  extends normed_add_torsor V P
 
 /-- The standard Euclidean space, fin n → ℝ. -/
 instance standard_euclidean_space_is_vector_space (n : ℕ) : vector_space ℝ (fin n → ℝ) :=
@@ -249,7 +249,7 @@ section euclidean
 
 open add_torsor
 
-variables (V : Type*) {P : Type*} [inner_product_space V] [nonempty P] [has_dist P]
+variables (V : Type*) {P : Type*} [inner_product_space V] [has_dist P]
     [euclidean_affine_space V P]
 include V
 
