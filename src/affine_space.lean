@@ -49,7 +49,7 @@ def vector_span (s : set P) : subspace k V := submodule.span k (vsub_set V s)
 /-- The points in the affine span of a (possibly empty) set of
 points. -/
 def span_points (s : set P) : set P :=
-⋃₀((λ p : P, (λ v : V, v +ᵥ p) '' (vector_span k V s).carrier) '' s)
+{p | ∃ p1 ∈ s, ∃ v ∈ (vector_span k V s).carrier, p = v +ᵥ p1}
 
 /-- The set of points in the affine span of a nonempty set of points
 is nonempty. -/
@@ -59,14 +59,13 @@ begin
   cases h with p hp,
   use p,
   unfold span_points,
-  rw [set.sUnion_image, set.mem_Union],
   use p,
-  rw set.mem_Union,
   use hp,
-  rw set.mem_image,
   use 0,
-  exact and.intro (submodule.zero _) (zero_vadd V p)
+  exact and.intro (submodule.zero _) (zero_vadd V p).symm
 end
+
+--set_option pp.all true
 
 /-- Adding a point in the affine span and a vector in the spanning
 subspace produces a point in the affine span. -/
@@ -74,19 +73,13 @@ lemma vadd_mem_span_points_of_mem_span_points_of_mem_vector_span {s : set P} {p 
     (hp : p ∈ span_points k V s) (hv : v ∈ vector_span k V s) : v +ᵥ p ∈ span_points k V s :=
 begin
   unfold span_points at hp,
-  rw [set.sUnion_image, set.mem_Union] at hp,
   cases hp with p2 hp2,
-  rw set.mem_Union at hp2,
   cases hp2 with hp2 hp3,
-  rw set.mem_image at hp3,
   rcases hp3 with ⟨v2, ⟨hv2, hv2p⟩⟩,
-  rw [←hv2p, vadd_assoc],
+  rw [hv2p, vadd_assoc],
   unfold span_points,
-  rw [set.sUnion_image, set.mem_Union],
   use p2,
-  rw set.mem_Union,
   use hp2,
-  rw set.mem_image,
   use v + v2,
   exact and.intro ((vector_span k V s).add hv hv2) rfl
 end
@@ -98,16 +91,13 @@ lemma vsub_mem_vector_span_of_mem_span_points_of_mem_span_points {s : set P} {p1
   p1 -ᵥ p2 ∈ vector_span k V s :=
 begin
   unfold span_points at hp1 hp2,
-  rw [set.sUnion_image, set.mem_Union] at hp1 hp2,
   cases hp1 with p1a hp1,
   cases hp2 with p2a hp2,
-  rw set.mem_Union at hp1 hp2,
   cases hp1 with hp1a hp1b,
   cases hp2 with hp2a hp2b,
-  rw set.mem_image at hp1b hp2b,
   rcases hp1b with ⟨v1, ⟨hv1, hv1p⟩⟩,
   rcases hp2b with ⟨v2, ⟨hv2, hv2p⟩⟩,
-  rw [←hv1p, ←hv2p, vsub_vadd_eq_vsub_sub V (v1 +ᵥ p1a), vadd_vsub_assoc, add_comm,
+  rw [hv1p, hv2p, vsub_vadd_eq_vsub_sub V (v1 +ᵥ p1a), vadd_vsub_assoc, add_comm,
       add_sub_assoc],
   have hv1v2 : v1 - v2 ∈ (vector_span k V s).carrier,
   { apply (vector_span k V s).add hv1,
