@@ -335,10 +335,10 @@ begin
   split,
   { intro h,
     exact real.arccos_inj (abs_le.mp (abs_inner_div_norm_mul_norm_le_one x y)).1
-                      (abs_le.mp (abs_inner_div_norm_mul_norm_le_one x y)).2
-                      (by norm_num)
-                      (by norm_num)
-                      h },
+                          (abs_le.mp (abs_inner_div_norm_mul_norm_le_one x y)).2
+                          (by norm_num)
+                          (by norm_num)
+                          h },
   { intro h,
     rw h }
 end
@@ -353,10 +353,10 @@ begin
   split,
   { intro h,
     exact real.arccos_inj (abs_le.mp (abs_inner_div_norm_mul_norm_le_one x y)).1
-                      (abs_le.mp (abs_inner_div_norm_mul_norm_le_one x y)).2
-                      (by norm_num)
-                      (by norm_num)
-                      h },
+                          (abs_le.mp (abs_inner_div_norm_mul_norm_le_one x y)).2
+                          (by norm_num)
+                          (by norm_num)
+                          h },
   { intro h,
     rw h }
 end
