@@ -5,6 +5,7 @@ import tactic.apply_fun
 
 noncomputable theory
 open_locale big_operators
+open_locale classical
 
 /-!
 # Euclidean spaces
@@ -445,6 +446,50 @@ begin
       inner_comm x y]
 end
 
+/-- Multiplying `a` by itself and then by its inverse results in `a`
+(whether or not `a` is zero). -/
+lemma mul_self_mul_inv (a : ℝ) : a * a * a⁻¹ = a :=
+begin
+  by_cases h : a = 0,
+  { rw [h, inv_zero, mul_zero] },
+  { rw [mul_assoc, mul_inv_cancel h, mul_one] }
+end
+
+/-- Converse of pons asinorum, vector angle form. -/
+lemma norm_eq_of_angle_sub_eq_angle_sub_rev_of_angle_ne_pi (x y : V)
+    (h : angle_of_vectors x (x - y) = angle_of_vectors y (y - x))
+    (hpi : angle_of_vectors x y ≠ real.pi) : ∥x∥ = ∥y∥ :=
+begin
+  replace h := real.arccos_inj (abs_le.mp (abs_inner_div_norm_mul_norm_le_one x (x - y))).1
+                               (abs_le.mp (abs_inner_div_norm_mul_norm_le_one x (x - y))).2
+                               (abs_le.mp (abs_inner_div_norm_mul_norm_le_one y (y - x))).1
+                               (abs_le.mp (abs_inner_div_norm_mul_norm_le_one y (y - x))).2
+                               h,
+  by_cases hxy : x = y,
+  { rw hxy },
+  { rw [←norm_neg (y - x), neg_sub, mul_comm, mul_comm ∥y∥, div_eq_mul_inv, div_eq_mul_inv,
+        mul_inv', mul_inv', ←mul_assoc, ←mul_assoc] at h,
+    replace h :=
+      mul_right_cancel' (inv_ne_zero (λ hz, hxy (eq_of_sub_eq_zero (norm_eq_zero.1 hz)))) h,
+    rw [inner_sub_right, inner_sub_right, inner_comm y x, inner_self_eq_norm_square,
+        inner_self_eq_norm_square, mul_sub_right_distrib, mul_sub_right_distrib,
+        mul_self_mul_inv, mul_self_mul_inv, sub_eq_sub_iff_sub_eq_sub,
+        ←mul_sub_left_distrib] at h,
+    by_cases hx0 : x = 0,
+    { rw [hx0, norm_zero, inner_zero_left, zero_mul, zero_sub, neg_eq_zero] at h,
+      rw [hx0, norm_zero, h] },
+    { by_cases hy0 : y = 0,
+      { rw [hy0, norm_zero, inner_zero_right, zero_mul, sub_zero] at h,
+        rw [hy0, norm_zero, h] },
+      { rw [inv_sub_inv (λ hz, hx0 (norm_eq_zero.1 hz)) (λ hz, hy0 (norm_eq_zero.1 hz)),
+            ←neg_sub, ←mul_div_assoc, mul_comm, mul_div_assoc, ←mul_neg_one] at h,
+        symmetry,
+        by_contradiction hyx,
+        replace h := (mul_left_cancel' (sub_ne_zero_of_ne hyx) h).symm,
+        rw [inner_div_norm_mul_norm_eq_neg_one_iff, ←angle_of_vectors_eq_pi_iff] at h,
+        exact hpi h } } }
+end
+
 end real_inner_product
 
 section euclidean
@@ -506,6 +551,18 @@ begin
   convert angle_sub_eq_angle_sub_rev_of_norm_eq (p1 -ᵥ p2 : V) (p1 -ᵥ p3 : V) h,
   { exact (vsub_sub_vsub_left_cancel V p3 p2 p1).symm },
   { exact (vsub_sub_vsub_left_cancel V p2 p3 p1).symm }
+end
+
+/-- Converse of pons asinorum, angle-at-point form. -/
+lemma dist_eq_of_angle_eq_angle_of_angle_ne_pi (p1 p2 p3 : P)
+    (h : ∠ V p1 p2 p3 = ∠ V p1 p3 p2)
+    (hpi : ∠ V p2 p1 p3 ≠ real.pi) : dist p1 p2 = dist p1 p3 :=
+begin
+  unfold angle_of_points at h hpi,
+  rw [norm_dist V p1 p2, norm_dist V p1 p3],
+  rw [←angle_of_vectors_of_neg_of_neg, neg_vsub_eq_vsub_rev, neg_vsub_eq_vsub_rev] at hpi,
+  rw [←vsub_sub_vsub_left_cancel V p3 p2 p1, ←vsub_sub_vsub_left_cancel V p2 p3 p1] at h,
+  exact norm_eq_of_angle_sub_eq_angle_sub_rev_of_angle_ne_pi (p1 -ᵥ p2 : V) (p1 -ᵥ p3 : V) h hpi
 end
 
 end euclidean
