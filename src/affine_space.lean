@@ -36,6 +36,7 @@ add_torsor V P
 
 namespace affine_space
 
+open add_action
 open add_torsor
 
 variables (k : Type*) (V : Type*) {P : Type*} [field k] [add_comm_group V] [vector_space k V]

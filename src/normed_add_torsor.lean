@@ -46,7 +46,7 @@ instance normed_add_torsor_is_metric_space : metric_space P :=
     intros x y,
     rw [norm_dist V x y, norm_dist V y x],
     convert norm_neg (y -ᵥ x),
-    exact vsub_rev_eq_neg_vsub V y x
+    exact (neg_vsub_eq_vsub_rev V y x).symm
   end,
   dist_triangle := begin
     intros x y z,
