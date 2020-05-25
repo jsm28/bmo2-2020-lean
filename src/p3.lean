@@ -2432,7 +2432,7 @@ begin
       rw ←hnalt1
     end,
     by_cases h : a ∈ c,
-    { simp [h, nat.succ_eq_add_one],
+    { simp [h, (show 2 * k2 + 1 + 1 = 2 * (k2 + 1), by ring)],
       ring },
     { conv
       begin
