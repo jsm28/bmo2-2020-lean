@@ -1,5 +1,6 @@
 import algebra.big_operators
 import analysis.normed_space.real_inner_product
+import affine_space
 import normed_add_torsor
 import tactic.apply_fun
 
@@ -493,6 +494,69 @@ begin
 end
 
 end real_inner_product
+
+section isometry
+/-!
+### Euclidean isometries
+
+This section develops properties of isometries in Euclidean space,
+showing that they are affine maps.
+-/
+
+open add_action add_torsor
+
+variables (V1 : Type*) {P1 : Type*} [inner_product_space V1] [metric_space P1]
+    [S1 : euclidean_affine_space V1 P1] (V2 : Type*) {P2 : Type*} [inner_product_space V2]
+    [metric_space P2] [S2 : euclidean_affine_space V2 P2]
+
+/-- The inner product, in terms of the norm. -/
+lemma inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two (x y : V2) :
+  inner x y = (∥x + y∥ * ∥x + y∥ - ∥x∥ * ∥x∥ - ∥y∥ * ∥y∥) / 2 :=
+begin
+  rw norm_add_mul_self,
+  ring
+end
+
+/-- The inner product, in terms of the norm. -/
+lemma inner_eq_norm_mul_self_add_norm_mul_self_sub_norm_sub_mul_self_div_two (x y : V2) :
+  inner x y = (∥x∥ * ∥x∥ + ∥y∥ * ∥y∥ - ∥x - y∥ * ∥x - y∥) / 2 :=
+begin
+  rw norm_sub_mul_self,
+  ring
+end
+
+include S1 S2
+
+/-- The map on vectors corresponding to a map from P1 to P2, at a base
+point p. -/
+def vector_map_of_point_map (f : P1 → P2) (p : P1) : V1 → V2 := λ v, f (v +ᵥ p) -ᵥ f p
+
+/-- Applying the map on vectors at the result of adding a vector. -/
+lemma neg_vector_map_of_point_map_of_add (f : P1 → P2) (p : P1) (v : V1) :
+  -vector_map_of_point_map V1 V2 f (v +ᵥ p) (-v) = vector_map_of_point_map V1 V2 f p v :=
+begin
+  unfold vector_map_of_point_map,
+  rw [vadd_assoc, neg_add_self, zero_vadd, neg_vsub_eq_vsub_rev]
+end
+
+/-- An isometry preserves the inner product. -/
+lemma inner_of_isometry_eq_inner (f : P1 → P2) (h : isometry f) (p : P1) (x y : V1) :
+  inner (vector_map_of_point_map V1 V2 f p x)
+        (vector_map_of_point_map V1 V2 f p y) = inner x y :=
+begin
+  rw [←neg_vector_map_of_point_map_of_add, inner_neg_left,
+      inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two,
+      inner_eq_norm_mul_self_add_norm_mul_self_sub_norm_sub_mul_self_div_two],
+  unfold vector_map_of_point_map,
+  rw [vadd_assoc, neg_add_self, zero_vadd, add_comm, vsub_add_vsub_cancel, ←norm_dist,
+      ←norm_dist, ←norm_dist, isometry.dist_eq h, isometry.dist_eq h, isometry.dist_eq h,
+      norm_dist V1 _ p, norm_dist V1 _ (x +ᵥ p), norm_dist V1 _ (x +ᵥ p), vadd_vsub,
+      vsub_vadd_eq_vsub_sub, vsub_vadd_eq_vsub_sub, vsub_self, vadd_vsub, zero_sub, norm_neg,
+      norm_sub_rev],
+  ring
+end
+
+end isometry
 
 section euclidean
 
