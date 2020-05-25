@@ -26,7 +26,7 @@ theorems that need it.
 
 /-- A `euclidean_affine_space V P` is an affine space with points `P`
 over an `inner_product_space V`. -/
-class euclidean_affine_space (V : Type*) (P : Type*) [inner_product_space V] [has_dist P]
+class euclidean_affine_space (V : Type*) (P : Type*) [inner_product_space V] [metric_space P]
   extends normed_add_torsor V P
 
 /-- The standard Euclidean space, fin n → ℝ. -/
@@ -83,11 +83,36 @@ instance standard_euclidean_space_is_inner_product_space (n : ℕ) :
       rw [(show (r • x) i = r * x i, by refl), mul_assoc]
     }
   end }
-instance standard_euclidean_affine_space_has_dist (n : ℕ) : has_dist (fin n → ℝ) :=
-{ dist := λ x y, ∥x - y∥ }
+instance standard_euclidean_affine_space_normed_group (n : ℕ) : normed_group (fin n → ℝ) :=
+inner_product_space_is_normed_group
+instance standard_euclidean_affine_space_metric_space (n : ℕ) : metric_space (fin n → ℝ) :=
+{ dist := λ x y, ∥x - y∥,
+  dist_self := begin
+    intro x,
+    unfold dist,
+    rw [sub_self, norm_zero]
+  end,
+  eq_of_dist_eq_zero := begin
+    intros x y h,
+    unfold dist at h,
+    rw [norm_eq_zero] at h,
+    exact eq_of_sub_eq_zero h
+  end,
+  dist_comm := begin
+    intros x y,
+    unfold dist,
+    convert norm_neg (y - x),
+    exact (neg_sub y x).symm
+  end,
+  dist_triangle := begin
+    intros x y z,
+    unfold dist,
+    convert norm_add_le (x - y) (y - z),
+    exact (sub_add_sub_cancel x y z).symm
+  end }
 instance standard_euclidean_affine_space (n : ℕ) :
   euclidean_affine_space (fin n → ℝ) (fin n → ℝ) :=
-{ dist_eq_norm_vsub := λ x y, rfl }
+{ norm_dist' := λ x y, rfl }
 
 section real_inner_product
 /-!
@@ -496,7 +521,7 @@ section euclidean
 
 open add_torsor
 
-variables (V : Type*) {P : Type*} [inner_product_space V] [has_dist P]
+variables (V : Type*) {P : Type*} [inner_product_space V] [metric_space P]
     [euclidean_affine_space V P]
 include V
 
