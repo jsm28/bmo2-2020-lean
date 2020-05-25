@@ -86,33 +86,10 @@ instance standard_euclidean_space_is_inner_product_space (n : ℕ) :
 instance standard_euclidean_affine_space_normed_group (n : ℕ) : normed_group (fin n → ℝ) :=
 inner_product_space_is_normed_group
 instance standard_euclidean_affine_space_metric_space (n : ℕ) : metric_space (fin n → ℝ) :=
-{ dist := λ x y, ∥x - y∥,
-  dist_self := begin
-    intro x,
-    unfold dist,
-    rw [sub_self, norm_zero]
-  end,
-  eq_of_dist_eq_zero := begin
-    intros x y h,
-    unfold dist at h,
-    rw [norm_eq_zero] at h,
-    exact eq_of_sub_eq_zero h
-  end,
-  dist_comm := begin
-    intros x y,
-    unfold dist,
-    convert norm_neg (y - x),
-    exact (neg_sub y x).symm
-  end,
-  dist_triangle := begin
-    intros x y z,
-    unfold dist,
-    convert norm_add_le (x - y) (y - z),
-    exact (sub_add_sub_cancel x y z).symm
-  end }
+normed_group.to_metric_space
 instance standard_euclidean_affine_space (n : ℕ) :
   euclidean_affine_space (fin n → ℝ) (fin n → ℝ) :=
-{ norm_dist' := λ x y, rfl }
+{ norm_dist' := normed_group.dist_eq }
 
 section real_inner_product
 /-!
