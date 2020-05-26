@@ -329,6 +329,32 @@ begin
   { exact div_mul_cancel _ h }
 end
 
+/-- The sine of the angle between two vectors, multiplied by the
+product of their norms. -/
+lemma sin_angle_of_vectors_mul_norm_mul_norm (x y : V) :
+  (angle_of_vectors x y).sin * (∥x∥ * ∥y∥) =
+    real.sqrt (inner x x * inner y y - inner x y * inner x y) :=
+begin
+  unfold angle_of_vectors,
+  rw [real.sin_arccos (abs_le.mp (abs_inner_div_norm_mul_norm_le_one x y)).1
+                     (abs_le.mp (abs_inner_div_norm_mul_norm_le_one x y)).2,
+      ←real.sqrt_mul_self (mul_nonneg (norm_nonneg x) (norm_nonneg y)),
+      ←real.sqrt_mul' _ (mul_self_nonneg _), pow_two,
+      real.sqrt_mul_self (mul_nonneg (norm_nonneg x) (norm_nonneg y)), inner_self_eq_norm_square,
+      inner_self_eq_norm_square],
+  congr,
+  by_cases h : (∥x∥ * ∥y∥) = 0,
+  { rw [(show ∥x∥ * ∥x∥ * (∥y∥ * ∥y∥) = (∥x∥ * ∥y∥) * (∥x∥ * ∥y∥), by ring), h, mul_zero, mul_zero,
+        zero_sub],
+    cases eq_zero_or_eq_zero_of_mul_eq_zero h with hx hy,
+    { rw norm_eq_zero at hx,
+      rw [hx, inner_zero_left, zero_mul, neg_zero] },
+    { rw norm_eq_zero at hy,
+      rw [hy, inner_zero_right, zero_mul, neg_zero] } },
+  { field_simp [h],
+    ring }
+end
+
 /-- The angle between two vectors is zero if and only if they are
 nonzero and one is a positive multiple of the other. -/
 lemma angle_of_vectors_eq_zero_iff (x y : V) :
