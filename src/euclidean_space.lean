@@ -525,6 +525,40 @@ begin
   ring
 end
 
+/-- Whether a map on vectors preserves the inner product. -/
+def preserves_inner (f : V1 → V2) : Prop := ∀ x y, inner (f x) (f y) = inner x y
+
+/-- A function that preserves the inner product preserves addition. -/
+lemma add_of_fn_eq_fn_of_add_of_preserves_inner (f : V1 → V2)
+    (h : preserves_inner V1 V2 f) (x y : V1) : f x + f y = f (x + y) :=
+begin
+  apply eq_of_sub_eq_zero,
+  rw [←inner_self_eq_zero, inner_sub_right, inner_sub_left, inner_sub_left, inner_add_right,
+      inner_add_right, inner_add_left, inner_add_left, inner_add_left, h, h, h, h, h, h, h, h, h,
+      inner_add_right, inner_add_right, inner_add_right, inner_add_left, inner_add_left,
+      inner_comm y x],
+  ring
+end
+
+/-- A function that preserves the inner product preserves scalar
+multiplication. -/
+lemma smul_of_fn_eq_fn_of_smul_of_preserves_inner (f : V1 → V2)
+    (h : preserves_inner V1 V2 f) (x : V1) (r : ℝ) : r • f x = f (r • x) :=
+begin
+  apply eq_of_sub_eq_zero,
+  rw [←inner_self_eq_zero, inner_sub_right, inner_sub_left, inner_sub_left, inner_smul_right,
+      inner_smul_right, inner_smul_left, inner_smul_left, h, h, h, h, inner_smul_right,
+      inner_smul_right, inner_smul_left],
+  ring
+end
+
+/-- A function that preserves the inner product is a linear map. -/
+def linear_map_of_preserves_inner (f : V1 → V2) (h : preserves_inner V1 V2 f) :
+  linear_map ℝ V1 V2 :=
+{ to_fun := f,
+  add := λ x y, (add_of_fn_eq_fn_of_add_of_preserves_inner V1 V2 f h x y).symm,
+  smul := λ r x, (smul_of_fn_eq_fn_of_smul_of_preserves_inner V1 V2 f h x r).symm }
+
 include S1 S2
 
 /-- The map on vectors corresponding to a map from P1 to P2, at a base
@@ -540,10 +574,11 @@ begin
 end
 
 /-- An isometry preserves the inner product. -/
-lemma inner_of_isometry_eq_inner (f : P1 → P2) (h : isometry f) (p : P1) (x y : V1) :
-  inner (vector_map_of_point_map V1 V2 f p x)
-        (vector_map_of_point_map V1 V2 f p y) = inner x y :=
+lemma inner_of_isometry_eq_inner (f : P1 → P2) (h : isometry f) (p : P1) :
+  preserves_inner V1 V2 (vector_map_of_point_map V1 V2 f p) :=
 begin
+  unfold preserves_inner,
+  intros x y,
   rw [←neg_vector_map_of_point_map_of_add, inner_neg_left,
       inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two,
       inner_eq_norm_mul_self_add_norm_mul_self_sub_norm_sub_mul_self_div_two],
