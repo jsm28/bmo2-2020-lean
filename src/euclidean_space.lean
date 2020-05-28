@@ -90,7 +90,7 @@ instance standard_euclidean_affine_space_metric_space (n : ℕ) : metric_space (
 normed_group.to_metric_space
 instance standard_euclidean_affine_space (n : ℕ) :
   euclidean_affine_space (fin n → ℝ) (fin n → ℝ) :=
-{ norm_dist' := normed_group.dist_eq }
+{ dist_eq_norm' := normed_group.dist_eq }
 
 section real_inner_product
 /-!
@@ -668,11 +668,11 @@ begin
       inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two,
       inner_eq_norm_mul_self_add_norm_mul_self_sub_norm_sub_mul_self_div_two],
   unfold vector_map_of_point_map,
-  rw [vadd_assoc, neg_add_self, zero_vadd, add_comm, vsub_add_vsub_cancel, ←norm_dist,
-      ←norm_dist, ←norm_dist, isometry.dist_eq h, isometry.dist_eq h, isometry.dist_eq h,
-      norm_dist V1 _ p, norm_dist V1 _ (x +ᵥ p), norm_dist V1 _ (x +ᵥ p), vadd_vsub,
-      vsub_vadd_eq_vsub_sub, vsub_vadd_eq_vsub_sub, vsub_self, vadd_vsub, zero_sub, norm_neg,
-      norm_sub_rev],
+  rw [vadd_assoc, neg_add_self, zero_vadd, add_comm, vsub_add_vsub_cancel, ←dist_eq_norm V2,
+      ←dist_eq_norm V2, ←dist_eq_norm V2, isometry.dist_eq h, isometry.dist_eq h,
+      isometry.dist_eq h, dist_eq_norm V1 _ p, dist_eq_norm V1 _ (x +ᵥ p),
+      dist_eq_norm V1 _ (x +ᵥ p), vadd_vsub, vsub_vadd_eq_vsub_sub, vsub_vadd_eq_vsub_sub,
+      vsub_self, vadd_vsub, zero_sub, norm_neg, norm_sub_rev],
   ring
 end
 
@@ -772,7 +772,8 @@ angle_of_vectors_of_self_of_nonzero (λ he, h ((vsub_eq_zero_iff_eq V).1 he))
 lemma dist_square_eq_dist_square_add_dist_square_iff_angle_eq_pi_div_two (p1 p2 p3 : P) :
   dist p1 p3 * dist p1 p3 = dist p1 p2 * dist p1 p2 + dist p3 p2 * dist p3 p2 ↔
     ∠ V p1 p2 p3 = real.pi / 2 :=
-by erw [metric_space.dist_comm p3 p2, norm_dist V p1 p3, norm_dist V p1 p2, norm_dist V p2 p3,
+by erw [metric_space.dist_comm p3 p2, dist_eq_norm V p1 p3, dist_eq_norm V p1 p2,
+        dist_eq_norm V p2 p3,
         ←norm_sub_square_eq_norm_square_add_norm_square_iff_angle_eq_pi_div_two,
         vsub_sub_vsub_right_cancel V p1, ←neg_vsub_eq_vsub_rev V p2 p3, norm_neg]
 
@@ -783,7 +784,7 @@ lemma dist_square_eq_dist_square_add_dist_square_sub_two_mul_dist_mul_dist_mul_c
     dist p1 p2 * dist p1 p2 + dist p3 p2 * dist p3 p2 -
       2 * dist p1 p2 * dist p3 p2 * (∠ V p1 p2 p3).cos :=
 begin
-  rw [norm_dist V p1 p3, norm_dist V p1 p2, norm_dist V p3 p2],
+  rw [dist_eq_norm V p1 p3, dist_eq_norm V p1 p2, dist_eq_norm V p3 p2],
   unfold angle_of_points,
   convert norm_sub_square_eq_norm_square_add_norm_square_sub_two_mul_norm_mul_norm_mul_cos_angle
           (p1 -ᵥ p2 : V) (p3 -ᵥ p2 : V),
@@ -795,7 +796,7 @@ end
 lemma angle_eq_angle_of_dist_eq {p1 p2 p3 : P} (h : dist p1 p2 = dist p1 p3) :
   ∠ V p1 p2 p3 = ∠ V p1 p3 p2 :=
 begin
-  rw [norm_dist V p1 p2, norm_dist V p1 p3] at h,
+  rw [dist_eq_norm V p1 p2, dist_eq_norm V p1 p3] at h,
   unfold angle_of_points,
   convert angle_sub_eq_angle_sub_rev_of_norm_eq h,
   { exact (vsub_sub_vsub_left_cancel V p3 p2 p1).symm },
@@ -808,7 +809,7 @@ lemma dist_eq_of_angle_eq_angle_of_angle_ne_pi {p1 p2 p3 : P}
     (hpi : ∠ V p2 p1 p3 ≠ real.pi) : dist p1 p2 = dist p1 p3 :=
 begin
   unfold angle_of_points at h hpi,
-  rw [norm_dist V p1 p2, norm_dist V p1 p3],
+  rw [dist_eq_norm V p1 p2, dist_eq_norm V p1 p3],
   rw [←angle_of_vectors_of_neg_of_neg, neg_vsub_eq_vsub_rev, neg_vsub_eq_vsub_rev] at hpi,
   rw [←vsub_sub_vsub_left_cancel V p3 p2 p1, ←vsub_sub_vsub_left_cancel V p2 p3 p1] at h,
   exact norm_eq_of_angle_sub_eq_angle_sub_rev_of_angle_ne_pi h hpi
