@@ -1,7 +1,7 @@
 import algebra.big_operators
 import analysis.normed_space.real_inner_product
 import affine_space
-import normed_add_torsor
+import analysis.normed_space.add_torsor
 import tactic.apply_fun
 
 noncomputable theory
@@ -532,15 +532,6 @@ begin
   rw [cos_angle_of_vectors, cos_angle_of_vectors, h, ←neg_sub, norm_neg, neg_sub,
       inner_sub_right, inner_sub_right, inner_self_eq_norm_square, inner_self_eq_norm_square, h,
       inner_comm x y]
-end
-
-/-- Multiplying `a` by itself and then by its inverse results in `a`
-(whether or not `a` is zero). -/
-lemma mul_self_mul_inv (a : ℝ) : a * a * a⁻¹ = a :=
-begin
-  by_cases h : a = 0,
-  { rw [h, inv_zero, mul_zero] },
-  { rw [mul_assoc, mul_inv_cancel h, mul_one] }
 end
 
 /-- Converse of pons asinorum, vector angle form. -/

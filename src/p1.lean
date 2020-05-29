@@ -213,9 +213,7 @@ theorem first_term_three (a : ℕ → ℤ) (hodd : all_odd a)
     (hrec : p1_recurrence a) : a 0 = 3 :=
 begin
   set k : ℕ := 2 ^ (2 + nat_abs (a 0 - 3)) with hk,
-  have hltk : 2 + nat_abs (a 0 - 3) < k,
-  { rw hk,
-    exact nat.lt_pow_self dec_trivial _ },
+  have hltk : 2 + nat_abs (a 0 - 3) < k := nat.lt_two_pow _,
   have hmod : a 0 % k = 3,
   { rw hk,
     push_cast,

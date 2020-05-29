@@ -3,7 +3,7 @@
 import data.finset
 import data.fintype.basic
 import data.nat.parity
-import logic.function
+import logic.function.basic
 import tactic.interval_cases
 import tactic.linarith
 import tactic.ring_exp
