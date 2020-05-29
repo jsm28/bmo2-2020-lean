@@ -225,8 +225,7 @@ begin
     apply_fun abs at ha,
     norm_num at ha,
     rcases (abs_inner_div_norm_mul_norm_eq_one_iff x y).1 ha with ⟨hx, ⟨r, ⟨hr, hy⟩⟩⟩,
-    use hx,
-    use r,
+    use [hx, r],
     refine and.intro _ hy,
     by_contradiction hrneg,
     rw hy at h,
@@ -251,8 +250,7 @@ begin
     apply_fun abs at ha,
     norm_num at ha,
     rcases (abs_inner_div_norm_mul_norm_eq_one_iff x y).1 ha with ⟨hx, ⟨r, ⟨hr, hy⟩⟩⟩,
-    use hx,
-    use r,
+    use [hx, r],
     refine and.intro _ hy,
     by_contradiction hrpos,
     rw hy at h,
@@ -742,7 +740,7 @@ angle_of_vectors_nonneg _ _
 lemma angle_of_points_le_pi (p1 p2 p3 : P) : ∠ V p1 p2 p3 ≤ real.pi :=
 angle_of_vectors_le_pi _ _
 
-/-- The angle at a point, where the first two points are the same. -/
+/-- The angle ∠AAB at a point. -/
 lemma angle_of_points_eq_left (p1 p2 : P) : ∠ V p1 p1 p2 = real.pi / 2 :=
 begin
   unfold angle_of_points,
@@ -750,14 +748,50 @@ begin
   exact angle_of_vectors_zero_left _
 end
 
-/-- The angle at a point, where the last two points are the same. -/
+/-- The angle ∠ABB at a point. -/
 lemma angle_of_points_eq_right (p1 p2 : P) : ∠ V p1 p2 p2 = real.pi / 2 :=
 by rw [angle_of_points_comm, angle_of_points_eq_left]
 
-/-- The angle at a point, where the first and last points are the
-same. -/
+/-- The angle ∠ABA at a point. -/
 lemma angle_of_points_eq_of_ne {p1 p2 : P} (h : p1 ≠ p2) : ∠ V p1 p2 p1 = 0 :=
 angle_of_vectors_of_self_of_nonzero (λ he, h ((vsub_eq_zero_iff_eq V).1 he))
+
+/-- If the angle ∠ABC at a point is π, the angle ∠BAC is 0. -/
+lemma angle_of_points_eq_zero_of_angle_eq_pi_left {p1 p2 p3 : P} (h : ∠ V p1 p2 p3 = real.pi) :
+  ∠ V p2 p1 p3 = 0 :=
+begin
+  unfold angle_of_points at h,
+  rw angle_of_vectors_eq_pi_iff at h,
+  rcases h with ⟨hp1p2, ⟨r, ⟨hr, hpr⟩⟩⟩,
+  unfold angle_of_points,
+  rw angle_of_vectors_eq_zero_iff,
+  rw [←neg_vsub_eq_vsub_rev, neg_ne_zero] at hp1p2,
+  use [hp1p2, -r + 1, add_pos' (neg_pos_of_neg hr) zero_lt_one],
+  rw [add_smul, ←neg_vsub_eq_vsub_rev V p1 p2, smul_neg],
+  simp [←hpr]
+end
+
+/-- If the angle ∠ABC at a point is π, the angle ∠BCA is 0. -/
+lemma angle_of_points_eq_zero_of_angle_eq_pi_right {p1 p2 p3 : P} (h : ∠ V p1 p2 p3 = real.pi) :
+  ∠ V p2 p3 p1 = 0 :=
+begin
+  rw angle_of_points_comm at h,
+  exact angle_of_points_eq_zero_of_angle_eq_pi_left V h
+end
+
+/-- If ∠BCD = π, then ∠ABC = ∠ABD. -/
+lemma angle_of_points_eq_angle_of_points_of_angle_eq_pi (p1 : P) {p2 p3 p4 : P}
+    (h : ∠ V p2 p3 p4 = real.pi) : ∠ V p1 p2 p3 = ∠ V p1 p2 p4 :=
+begin
+  unfold angle_of_points at h,
+  rw angle_of_vectors_eq_pi_iff at h,
+  rcases h with ⟨hp2p3, ⟨r, ⟨hr, hpr⟩⟩⟩,
+  unfold angle_of_points,
+  symmetry,
+  convert angle_of_vectors_of_pos_smul_right _ _ (add_pos' (neg_pos_of_neg hr) zero_lt_one),
+  rw [add_smul, ←neg_vsub_eq_vsub_rev V p2 p3, smul_neg],
+  simp [←hpr]
+end
 
 /-- Pythagorean theorem, if-and-only-if angle-at-point form. -/
 lemma dist_square_eq_dist_square_add_dist_square_iff_angle_eq_pi_div_two (p1 p2 p3 : P) :
