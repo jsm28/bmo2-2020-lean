@@ -448,6 +448,18 @@ begin
     rw h }
 end
 
+/-- If the angle between two vectors is π, the angles between those
+vectors and a third vector add to π. -/
+lemma angle_of_vectors_add_angle_of_vectors_eq_pi_of_angle_of_vectors_eq_pi {x y : V} (z : V)
+    (h : angle_of_vectors x y = real.pi) :
+  angle_of_vectors x z + angle_of_vectors y z = real.pi :=
+begin
+  rw angle_of_vectors_eq_pi_iff at h,
+  rcases h with ⟨hx, ⟨r, ⟨hr, hxy⟩⟩⟩,
+  rw [hxy, angle_of_vectors_of_neg_smul_left x z hr, angle_of_vectors_of_neg_left,
+      add_sub_cancel'_right]
+end
+
 /-- Two vectors have inner product 0 if and only if the angle between
 them is π/2. -/
 lemma inner_eq_zero_iff_angle_eq_pi_div_two (x y : V) :
@@ -791,6 +803,16 @@ begin
   convert angle_of_vectors_of_pos_smul_right _ _ (add_pos' (neg_pos_of_neg hr) zero_lt_one),
   rw [add_smul, ←neg_vsub_eq_vsub_rev V p2 p3, smul_neg],
   simp [←hpr]
+end
+
+/-- If ∠BCD = π, then ∠ACB + ∠ACD = π. -/
+lemma angle_of_points_add_angle_of_points_eq_pi_of_angle_of_points_eq_pi (p1 : P) {p2 p3 p4 : P}
+    (h : ∠ V p2 p3 p4 = real.pi) : ∠ V p1 p3 p2 + ∠ V p1 p3 p4 = real.pi :=
+begin
+  unfold angle_of_points at h,
+  unfold angle_of_points,
+  rw [angle_of_vectors_comm (p1 -ᵥ p3), angle_of_vectors_comm (p1 -ᵥ p3)],
+  exact angle_of_vectors_add_angle_of_vectors_eq_pi_of_angle_of_vectors_eq_pi _ h
 end
 
 /-- Pythagorean theorem, if-and-only-if angle-at-point form. -/
