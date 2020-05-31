@@ -142,7 +142,8 @@ def affine_map_of_isometry {f : P1 → P2} (h : isometry f) : affine_map ℝ V1 
   linear := linear_map_of_isometry V1 V2 h,
   add := begin
     intros p v,
-    rw vector_map_of_isometry_eq V1 V2 h _ p,
+    unfold linear_map_of_isometry linear_map_of_preserves_inner,
+    simp_rw vector_map_of_isometry_eq V1 V2 h _ p,
     exact (vsub_vadd V2 (f (v +ᵥ p)) (f p)).symm
   end }
 

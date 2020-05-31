@@ -1738,7 +1738,7 @@ begin
   rw sub_black_even_rows _ _ _ _ _ ha hb,
   norm_cast,
   ring,
-  rw sub_self,
+  rw [mul_assoc, sub_self],
   norm_num
 end
 
