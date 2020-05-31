@@ -16,8 +16,8 @@ showing that they are affine maps that preserve the inner product.
 
 open add_action add_torsor
 
-variables (V1 : Type*) {P1 : Type*} [inner_product_space V1] [metric_space P1]
-    [S1 : euclidean_affine_space V1 P1] (V2 : Type*) {P2 : Type*} [inner_product_space V2]
+variables {V1 : Type*} {P1 : Type*} [inner_product_space V1] [metric_space P1]
+    [S1 : euclidean_affine_space V1 P1] {V2 : Type*} {P2 : Type*} [inner_product_space V2]
     [metric_space P2] [S2 : euclidean_affine_space V2 P2]
 
 /-- The inner product, in terms of the norm. -/
@@ -40,8 +40,8 @@ end
 def preserves_inner (f : V1 → V2) : Prop := ∀ x y, inner (f x) (f y) = inner x y
 
 /-- A function that preserves the inner product preserves addition. -/
-lemma fn_of_add_eq_add_of_fn_of_preserves_inner (f : V1 → V2)
-    (h : preserves_inner V1 V2 f) (x y : V1) : f (x + y) = f x + f y :=
+lemma fn_of_add_eq_add_of_fn_of_preserves_inner {f : V1 → V2}
+    (h : preserves_inner f) (x y : V1) : f (x + y) = f x + f y :=
 begin
   apply eq_of_sub_eq_zero,
   rw [←inner_self_eq_zero, inner_sub_right, inner_sub_left, inner_sub_left, inner_add_right,
@@ -53,8 +53,8 @@ end
 
 /-- A function that preserves the inner product preserves scalar
 multiplication. -/
-lemma fn_of_smul_eq_smul_of_fn_of_preserves_inner (f : V1 → V2)
-    (h : preserves_inner V1 V2 f) (r : ℝ) (x : V1) :  f (r • x) = r • f x :=
+lemma fn_of_smul_eq_smul_of_fn_of_preserves_inner {f : V1 → V2}
+    (h : preserves_inner f) (r : ℝ) (x : V1) : f (r • x) = r • f x :=
 begin
   apply eq_of_sub_eq_zero,
   rw [←inner_self_eq_zero, inner_sub_right, inner_sub_left, inner_sub_left, inner_smul_right,
@@ -64,12 +64,13 @@ begin
 end
 
 /-- A function that preserves the inner product is a linear map. -/
-def linear_map_of_preserves_inner (f : V1 → V2) (h : preserves_inner V1 V2 f) :
+def linear_map_of_preserves_inner {f : V1 → V2} (h : preserves_inner f) :
   linear_map ℝ V1 V2 :=
 { to_fun := f,
-  add := fn_of_add_eq_add_of_fn_of_preserves_inner V1 V2 f h,
-  smul := fn_of_smul_eq_smul_of_fn_of_preserves_inner V1 V2 f h }
+  add := fn_of_add_eq_add_of_fn_of_preserves_inner h,
+  smul := fn_of_smul_eq_smul_of_fn_of_preserves_inner h }
 
+variables (V1) (V2)
 include S1 S2
 
 /-- The map on vectors corresponding to a map from P1 to P2, at a base
@@ -85,8 +86,8 @@ begin
 end
 
 /-- An isometry preserves the inner product. -/
-lemma preserves_inner_of_isometry (f : P1 → P2) (h : isometry f) (p : P1) :
-  preserves_inner V1 V2 (vector_map_of_point_map V1 V2 f p) :=
+lemma preserves_inner_of_isometry {f : P1 → P2} (h : isometry f) (p : P1) :
+  preserves_inner (vector_map_of_point_map V1 V2 f p) :=
 begin
   unfold preserves_inner,
   intros x y,
@@ -104,7 +105,7 @@ end
 
 /-- An isometry induces the same map on vectors with any base
 point. -/
-lemma vector_map_of_isometry_eq (f : P1 → P2) (h : isometry f) (p1 p2 : P1) :
+lemma vector_map_of_isometry_eq {f : P1 → P2} (h : isometry f) (p1 p2 : P1) :
   vector_map_of_point_map V1 V2 f p1 = vector_map_of_point_map V1 V2 f p2 :=
 begin
   ext x,
@@ -122,29 +123,26 @@ begin
   apply eq_sub_of_add_eq,
   symmetry,
   rw vadd_vsub_assoc,
-  exact fn_of_add_eq_add_of_fn_of_preserves_inner V1 V2 (vector_map_of_point_map V1 V2 f p1)
-                                                  (preserves_inner_of_isometry V1 V2 f h p1) _ _
+  exact fn_of_add_eq_add_of_fn_of_preserves_inner (preserves_inner_of_isometry V1 V2 h p1) _ _
 end
 
 /-- The map on vectors corresponding to a map from P1 to P2, for an
 isometry. -/
-def vector_map_of_isometry (f : P1 → P2) (h : isometry f) : V1 → V2 :=
+def vector_map_of_isometry {f : P1 → P2} (h : isometry f) : V1 → V2 :=
 vector_map_of_point_map V1 V2 f (classical.choice S1.nonempty)
 
 /-- The linear map on vectors corresponding to a map from P1 to P2,
 for an isometry. -/
-def linear_map_of_isometry (f : P1 → P2) (h : isometry f) : linear_map ℝ V1 V2 :=
-linear_map_of_preserves_inner V1 V2 (vector_map_of_isometry V1 V2 f h)
-                                    (preserves_inner_of_isometry V1 V2 f h _)
+def linear_map_of_isometry {f : P1 → P2} (h : isometry f) : linear_map ℝ V1 V2 :=
+linear_map_of_preserves_inner (preserves_inner_of_isometry V1 V2 h (classical.choice S1.nonempty))
 
 /-- An isometry is an affine map. -/
-def affine_map_of_isometry (f : P1 → P2) (h : isometry f) : affine_map ℝ V1 P1 V2 P2 :=
+def affine_map_of_isometry {f : P1 → P2} (h : isometry f) : affine_map ℝ V1 P1 V2 P2 :=
 { to_fun := f,
-  linear := linear_map_of_isometry V1 V2 f h,
+  linear := linear_map_of_isometry V1 V2 h,
   add := begin
     intros p v,
-    unfold vector_map_of_isometry,
-    rw vector_map_of_isometry_eq V1 V2 f h _ p,
+    rw vector_map_of_isometry_eq V1 V2 h _ p,
     exact (vsub_vadd V2 (f (v +ᵥ p)) (f p)).symm
   end }
 
