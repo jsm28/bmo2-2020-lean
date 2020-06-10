@@ -1,6 +1,5 @@
 import linear_algebra.affine_space
-import euclidean
-import tactic.apply_fun
+import geometry.euclidean
 import tactic.interval_cases
 
 noncomputable theory
@@ -21,22 +20,6 @@ open add_action add_torsor
 variables {V1 : Type*} {P1 : Type*} [inner_product_space V1] [metric_space P1]
     [S1 : euclidean_affine_space V1 P1] {V2 : Type*} {P2 : Type*} [inner_product_space V2]
     [metric_space P2] [S2 : euclidean_affine_space V2 P2]
-
-/-- The inner product, in terms of the norm. -/
-lemma inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two (x y : V2) :
-  inner x y = (∥x + y∥ * ∥x + y∥ - ∥x∥ * ∥x∥ - ∥y∥ * ∥y∥) / 2 :=
-begin
-  rw norm_add_mul_self,
-  ring
-end
-
-/-- The inner product, in terms of the norm. -/
-lemma inner_eq_norm_mul_self_add_norm_mul_self_sub_norm_sub_mul_self_div_two (x y : V2) :
-  inner x y = (∥x∥ * ∥x∥ + ∥y∥ * ∥y∥ - ∥x - y∥ * ∥x - y∥) / 2 :=
-begin
-  rw norm_sub_mul_self,
-  ring
-end
 
 /-- Whether a map on vectors preserves the inner product. -/
 def preserves_inner (f : V1 → V2) : Prop := ∀ x y, inner (f x) (f y) = inner x y
@@ -118,7 +101,7 @@ begin
     skip,
     rw ←vsub_vadd V1 p2 p1
   },
-  rw ←vsub_sub_vsub_right_cancel V2 (f (x +ᵥ p2 -ᵥ p1 +ᵥ p1)) _ (f p1),
+  rw ←vsub_sub_vsub_cancel_right V2 (f (x +ᵥ p2 -ᵥ p1 +ᵥ p1)) _ (f p1),
   change vector_map_of_point_map V1 V2 f p1 x =
     vector_map_of_point_map V1 V2 f p1 (x +ᵥ p2 -ᵥ p1) -
       vector_map_of_point_map V1 V2 f p1 (p2 -ᵥ p1),
@@ -321,7 +304,7 @@ begin
   unfold angle,
   rw [←angle_neg_neg (p1 -ᵥ p3), ←angle_neg_neg (p1 -ᵥ p2), neg_vsub_eq_vsub_rev,
       neg_vsub_eq_vsub_rev, neg_vsub_eq_vsub_rev, neg_vsub_eq_vsub_rev,
-      ←vsub_sub_vsub_right_cancel V p3 p2 p1, ←vsub_sub_vsub_right_cancel V p2 p3 p1],
+      ←vsub_sub_vsub_cancel_right V p3 p2 p1, ←vsub_sub_vsub_cancel_right V p2 p3 p1],
   exact angle_add_angle_sub_add_angle_sub_eq_pi (λ he, h3 ((vsub_eq_zero_iff_eq V).1 he))
                                                 (λ he, h2 ((vsub_eq_zero_iff_eq V).1 he))
 end
