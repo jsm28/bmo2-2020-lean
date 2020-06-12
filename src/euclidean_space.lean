@@ -52,8 +52,8 @@ end
 def linear_map_of_preserves_inner {f : V1 → V2} (h : preserves_inner f) :
   linear_map ℝ V1 V2 :=
 { to_fun := f,
-  add := fn_of_add_eq_add_of_fn_of_preserves_inner h,
-  smul := fn_of_smul_eq_smul_of_fn_of_preserves_inner h }
+  map_add' := fn_of_add_eq_add_of_fn_of_preserves_inner h,
+  map_smul' := fn_of_smul_eq_smul_of_fn_of_preserves_inner h }
 
 variables (V1) (V2)
 include S1 S2
