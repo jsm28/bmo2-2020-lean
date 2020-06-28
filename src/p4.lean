@@ -431,13 +431,13 @@ begin
             unfold polynomial.is_root,
             rw ← hmt,
             exact hden },
-          { rw [hterm, div_eq_zero_iff hden] at hm0,
+          { rw [hterm, div_eq_zero_iff] at hm0,
             apply finset.mem_union_left,
             apply finset.mem_union_right,
             rw polynomial.mem_roots hn0,
             unfold polynomial.is_root,
             rw ← hmt,
-            exact hm0 } } } } }
+            exact or.resolve_right hm0 hden } } } } }
 end
 
 -- There exists a countable set of k for which some term up to n is zero.

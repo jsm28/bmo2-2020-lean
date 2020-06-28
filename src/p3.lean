@@ -2924,16 +2924,12 @@ begin
         rw [iff_true_intro (mem_univ _), true_and,
             fin.coe_coe_of_lt (show t < n + 1, by linarith only [hst])] at ht,
         rw [ht, iff_true_intro (mem_univ _), true_and],
-        have ht0 : 0 ≤ t / 2 + 1, { linarith only [] },
-        have ht1 : 0 < t / 2 + 1, { linarith only [] },
-        have ht3 : t / 2 + 1 ≠ 0,
-        { exact nat.succ_ne_zero _ },
         conv
         begin
           to_lhs,
           congr,
-          rw [mem_filter, Ico.mem, iff_true_intro ht0, iff_true_intro ht1,
-              iff_false_intro ht3, true_and, true_and, false_and, false_or]
+          rw [mem_filter, Ico.mem, iff_true_intro (zero_le _), iff_true_intro (nat.succ_pos _),
+              iff_false_intro (nat.succ_ne_zero _), true_and, true_and, false_and, false_or]
         end,
         erw mem_filter at h,
         cases h with hcu h,
@@ -3159,7 +3155,7 @@ begin
           rw [hpar, ←nat.not_even_iff, not_not, nat.even_succ, nat.not_even_iff] at h,
           rw [hpar, h] } } } },
   { intros i j hi hj heq,
-    rw ext at heq,
+    rw ext_iff at heq,
     have heq0 := heq (0 : fin (n + 1)),
     rw [mem_filter, mem_filter, fin.coe_zero] at heq0,
     norm_num at heq0,
