@@ -12,8 +12,6 @@ import tactic.norm_num
 import tactic.ring
 import tactic.ring_exp
 
-import p1_lemmas
-
 open int
 
 -- Next term in sequence.
@@ -25,6 +23,23 @@ def p1_recurrence (a : ℕ → ℤ) : Prop := ∀ n : ℕ, a (n + 1) = p1_seq_ne
 -- Odd numbers.
 def odd (a : ℤ) : Prop := a % 2 = 1
 def all_odd (a : ℕ → ℤ) : Prop := ∀ n : ℕ, odd (a n)
+
+/-- If an integer is `a` mod `b`, there are corresponding cases for its
+value mod `c * b`. -/
+lemma mod_mul_eq_cases {n a b c : ℤ} (hbpos : 0 < b) (hcpos : 0 < c) (hmod : n % b = a) :
+  ∃ d : ℤ, 0 ≤ d ∧ d < c ∧ n % (c * b) = a + d * b :=
+begin
+  use ((n % (c * b)) / b),
+  split,
+  { exact int.div_nonneg (mod_nonneg _ (mul_ne_zero (ne_of_gt hcpos) (ne_of_gt hbpos)))
+                         (int.le_of_lt hbpos) },
+  split,
+  { rw int.div_lt_iff_lt_mul hbpos,
+    exact mod_lt_of_pos n (mul_pos hcpos hbpos) },
+  { rw [←hmod, ←mod_mod_of_dvd n (dvd_mul_left b c), mod_def (n % (c * b)) b,
+        mul_comm b (n % (c * b) / b)],
+    simp }
+end
 
 -- If an integer is a mod b, it is a or a + b mod 2b.
 theorem mod_mul_2 (n : ℤ) (a : ℤ) (b : ℤ) (hbpos : 0 < b) (hmod : n % b = a) :
