@@ -5,12 +5,11 @@
 
 import data.polynomial
 import data.real.basic
+import data.real.cardinality
 import tactic.basic
 import tactic.linarith
 import tactic.ring_exp
 import topology.instances.real
-
-import p4_lemmas
 
 noncomputable theory
 open_locale classical
@@ -494,13 +493,21 @@ theorem p4_countable_zero_set_prop:
     (∀ k : ℝ, (∃ m : ℕ, p4_term m k = 0) → k ∈ p4_countable_zero_set) :=
 classical.some_spec p4_countable_zero
 
+-- An open interval of reals is uncountable.
+lemma not_countable_Ioo_real {k1 k2 : ℝ} (h : k1 < k2) :
+  ¬ set.countable (set.Ioo k1 k2) :=
+begin
+  rw [cardinal.countable_iff, not_le, cardinal.mk_Ioo_real h],
+  exact cardinal.cantor _
+end
+
 -- Any open interval of reals contains one not in that set.
 theorem interval_open_not_in_set (k1 k2 : ℝ) (h : k1 < k2) :
   ∃ k : ℝ, k ∈ set.Ioo k1 k2 ∧ ¬ k ∈ p4_countable_zero_set :=
 begin
   have hns : ¬ set.Ioo k1 k2 ⊆ p4_countable_zero_set,
   { intro hsub,
-    exact not_countable_real_Ioo h
+    exact not_countable_Ioo_real h
       (set.countable.mono hsub p4_countable_zero_set_prop.left) },
   rw set.not_subset at hns,
   rcases hns with ⟨k, ⟨hk1, hk2⟩⟩,
