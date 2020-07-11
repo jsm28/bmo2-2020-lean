@@ -212,13 +212,13 @@ begin
       exact induction_main_all k a h2k (hk h2k) hrec },
     { by_cases hk1 : k = 1,
       { intro h22,
-        rw [hk1, (show nat.succ 1 = 2, by norm_num)],
+        rw hk1,
         exact induction_base_all a hodd hrec, },
       { intro h2sk,
         exfalso,
-        rw [(show 2 = nat.succ 1, by norm_num), nat.succ_le_iff, nat.lt_add_one_iff,
-            le_iff_lt_or_eq] at h2sk,
-        finish, }}},
+        rw [(show 2 = nat.succ 1, by norm_num), nat.succ_le_iff, nat.lt_add_one_iff] at h2sk,
+        rw not_le at h2k,
+        exact hk1 (le_antisymm (nat.le_of_lt_succ h2k) h2sk) }}},
 end
 
 -- The first term of the sequence is 3.

@@ -2143,7 +2143,7 @@ begin
         end,
         rw if_true,
         rw nat.not_even_iff at he,
-        rw [←nat.mod_add_div x 2, he, add_zero, nat.add_mul_div_left _ _ (dec_trivial : 2 > 0)],
+        rw [←nat.mod_add_div x 2, he, nat.add_mul_div_left _ _ (dec_trivial : 2 > 0)],
         conv
         begin
           to_rhs,
