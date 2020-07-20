@@ -395,8 +395,7 @@ begin
   { cases ht with st hst,
     use st ∪ polynomial.roots ((p4_term_poly (nat.succ t)).fst) ∪
              polynomial.roots ((p4_term_poly (nat.succ t)).snd),
-    intros k hm,
-    rcases hm with ⟨m, ⟨hmlt, hm0⟩⟩,
+    rintros k ⟨m, hmlt, hm0⟩,
     by_cases hx : ∃ (q : ℕ), (q ≤ t ∧ p4_term q k = 0),
     { apply finset.mem_union_left,
       apply finset.mem_union_left,
