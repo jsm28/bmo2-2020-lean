@@ -1,4 +1,4 @@
-import linear_algebra.affine_space
+import linear_algebra.affine_space.basic
 import geometry.euclidean
 
 noncomputable theory
