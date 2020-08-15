@@ -1,4 +1,3 @@
-import linear_algebra.affine_space.basic
 import geometry.euclidean
 
 noncomputable theory
@@ -13,11 +12,9 @@ This section develops properties of isometries in Euclidean space,
 showing that they are affine maps that preserve the inner product.
 -/
 
-open add_action add_torsor
-
 variables {V1 : Type*} {P1 : Type*} [inner_product_space V1] [metric_space P1]
-    [S1 : euclidean_affine_space V1 P1] {V2 : Type*} {P2 : Type*} [inner_product_space V2]
-    [metric_space P2] [S2 : euclidean_affine_space V2 P2]
+    [S1 : normed_add_torsor V1 P1] {V2 : Type*} {P2 : Type*} [inner_product_space V2]
+    [metric_space P2] [S2 : normed_add_torsor V2 P2]
 
 /-- Whether a map on vectors preserves the inner product. -/
 def preserves_inner (f : V1 → V2) : Prop := ∀ x y, inner (f x) (f y) = inner x y
@@ -78,10 +75,10 @@ begin
       inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two,
       inner_eq_norm_mul_self_add_norm_mul_self_sub_norm_sub_mul_self_div_two],
   unfold vector_map_of_point_map,
-  rw [vadd_assoc, neg_add_self, zero_vadd, add_comm, vsub_add_vsub_cancel, ←dist_eq_norm V2,
-      ←dist_eq_norm V2, ←dist_eq_norm V2, isometry.dist_eq h, isometry.dist_eq h,
-      isometry.dist_eq h, dist_eq_norm V1 _ p, dist_eq_norm V1 _ (x +ᵥ p),
-      dist_eq_norm V1 _ (x +ᵥ p), vadd_vsub, vsub_vadd_eq_vsub_sub, vsub_vadd_eq_vsub_sub,
+  rw [vadd_assoc, neg_add_self, zero_vadd, add_comm, vsub_add_vsub_cancel, ←dist_eq_norm_vsub V2,
+      ←dist_eq_norm_vsub V2, ←dist_eq_norm_vsub V2, isometry.dist_eq h, isometry.dist_eq h,
+      isometry.dist_eq h, dist_eq_norm_vsub V1 _ p, dist_eq_norm_vsub V1 _ (x +ᵥ p),
+      dist_eq_norm_vsub V1 _ (x +ᵥ p), vadd_vsub, vsub_vadd_eq_vsub_sub, vsub_vadd_eq_vsub_sub,
       vsub_self, vadd_vsub, zero_sub, norm_neg, norm_sub_rev],
   ring
 end
@@ -93,13 +90,13 @@ lemma vector_map_of_isometry_eq {f : P1 → P2} (h : isometry f) (p1 p2 : P1) :
 begin
   ext x,
   unfold vector_map_of_point_map,
-  rw ←vsub_vadd V1 (x +ᵥ p2) p1,
+  rw ←vsub_vadd (x +ᵥ p2) p1,
   conv_rhs {
     congr,
     skip,
-    rw ←vsub_vadd V1 p2 p1
+    rw ←vsub_vadd p2 p1
   },
-  rw ←vsub_sub_vsub_cancel_right V2 (f (x +ᵥ p2 -ᵥ p1 +ᵥ p1)) _ (f p1),
+  rw ←vsub_sub_vsub_cancel_right (f (x +ᵥ p2 -ᵥ p1 +ᵥ p1)) _ (f p1),
   change vector_map_of_point_map V1 V2 f p1 x =
     vector_map_of_point_map V1 V2 f p1 (x +ᵥ p2 -ᵥ p1) -
       vector_map_of_point_map V1 V2 f p1 (p2 -ᵥ p1),
@@ -120,14 +117,14 @@ def linear_map_of_isometry {f : P1 → P2} (h : isometry f) : linear_map ℝ V1 
 linear_map_of_preserves_inner (preserves_inner_of_isometry V1 V2 h (classical.choice S1.nonempty))
 
 /-- An isometry is an affine map. -/
-def affine_map_of_isometry {f : P1 → P2} (h : isometry f) : affine_map ℝ V1 P1 V2 P2 :=
+def affine_map_of_isometry {f : P1 → P2} (h : isometry f) : affine_map ℝ P1 P2 :=
 { to_fun := f,
   linear := linear_map_of_isometry V1 V2 h,
   map_vadd' := begin
     intros p v,
     unfold linear_map_of_isometry linear_map_of_preserves_inner,
     simp_rw vector_map_of_isometry_eq V1 V2 h _ p,
-    exact (vsub_vadd V2 (f (v +ᵥ p)) (f p)).symm
+    exact (vsub_vadd (f (v +ᵥ p)) (f p)).symm
   end }
 
 end isometry

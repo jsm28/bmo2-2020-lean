@@ -16,28 +16,29 @@
 
 import geometry.euclidean
 
-import circumcenter
-
-open affine_space finite_dimensional
+open affine finite_dimensional
 
 variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
-    [euclidean_affine_space V P] [finite_dimensional ℝ V]
+    [normed_add_torsor V P] [finite_dimensional ℝ V]
 
 -- Properties of sets of points in the problem.
 
 def at_least_four_points (s : set P) : Prop := 4 ≤ cardinal.mk s
 
 variables (V)
+include V
 
 def no_three_points_collinear (s : set P) : Prop :=
-∀ p : fin 3 → P, function.injective p → set.range p ⊆ s → affine_independent ℝ V p
+∀ p : fin 3 → P, function.injective p → set.range p ⊆ s → affine_independent ℝ p
 
 def same_circumradius (s : set P) : Prop :=
-∃ r : ℝ, ∀ t : triangle ℝ V P, set.range t.points ⊆ s → t.circumradius = r
+∃ r : ℝ, ∀ t : triangle ℝ P, set.range t.points ⊆ s → t.circumradius = r
 
 -- The description given in the problem.
 def p2_problem_desc (s : set P) : Prop :=
 at_least_four_points s ∧ no_three_points_collinear V s ∧ same_circumradius V s
+
+omit V
 
 -- Properties of sets of points in the answer.
 
