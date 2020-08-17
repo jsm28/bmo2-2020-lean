@@ -16,6 +16,8 @@
 
 import geometry.euclidean
 
+import orthocenter
+
 open affine finite_dimensional
 
 variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
@@ -25,7 +27,6 @@ variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
 
 def at_least_four_points (s : set P) : Prop := 4 ≤ cardinal.mk s
 
-variables (V)
 include V
 
 def no_three_points_collinear (s : set P) : Prop :=
@@ -36,7 +37,7 @@ def same_circumradius (s : set P) : Prop :=
 
 -- The description given in the problem.
 def p2_problem_desc (s : set P) : Prop :=
-at_least_four_points s ∧ no_three_points_collinear V s ∧ same_circumradius V s
+at_least_four_points s ∧ no_three_points_collinear s ∧ same_circumradius s
 
 omit V
 
@@ -49,9 +50,13 @@ omit V
 def concyclic (s : set P) : Prop :=
 ∃ (centre : P) (radius : ℝ), ∀ p ∈ s, dist p centre = radius
 
+include V
+
 -- A set of points forms an orthocentric system.  This should go in
--- mathlib.
-def orthocentric_system (s : set P) : Prop := sorry
+-- mathlib, along with various properties thereof.
+def orthocentric_system (s : set P) : Prop :=
+∃ t : triangle ℝ P,
+  t.orthocenter ∉ set.range t.points ∧ s = insert t.orthocenter (set.range t.points)
 
 -- The description given as an answer to the problem.
 def p2_answer_desc (s : set P) : Prop :=
@@ -59,7 +64,7 @@ at_least_four_points s ∧ (concyclic s ∨ orthocentric_system s)
 
 -- The result of the problem.
 theorem p2_result (s : set P) (hd2 : findim ℝ V = 2) :
-  p2_problem_desc V s ↔ p2_answer_desc s :=
+  p2_problem_desc s ↔ p2_answer_desc s :=
 begin
   unfold p2_problem_desc p2_answer_desc,
   rw and.congr_right_iff,
