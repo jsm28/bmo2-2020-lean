@@ -8,6 +8,71 @@ noncomputable theory
 open_locale big_operators
 open_locale classical
 
+section affine
+
+variables (k : Type*) {V : Type*} {P : Type*} [ring k] [add_comm_group V] [module k V]
+          [affine_space V P]
+variables {ι : Type*}
+include V
+
+-- Slightly different statement from PR #3858 (full proof there).
+lemma vector_span_eq_span_vsub_set_left' {s : set P} {p : P} (hp : p ∈ s) :
+  vector_span k s = submodule.span k ((-ᵥ) p '' s) :=
+sorry
+
+-- Slightly different statement from PR #3858 (full proof there).
+lemma vector_span_eq_span_vsub_set_right' {s : set P} {p : P} (hp : p ∈ s) :
+  vector_span k s = submodule.span k ((-ᵥ p) '' s) :=
+sorry
+
+/-- The `vector_span` is the span of the pairwise subtractions with a
+given point on the left, excluding the subtraction of that point from
+itself. -/
+lemma vector_span_eq_span_vsub_set_left_ne {s : set P} {p : P} (hp : p ∈ s) :
+  vector_span k s = submodule.span k ((-ᵥ) p '' (s \ {p})) :=
+begin
+  conv_lhs { rw [vector_span_eq_span_vsub_set_left' k hp, ←set.insert_eq_of_mem hp,
+                 ←set.insert_diff_singleton, set.image_insert_eq] },
+  simp [submodule.span_insert_eq_span]
+end
+
+/-- The `vector_span` is the span of the pairwise subtractions with a
+given point on the right, excluding the subtraction of that point from
+itself. -/
+lemma vector_span_eq_span_vsub_set_right_ne {s : set P} {p : P} (hp : p ∈ s) :
+  vector_span k s = submodule.span k ((-ᵥ p) '' (s \ {p})) :=
+begin
+  conv_lhs { rw [vector_span_eq_span_vsub_set_right' k hp, ←set.insert_eq_of_mem hp,
+                 ←set.insert_diff_singleton, set.image_insert_eq] },
+  simp [submodule.span_insert_eq_span]
+end
+
+/-- The `vector_span` of the image of a function is the span of the
+pairwise subtractions with a given point on the left, excluding the
+subtraction of that point from itself. -/
+lemma vector_span_image_eq_span_vsub_set_left_ne (p : ι → P) {s : set ι} {i : ι} (hi : i ∈ s) :
+  vector_span k (p '' s) = submodule.span k ((-ᵥ) (p i) '' (p '' (s \ {i}))) :=
+begin
+  conv_lhs { rw [vector_span_eq_span_vsub_set_left' k (set.mem_image_of_mem p hi),
+                 ←set.insert_eq_of_mem hi, ←set.insert_diff_singleton, set.image_insert_eq,
+                 set.image_insert_eq] },
+  simp [submodule.span_insert_eq_span]
+end
+
+/-- The `vector_span` of the image of a function is the span of the
+pairwise subtractions with a given point on the right, excluding the
+subtraction of that point from itself. -/
+lemma vector_span_image_eq_span_vsub_set_right_ne (p : ι → P) {s : set ι} {i : ι} (hi : i ∈ s) :
+  vector_span k (p '' s) = submodule.span k ((-ᵥ (p i)) '' (p '' (s \ {i}))) :=
+begin
+  conv_lhs { rw [vector_span_eq_span_vsub_set_right' k (set.mem_image_of_mem p hi),
+                 ←set.insert_eq_of_mem hi, ←set.insert_diff_singleton, set.image_insert_eq,
+                 set.image_insert_eq] },
+  simp [submodule.span_insert_eq_span]
+end
+
+end affine
+
 namespace affine
 
 namespace simplex
@@ -496,12 +561,8 @@ begin
     simp [h₁₂, h₁₃] },
   rw [monge_plane_def, altitude_def, direction_affine_span, hs, he, finset.centroid_singleton,
       finset.coe_insert, finset.coe_singleton,
-      vector_span_eq_span_vsub_set_left ℝ (set.mem_image_of_mem t.points (set.mem_insert i₂ _)),
-      set.image_insert_eq, set.image_singleton],
-  conv_lhs { congr, congr, skip, congr, congr, congr, funext, conv { congr, funext, rw eq_comm } },
-  simp_rw ←set.mem_image_iff_bex,
-  rw [set.image_insert_eq, set.image_singleton, set.set_of_mem_eq],
-  simp [submodule.span_insert_eq_span]
+      vector_span_image_eq_span_vsub_set_left_ne ℝ _ (set.mem_insert i₂ _)],
+  simp [h₂₃, submodule.span_insert_eq_span]
 end
 
 /-- The orthocenter lies in the altitudes. -/
