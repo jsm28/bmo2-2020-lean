@@ -65,6 +65,44 @@ end
 
 end affine
 
+namespace affine_subspace
+
+variables {k : Type*} {V : Type*} {P : Type*} [ring k] [add_comm_group V] [module k V]
+          [affine_space V P]
+variables {ι : Type*}
+include V
+
+-- More affine space lemmas yet to be PRed.
+
+/-- Adding a vector to a point in a subspace produces a point in the
+subspace if and only if the vector is in the direction. -/
+lemma vadd_mem_iff_mem_direction {s : affine_subspace k P} (v : V) {p : P} (hp : p ∈ s) :
+  v +ᵥ p ∈ s ↔ v ∈ s.direction :=
+begin
+  split,
+  { intro h,
+    simpa using vsub_mem_direction h hp },
+  { exact λ h, vadd_mem_of_mem_direction h hp }
+end
+
+/-- If two affine subspaces have a point in common, the direction of
+their inf equals the inf of their directions. -/
+lemma direction_inf_of_mem {s₁ s₂ : affine_subspace k P} {p : P} (h₁ : p ∈ s₁) (h₂ : p ∈ s₂) :
+  (s₁ ⊓ s₂).direction = s₁.direction ⊓ s₂.direction :=
+begin
+  ext v,
+  rw [submodule.mem_inf, ←vadd_mem_iff_mem_direction v h₁, ←vadd_mem_iff_mem_direction v h₂,
+      ←vadd_mem_iff_mem_direction v ((mem_inf_iff p s₁ s₂).2 ⟨h₁, h₂⟩), mem_inf_iff]
+end
+
+/-- If two affine subspaces have a point in their inf, the direction
+of their inf equals the inf of their directions. -/
+lemma direction_inf_of_mem_inf {s₁ s₂ : affine_subspace k P} {p : P} (h : p ∈ s₁ ⊓ s₂) :
+  (s₁ ⊓ s₂).direction = s₁.direction ⊓ s₂.direction :=
+direction_inf_of_mem ((mem_inf_iff p s₁ s₂).1 h).1 ((mem_inf_iff p s₁ s₂).1 h).2
+
+end affine_subspace
+
 namespace affine
 
 namespace simplex
@@ -491,13 +529,51 @@ begin
   rw [inner_smul_right, s.inner_monge_point_vsub_face_centroid_vsub h, mul_zero]
 end
 
+/-- The direction of a Monge plane. -/
+lemma direction_monge_plane {n : ℕ} (s : simplex ℝ P (n + 2)) {i₁ i₂ : fin (n + 3)} (h : i₁ ≠ i₂) :
+  (s.monge_plane i₁ i₂).direction = (submodule.span ℝ {s.points i₁ -ᵥ s.points i₂}).orthogonal ⊓
+    vector_span ℝ (set.range s.points) :=
+by rw [monge_plane_def, direction_inf_of_mem_inf (s.monge_point_mem_monge_plane h), direction_mk',
+       direction_affine_span]
+
 /-- The Monge point is the only point in all the Monge planes from any
 one vertex. -/
 lemma eq_monge_point_of_forall_mem_monge_plane {n : ℕ} {s : simplex ℝ P (n + 2)}
     {i₁ : fin (n + 3)} {p : P} (h : ∀ i₂, i₁ ≠ i₂ → p ∈ s.monge_plane i₁ i₂) :
   p = s.monge_point :=
 begin
-  sorry
+  rw ←@vsub_eq_zero_iff_eq V,
+  have h' : ∀ i₂, i₁ ≠ i₂ → p -ᵥ s.monge_point ∈
+    (submodule.span ℝ {s.points i₁ -ᵥ s.points i₂}).orthogonal ⊓ vector_span ℝ (set.range s.points),
+  { intros i₂ hne,
+    rw [←s.direction_monge_plane hne,
+        vsub_right_mem_direction_iff_mem (s.monge_point_mem_monge_plane hne)],
+    exact h i₂ hne },
+  have hi : p -ᵥ s.monge_point ∈ ⨅ (i₂ : {i // i₁ ≠ i}),
+    (submodule.span ℝ ({s.points i₁ -ᵥ s.points i₂}: set V)).orthogonal,
+  { rw submodule.mem_infi,
+    exact λ i, (submodule.mem_inf.1 (h' i i.property)).1 },
+  rw [submodule.infi_orthogonal, ←submodule.span_Union] at hi,
+  have hu : (⋃ (i : {i // i₁ ≠ i}), ({s.points i₁ -ᵥ s.points i} : set V)) =
+    (-ᵥ) (s.points i₁) '' (s.points '' (set.univ \ {i₁})),
+  { rw [set.image_image],
+    ext x,
+    simp_rw [set.mem_Union, set.mem_image, set.mem_singleton_iff, set.mem_diff_singleton],
+    split,
+    { rintros ⟨i, rfl⟩,
+      use [i, ⟨set.mem_univ _, i.property.symm⟩] },
+    { rintros ⟨i, ⟨hiu, hi⟩, rfl⟩,
+      use [⟨i, hi.symm⟩, rfl] } },
+  rw [hu, ←vector_span_image_eq_span_vsub_set_left_ne ℝ _ (set.mem_univ _),
+      set.image_univ] at hi,
+  have hv : p -ᵥ s.monge_point ∈ vector_span ℝ (set.range s.points),
+  { let s₁ : finset (fin (n + 3)) := finset.univ.erase i₁,
+    obtain ⟨i₂, h₂⟩ :=
+      finset.card_pos.1 (show 0 < finset.card s₁, by simp [finset.card_erase_of_mem]),
+    have h₁₂ : i₁ ≠ i₂ := (finset.ne_of_mem_erase h₂).symm,
+    exact (submodule.mem_inf.1 (h' i₂ h₁₂)).2 },
+  exact submodule.disjoint_def.1 ((vector_span ℝ (set.range s.points)).orthogonal_disjoint)
+    _ hv hi,
 end
 
 /-- An altitude of a simplex is the line that passes through a vertex
