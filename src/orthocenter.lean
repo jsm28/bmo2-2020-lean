@@ -15,15 +15,7 @@ variables (k : Type*) {V : Type*} {P : Type*} [ring k] [add_comm_group V] [modul
 variables {ι : Type*}
 include V
 
--- Slightly different statement from PR #3858 (full proof there).
-lemma vector_span_eq_span_vsub_set_left' {s : set P} {p : P} (hp : p ∈ s) :
-  vector_span k s = submodule.span k ((-ᵥ) p '' s) :=
-sorry
-
--- Slightly different statement from PR #3858 (full proof there).
-lemma vector_span_eq_span_vsub_set_right' {s : set P} {p : P} (hp : p ∈ s) :
-  vector_span k s = submodule.span k ((-ᵥ p) '' s) :=
-sorry
+-- PR #3866.
 
 /-- The `vector_span` is the span of the pairwise subtractions with a
 given point on the left, excluding the subtraction of that point from
@@ -31,7 +23,7 @@ itself. -/
 lemma vector_span_eq_span_vsub_set_left_ne {s : set P} {p : P} (hp : p ∈ s) :
   vector_span k s = submodule.span k ((-ᵥ) p '' (s \ {p})) :=
 begin
-  conv_lhs { rw [vector_span_eq_span_vsub_set_left' k hp, ←set.insert_eq_of_mem hp,
+  conv_lhs { rw [vector_span_eq_span_vsub_set_left k hp, ←set.insert_eq_of_mem hp,
                  ←set.insert_diff_singleton, set.image_insert_eq] },
   simp [submodule.span_insert_eq_span]
 end
@@ -42,7 +34,7 @@ itself. -/
 lemma vector_span_eq_span_vsub_set_right_ne {s : set P} {p : P} (hp : p ∈ s) :
   vector_span k s = submodule.span k ((-ᵥ p) '' (s \ {p})) :=
 begin
-  conv_lhs { rw [vector_span_eq_span_vsub_set_right' k hp, ←set.insert_eq_of_mem hp,
+  conv_lhs { rw [vector_span_eq_span_vsub_set_right k hp, ←set.insert_eq_of_mem hp,
                  ←set.insert_diff_singleton, set.image_insert_eq] },
   simp [submodule.span_insert_eq_span]
 end
@@ -53,7 +45,7 @@ subtraction of that point from itself. -/
 lemma vector_span_image_eq_span_vsub_set_left_ne (p : ι → P) {s : set ι} {i : ι} (hi : i ∈ s) :
   vector_span k (p '' s) = submodule.span k ((-ᵥ) (p i) '' (p '' (s \ {i}))) :=
 begin
-  conv_lhs { rw [vector_span_eq_span_vsub_set_left' k (set.mem_image_of_mem p hi),
+  conv_lhs { rw [vector_span_eq_span_vsub_set_left k (set.mem_image_of_mem p hi),
                  ←set.insert_eq_of_mem hi, ←set.insert_diff_singleton, set.image_insert_eq,
                  set.image_insert_eq] },
   simp [submodule.span_insert_eq_span]
@@ -65,7 +57,7 @@ subtraction of that point from itself. -/
 lemma vector_span_image_eq_span_vsub_set_right_ne (p : ι → P) {s : set ι} {i : ι} (hi : i ∈ s) :
   vector_span k (p '' s) = submodule.span k ((-ᵥ (p i)) '' (p '' (s \ {i}))) :=
 begin
-  conv_lhs { rw [vector_span_eq_span_vsub_set_right' k (set.mem_image_of_mem p hi),
+  conv_lhs { rw [vector_span_eq_span_vsub_set_right k (set.mem_image_of_mem p hi),
                  ←set.insert_eq_of_mem hi, ←set.insert_diff_singleton, set.image_insert_eq,
                  set.image_insert_eq] },
   simp [submodule.span_insert_eq_span]
