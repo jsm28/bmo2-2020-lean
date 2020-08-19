@@ -543,6 +543,11 @@ lemma orthocenter_eq_monge_point (t : triangle ℝ P) :
   t.orthocenter = t.monge_point :=
 rfl
 
+/-- The orthocenter lies in the affine span. -/
+lemma orthocenter_mem_affine_span (t : triangle ℝ P) :
+  t.orthocenter ∈ affine_span ℝ (set.range t.points) :=
+t.monge_point_mem_affine_span
+
 /-- In the case of a triangle, altitudes are the same thing as Monge
 planes. -/
 lemma altitude_eq_monge_plane (t : triangle ℝ P) {i₁ i₂ i₃ : fin 3} (h₁₂ : i₁ ≠ i₂)
