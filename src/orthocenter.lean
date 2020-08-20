@@ -521,7 +521,7 @@ rfl
 
 /-- The position of the orthocenter in relation to the circumcenter
 and centroid. -/
-lemma orthocenter_eq_smul_vsub_vadd_circumcenter {n : ℕ} (t : triangle ℝ P) :
+lemma orthocenter_eq_smul_vsub_vadd_circumcenter (t : triangle ℝ P) :
   t.orthocenter = (3 : ℝ) •
     ((finset.univ : finset (fin 3)).centroid ℝ t.points -ᵥ t.circumcenter : V) +ᵥ t.circumcenter :=
 begin
@@ -557,7 +557,7 @@ begin
 end
 
 /-- The orthocenter lies in the altitudes. -/
-lemma orthocenter_mem_altitude {n : ℕ} (t : triangle ℝ P) {i₁ : fin 3} :
+lemma orthocenter_mem_altitude (t : triangle ℝ P) {i₁ : fin 3} :
   t.orthocenter ∈ t.altitude i₁ :=
 begin
   let s₂₃ : finset (fin 3) := finset.univ.erase i₁,
@@ -575,8 +575,8 @@ end
 
 /-- The orthocenter is the only point lying in any two of the
 altitudes. -/
-lemma eq_orthocenter_of_forall_mem_altitude {n : ℕ} {t : triangle ℝ P}
-    {i₁ i₂ : fin 3} {p : P} (h₁₂ : i₁ ≠ i₂) (h₁ : p ∈ t.altitude i₁) (h₂ : p ∈ t.altitude i₂) :
+lemma eq_orthocenter_of_forall_mem_altitude {t : triangle ℝ P} {i₁ i₂ : fin 3} {p : P}
+    (h₁₂ : i₁ ≠ i₂) (h₁ : p ∈ t.altitude i₁) (h₂ : p ∈ t.altitude i₂) :
   p = t.orthocenter :=
 begin
   let s₃ : finset (fin 3) := (finset.univ.erase i₁).erase i₂,
