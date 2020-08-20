@@ -221,9 +221,9 @@ def monge_point {n : ℕ} (s : simplex ℝ P n) : P :=
 /-- The position of the Monge point in relation to the circumcenter
 and centroid. -/
 lemma monge_point_eq_smul_vsub_vadd_circumcenter {n : ℕ} (s : simplex ℝ P n) :
-s.monge_point = (((n + 1 : ℕ) : ℝ) / (((n - 1) : ℕ) : ℝ)) •
-  ((finset.univ : finset (fin (n + 1))).centroid ℝ s.points -ᵥ s.circumcenter : V) +ᵥ
-  s.circumcenter :=
+  s.monge_point = (((n + 1 : ℕ) : ℝ) / (((n - 1) : ℕ) : ℝ)) •
+    ((finset.univ : finset (fin (n + 1))).centroid ℝ s.points -ᵥ s.circumcenter : V) +ᵥ
+    s.circumcenter :=
 rfl
 
 /-- The Monge point lies in the affine span. -/
@@ -434,6 +434,9 @@ begin
   rw [inner_smul_right, s.inner_monge_point_vsub_face_centroid_vsub h, mul_zero]
 end
 
+-- This doesn't actually need the `i₁ ≠ i₂` hypothesis, but it's
+-- convenient for the proof and `monge_plane` isn't intended to be
+-- useful without that hypothesis.
 /-- The direction of a Monge plane. -/
 lemma direction_monge_plane {n : ℕ} (s : simplex ℝ P (n + 2)) {i₁ i₂ : fin (n + 3)} (h : i₁ ≠ i₂) :
   (s.monge_plane i₁ i₂).direction = (submodule.span ℝ {s.points i₁ -ᵥ s.points i₂}).orthogonal ⊓
@@ -515,6 +518,16 @@ def orthocenter (t : triangle ℝ P) : P := t.monge_point
 lemma orthocenter_eq_monge_point (t : triangle ℝ P) :
   t.orthocenter = t.monge_point :=
 rfl
+
+/-- The position of the orthocenter in relation to the circumcenter
+and centroid. -/
+lemma orthocenter_eq_smul_vsub_vadd_circumcenter {n : ℕ} (t : triangle ℝ P) :
+  t.orthocenter = (3 : ℝ) •
+    ((finset.univ : finset (fin 3)).centroid ℝ t.points -ᵥ t.circumcenter : V) +ᵥ t.circumcenter :=
+begin
+  rw [orthocenter_eq_monge_point, monge_point_eq_smul_vsub_vadd_circumcenter],
+  norm_num
+end
 
 /-- The orthocenter lies in the affine span. -/
 lemma orthocenter_mem_affine_span (t : triangle ℝ P) :
