@@ -18,6 +18,9 @@ import geometry.euclidean
 
 import orthocenter
 
+noncomputable theory
+open_locale classical
+
 namespace affine_subspace
 
 variables {k : Type*} {V : Type*} {P : Type*} [ring k] [add_comm_group V] [module k V]
@@ -43,6 +46,67 @@ end
 
 end affine_subspace
 
+section indep
+
+-- Results to add to affine_space/independent.lean in mathlib.
+
+variables {k : Type*} {V : Type*} {P : Type*} [ring k] [add_comm_group V] [module k V]
+variables [affine_space V P] {ι : Type*}
+include V
+
+/-- An affinely independent family is injective, if the underlying
+ring is nontrivial. -/
+lemma injective_of_affine_independent [nontrivial k] {p : ι → P} (ha : affine_independent k p) :
+  function.injective p :=
+begin
+  intros i₁ i₂ he,
+  rw affine_independent_iff_indicator_eq_of_affine_combination_eq k p at ha,
+  have hp : ({i₁} : finset ι).affine_combination p (function.const ι (1 : k)) =
+    ({i₂} : finset ι).affine_combination p (function.const ι (1 : k)),
+  { rw [({i₁} : finset ι).affine_combination_of_eq_one_of_eq_zero
+          (function.const ι (1 : k))
+          _
+          (finset.mem_singleton_self i₁)
+          rfl
+          (λ i hi hin, false.elim (hin (finset.mem_singleton.1 hi))),
+        ({i₂} : finset ι).affine_combination_of_eq_one_of_eq_zero
+          (function.const ι (1 : k))
+          _
+          (finset.mem_singleton_self i₂)
+          rfl
+          (λ i hi hin, false.elim (hin (finset.mem_singleton.1 hi)))],
+    exact he },
+  replace ha := ha {i₁} {i₂} (function.const ι 1) (function.const ι 1)
+    finset.sum_singleton finset.sum_singleton hp,
+  simp_rw finset.coe_singleton at ha,
+  have ha' : ({i₁} : set ι).indicator (function.const ι (1 : k)) i₁ =
+    ({i₂} : set ι).indicator (function.const ι (1 : k)) i₁,
+  { rw ha },
+  simp only [set.mem_singleton, set.indicator_of_mem] at ha',
+  change 1 = ({i₂} : set ι).indicator (function.const ι (1 : k)) i₁ at ha',
+  have haz : ({i₂} : set ι).indicator (function.const ι (1 : k)) i₁ ≠ 0,
+  { rw ←ha',
+    exact one_ne_zero },
+  have hm := set.mem_of_indicator_ne_zero haz,
+  rw set.mem_singleton_iff at hm,
+  exact hm
+end
+
+/-- If an indexed family of points is affinely independent, so is the
+corresponding set of points. -/
+lemma affine_independent_set_of_affine_independent {p : ι → P} (ha : affine_independent k p) :
+  affine_independent k (λ x, x : set.range p → P) :=
+begin
+  let f : set.range p → ι := λ x, x.property.some,
+  have hf : ∀ x, p (f x) = x := λ x, x.property.some_spec,
+  let fe : set.range p ↪ ι := ⟨f, λ x₁ x₂ he, subtype.ext (hf x₁ ▸ hf x₂ ▸ he ▸ rfl)⟩,
+  convert affine_independent_embedding_of_affine_independent fe ha,
+  ext,
+  simp [hf]
+end
+
+end indep
+
 section affine
 
 -- Results to add to affine_space/finite_dimensional.lean in mathlib.
@@ -60,6 +124,17 @@ lemma findim_vector_span_of_affine_independent [fintype ι] {p : ι → P}
     (hi : affine_independent k p) {n : ℕ} (hc : fintype.card ι = n + 1) :
   findim k (vector_span k (set.range p)) = n :=
 begin
+  have hi' := affine_independent_set_of_affine_independent hi,
+  have hc' : fintype.card (set.range p) = n + 1,
+  { rw set.card_range_of_injective (injective_of_affine_independent hi),
+    exact hc },
+  have hn : (set.range p).nonempty,
+  { refine set.range_nonempty_iff_nonempty.2 (fintype.card_pos_iff.1 _),
+    simp [hc] },
+  rcases hn with ⟨p₁, hp₁⟩,
+  rw affine_independent_set_iff_linear_independent_vsub k hp₁ at hi',
+  haveI : fintype ((λ (p : P), p -ᵥ p₁) '' (set.range p \ {p₁})) := sorry,
+  rw [vector_span_eq_span_vsub_set_right_ne k hp₁, findim_span_set_eq_card _ hi'],
   sorry
 end
 
