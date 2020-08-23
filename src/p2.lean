@@ -54,6 +54,24 @@ def concyclic (s : set P) : Prop :=
 
 include V
 
+-- All n-simplices among concyclic points in n-space have the same
+-- circumradius.  This should go in mathlib in some form.
+lemma exists_circumradius_eq_of_concyclic {ps : set P} {n : ℕ} (hd : findim ℝ V = n)
+    (hc : concyclic ps) :
+  ∃ r : ℝ, ∀ s : simplex ℝ P n, set.range s.points ⊆ ps → s.circumradius = r :=
+begin
+  rcases hc with ⟨c, r, hcr⟩,
+  use r,
+  intros s hsps,
+  have hs : affine_span ℝ (set.range s.points) = ⊤,
+  { refine affine_span_eq_top_of_affine_independent_of_card_eq_findim_add_one s.independent _,
+    simp [hd] },
+  have hc : c ∈ affine_span ℝ (set.range s.points) := hs.symm ▸ affine_subspace.mem_top ℝ V c,
+  exact (s.eq_circumradius_of_dist_eq
+    hc
+    (λ i, hcr (s.points i) (hsps (set.mem_range_self i)))).symm
+end
+
 -- Any three points in a concyclic set are affinely independent.
 -- Should go in mathlib in some form.
 lemma affine_independent_of_concyclic {s : set P} (hs : concyclic s) {p : fin 3 → P}
@@ -152,6 +170,55 @@ begin
   sorry
 end
 
+-- The main part of the solution: a set with the given property is as
+-- described.
+theorem p2_result_main {s : set P} (hd2 : findim ℝ V = 2) (h4 : at_least_four_points s)
+    (hn3 : no_three_points_collinear s) {r : ℝ}
+    (hr : ∀ (t : triangle ℝ P), set.range t.points ⊆ s → simplex.circumradius t = r) :
+  concyclic s ∨ orthocentric_system s :=
+begin
+  obtain ⟨t0, ht0s⟩ := p2_contains_triangle h4 hn3,
+  -- TODO: consider subsequent rework using bundled circumcircles.
+  by_cases hc : ∀ p ∈ s, dist p t0.circumcenter = t0.circumradius,
+  { -- The easier case: all points lie on the circumcircle of t0.
+    left,
+    exact ⟨t0.circumcenter, t0.circumradius, hc⟩ },
+  { -- The harder case: some point does not lie on the circumcircle of
+    -- t0.
+    right,
+    use t0,
+    push_neg at hc,
+    simp_rw ←ne.def at hc,
+    simp_rw ←hr t0 ht0s at hr,
+    rcases hc with ⟨p, hps, hpr⟩,
+    have hpo := p2_eq_orthocentre ht0s hr hps hpr,
+    split,
+    { rw ←hpo,
+      rintros ⟨i, rfl⟩,
+      apply hpr,
+      simp },
+    { have hsub : insert t0.orthocenter (set.range t0.points) ⊆ s,
+      { rw [←hpo, set.insert_subset],
+        exact ⟨hps, ht0s⟩ },
+      refine set.subset.antisymm _ hsub,
+      rw set.subset_def,
+      rintros p1 hp1,
+      rw set.mem_insert_iff,
+      by_contradiction hp1c,
+      push_neg at hp1c,
+      rcases hp1c with ⟨hp1no, hp1nt0⟩,
+      by_cases hp1r : dist p1 t0.circumcenter = t0.circumradius,
+      { -- Given p1 on the circumcircle of t0, not a vertex, not the
+        -- orthocentre, the orthocentre not on the circumcircle; must
+        -- derive a contradiction.  Consider a triangle t1 made of two
+        -- of the vertices of t0 plus the orthocentre of t0.  Then the
+        -- two circumcircles meet only at the two shared vertices, so
+        -- p1 does not lie on the circumcircle of t1, so must be its
+        -- orthocentre, but that is the third vertex of t0.
+        sorry },
+      { exact hp1no (p2_eq_orthocentre ht0s hr hp1 hp1r) } } }
+end
+
 -- The result of the problem.
 theorem p2_result (s : set P) (hd2 : findim ℝ V = 2) :
   p2_problem_desc s ↔ p2_answer_desc s :=
@@ -163,64 +230,13 @@ begin
   { -- The main part of the solution: a set with the given property is
     -- as described.
     rintro ⟨hn3, r, hr⟩,
-    obtain ⟨t0, ht0s⟩ := p2_contains_triangle h4 hn3,
-    -- TODO: consider subsequent rework using bundled circumcircles.
-    by_cases hc : ∀ p ∈ s, dist p t0.circumcenter = t0.circumradius,
-    { -- The easier case: all points lie on the circumcircle of t0.
-      left,
-      exact ⟨t0.circumcenter, t0.circumradius, hc⟩ },
-    { -- The harder case: some point does not lie on the circumcircle
-      -- of t0.
-      right,
-      use t0,
-      push_neg at hc,
-      simp_rw ←ne.def at hc,
-      simp_rw ←hr t0 ht0s at hr,
-      rcases hc with ⟨p, hps, hpr⟩,
-      have hpo := p2_eq_orthocentre ht0s hr hps hpr,
-      split,
-      { rw ←hpo,
-        rintros ⟨i, rfl⟩,
-        apply hpr,
-        simp },
-      { have hsub : insert t0.orthocenter (set.range t0.points) ⊆ s,
-        { rw [←hpo, set.insert_subset],
-          exact ⟨hps, ht0s⟩ },
-        refine set.subset.antisymm _ hsub,
-        rw set.subset_def,
-        rintros p1 hp1,
-        rw set.mem_insert_iff,
-        by_contradiction hp1c,
-        push_neg at hp1c,
-        rcases hp1c with ⟨hp1no, hp1nt0⟩,
-        by_cases hp1r : dist p1 t0.circumcenter = t0.circumradius,
-        { -- Given p1 on the circumcircle of t0, not a vertex, not the
-          -- orthocentre, the orthocentre not on the circumcircle;
-          -- must derive a contradiction.  Consider a triangle t1 made
-          -- of two of the vertices of t0 plus the orthocentre of t0.
-          -- Then the two circumcircles meet only at the two shared
-          -- vertices, so p1 does not lie on the circumcircle of t1,
-          -- so must be its orthocentre, but that is the third vertex
-          -- of t0.
-          sorry },
-        { exact hp1no (p2_eq_orthocentre ht0s hr hp1 hp1r) } } } },
+    exact p2_result_main hd2 h4 hn3 hr },
   { -- The easy part of the solution: a set as described satisfies the
     -- conditions of the problem.
     rintro (hc | ho),
     { split,
       { exact λ p hpi hps, affine_independent_of_concyclic hc hps hpi },
-      { rcases hc with ⟨c, r, hcr⟩,
-        use r,
-        intros t hts,
-        have ht : affine_span ℝ (set.range t.points) = ⊤,
-        { refine affine_span_eq_top_of_affine_independent_of_card_eq_findim_add_one
-            t.independent _,
-          simp [hd2] },
-        have hc : c ∈ affine_span ℝ (set.range t.points) :=
-          ht.symm ▸ affine_subspace.mem_top ℝ V c,
-        exact (t.eq_circumradius_of_dist_eq
-          hc
-          (λ i, hcr (t.points i) (hts (set.mem_range_self i)))).symm } },
+      { exact exists_circumradius_eq_of_concyclic hd2 hc } },
     { split,
       { exact λ p hpi hps, affine_independent_of_orthocentric_system ho hps hpi },
       { exact exists_circumradius_eq_of_orthocentric_system ho } } }
