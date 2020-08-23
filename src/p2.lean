@@ -14,6 +14,7 @@
 -- that there exist a point and a vector such that all points in the
 -- subspace are multiples of that vector added to that point).
 
+import data.matrix.notation
 import geometry.euclidean
 
 noncomputable theory
@@ -92,6 +93,65 @@ end
 def p2_answer_desc (s : set P) : Prop :=
 at_least_four_points s ∧ (concyclic s ∨ orthocentric_system s)
 
+-- Any set with at least four points, no three collinear, contains a
+-- triangle.
+theorem p2_contains_triangle {s : set P} (h4 : at_least_four_points s)
+    (hn3 : no_three_points_collinear s) :
+  ∃ t : triangle ℝ P, set.range t.points ⊆ s :=
+begin
+  unfold at_least_four_points at h4,
+  rw cardinal.le_mk_iff_exists_subset at h4,
+  rcases h4 with ⟨s', hs', h4⟩,
+  have hf : s'.finite,
+  { refine cardinal.lt_omega_iff_finite.1 _,
+    rw h4,
+    simp },
+  haveI : fintype s' := hf.fintype,
+  rw [cardinal.fintype_card, ←finset.card_univ] at h4,
+  norm_cast at h4,
+  obtain ⟨p1', hp1'⟩ : (finset.univ : finset s').nonempty,
+  { simp [←finset.card_pos, h4] },
+  let s3 : finset s' := finset.univ.erase p1',
+  obtain ⟨p2', hp2'⟩ : s3.nonempty,
+  { simp [←finset.card_pos, h4, finset.card_erase_of_mem] },
+  have h12 : p1' ≠ p2' := (finset.ne_of_mem_erase hp2').symm,
+  let s2 : finset s' := s3.erase p2',
+  obtain ⟨p3', hp3'⟩ : s2.nonempty,
+  { simp [←finset.card_pos, h4, finset.card_erase_of_mem, hp2'] },
+  have h23 : p2' ≠ p3' := (finset.ne_of_mem_erase hp3').symm,
+  have h13 : p1' ≠ p3' := (finset.ne_of_mem_erase (finset.mem_of_mem_erase hp3')).symm,
+  cases p1' with p1 hp1s',
+  cases p2' with p2 hp2s',
+  cases p3' with p3 hp3s',
+  rw [ne.def, subtype.ext_iff, subtype.coe_mk, subtype.coe_mk, ←ne.def] at h12,
+  rw [ne.def, subtype.ext_iff, subtype.coe_mk, subtype.coe_mk, ←ne.def] at h23,
+  rw [ne.def, subtype.ext_iff, subtype.coe_mk, subtype.coe_mk, ←ne.def] at h13,
+  let p : fin 3 → P := ![p1, p2, p3],
+  have hi : function.injective p,
+  { intros i1 i2 hi12,
+    fin_cases i1; fin_cases i2;
+      simpa [h12, h13, h23, h12.symm, h13.symm, h23.symm, p] using hi12 },
+  have hps : set.range p ⊆ s,
+  { refine set.subset.trans _ hs',
+    rw set.range_subset_iff,
+    intro i,
+    fin_cases i; simp [p, hp1s', hp2s', hp3s'] },
+  use ⟨p, hn3 p hi hps⟩,
+  exact hps
+end
+
+-- Given a triangle in a set with the properties of the problem, any
+-- point in that set that is not one of the vertices of the triangle,
+-- and not on its circumcircle, must be its orthocentre.
+theorem p2_eq_orthocentre {s : set P} {t0 : triangle ℝ P} {p : P}
+    (ht0s : set.range t0.points ⊆ s)
+    (hr : ∀ (t : triangle ℝ P), set.range t.points ⊆ s → t.circumradius = t0.circumradius)
+    (hp : p ∈ s) (hpn : dist p t0.circumcenter ≠ t0.circumradius) :
+  p = t0.orthocenter :=
+begin
+  sorry
+end
+
 -- The result of the problem.
 theorem p2_result (s : set P) (hd2 : findim ℝ V = 2) :
   p2_problem_desc s ↔ p2_answer_desc s :=
@@ -100,9 +160,53 @@ begin
   rw and.congr_right_iff,
   intro h4,
   split,
-  { rintro ⟨hn3, r, hr⟩,
-    sorry },
-  { rintro (hc | ho),
+  { -- The main part of the solution: a set with the given property is
+    -- as described.
+    rintro ⟨hn3, r, hr⟩,
+    obtain ⟨t0, ht0s⟩ := p2_contains_triangle h4 hn3,
+    -- TODO: consider subsequent rework using bundled circumcircles.
+    by_cases hc : ∀ p ∈ s, dist p t0.circumcenter = t0.circumradius,
+    { -- The easier case: all points lie on the circumcircle of t0.
+      left,
+      exact ⟨t0.circumcenter, t0.circumradius, hc⟩ },
+    { -- The harder case: some point does not lie on the circumcircle
+      -- of t0.
+      right,
+      use t0,
+      push_neg at hc,
+      simp_rw ←ne.def at hc,
+      simp_rw ←hr t0 ht0s at hr,
+      rcases hc with ⟨p, hps, hpr⟩,
+      have hpo := p2_eq_orthocentre ht0s hr hps hpr,
+      split,
+      { rw ←hpo,
+        rintros ⟨i, rfl⟩,
+        apply hpr,
+        simp },
+      { have hsub : insert t0.orthocenter (set.range t0.points) ⊆ s,
+        { rw [←hpo, set.insert_subset],
+          exact ⟨hps, ht0s⟩ },
+        refine set.subset.antisymm _ hsub,
+        rw set.subset_def,
+        rintros p1 hp1,
+        rw set.mem_insert_iff,
+        by_contradiction hp1c,
+        push_neg at hp1c,
+        rcases hp1c with ⟨hp1no, hp1nt0⟩,
+        by_cases hp1r : dist p1 t0.circumcenter = t0.circumradius,
+        { -- Given p1 on the circumcircle of t0, not a vertex, not the
+          -- orthocentre, the orthocentre not on the circumcircle;
+          -- must derive a contradiction.  Consider a triangle t1 made
+          -- of two of the vertices of t0 plus the orthocentre of t0.
+          -- Then the two circumcircles meet only at the two shared
+          -- vertices, so p1 does not lie on the circumcircle of t1,
+          -- so must be its orthocentre, but that is the third vertex
+          -- of t0.
+          sorry },
+        { exact hp1no (p2_eq_orthocentre ht0s hr hp1 hp1r) } } } },
+  { -- The easy part of the solution: a set as described satisfies the
+    -- conditions of the problem.
+    rintro (hc | ho),
     { split,
       { exact λ p hpi hps, affine_independent_of_concyclic hc hps hpi },
       { rcases hc with ⟨c, r, hcr⟩,
