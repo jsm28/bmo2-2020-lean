@@ -133,9 +133,21 @@ begin
     simp [hc] },
   rcases hn with ⟨p₁, hp₁⟩,
   rw affine_independent_set_iff_linear_independent_vsub k hp₁ at hi',
-  haveI : fintype ((λ (p : P), p -ᵥ p₁) '' (set.range p \ {p₁})) := sorry,
-  rw [vector_span_eq_span_vsub_set_right_ne k hp₁, findim_span_set_eq_card _ hi'],
-  sorry
+  have hfr : (set.range p \ {p₁}).finite := (set.finite_range _).subset (set.diff_subset _ _),
+  haveI := hfr.fintype,
+  have hf : set.finite ((λ (p : P), p -ᵥ p₁) '' (set.range p \ {p₁})) := hfr.image _,
+  haveI := hf.fintype,
+  have hc : hf.to_finset.card = n,
+  { rw [hf.card_to_finset,
+        set.card_image_of_injective (set.range p \ {p₁}) (vsub_left_injective _)],
+    have hd : insert p₁ (set.range p \ {p₁}) = set.range p,
+    { rw [set.insert_diff_singleton, set.insert_eq_of_mem hp₁] },
+    have hc'' : fintype.card ↥(insert p₁ (set.range p \ {p₁})) = n + 1,
+    { convert hc' },
+    rw set.card_insert (set.range p \ {p₁}) (λ h, ((set.mem_diff p₁).2 h).2 rfl) at hc'',
+    simpa using hc'' },
+  rw [vector_span_eq_span_vsub_set_right_ne k hp₁, findim_span_set_eq_card _ hi', ←hc],
+  congr
 end
 
 /-- The `vector_span` of a finite affinely independent family whose
