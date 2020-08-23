@@ -16,8 +16,6 @@
 
 import geometry.euclidean
 
-import orthocenter
-
 noncomputable theory
 open_locale classical
 
