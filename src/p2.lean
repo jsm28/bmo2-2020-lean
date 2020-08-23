@@ -161,11 +161,29 @@ end
 -- Given a triangle in a set with the properties of the problem, any
 -- point in that set that is not one of the vertices of the triangle,
 -- and not on its circumcircle, must be its orthocentre.
-theorem p2_eq_orthocentre {s : set P} {t0 : triangle ℝ P} {p : P}
+theorem p2_eq_orthocentre {s : set P} (hd2 : findim ℝ V = 2) {t0 : triangle ℝ P} {p : P}
     (ht0s : set.range t0.points ⊆ s)
     (hr : ∀ (t : triangle ℝ P), set.range t.points ⊆ s → t.circumradius = t0.circumradius)
     (hp : p ∈ s) (hpn : dist p t0.circumcenter ≠ t0.circumradius) :
   p = t0.orthocenter :=
+begin
+  sorry
+end
+
+-- Given p on the circumcircle of t0, not a vertex, not the
+-- orthocentre, the orthocentre not on the circumcircle; derive a
+-- contradiction.  Consider a triangle t1 made of two of the vertices
+-- of t0 plus the orthocentre of t0.  Then the two circumcircles meet
+-- only at the two shared vertices, so p1 does not lie on the
+-- circumcircle of t1, so must be its orthocentre, but that is the
+-- third vertex of t0.
+theorem p2_orthocentre_extra {s : set P} (hd2 : findim ℝ V = 2)
+    (hn3 : no_three_points_collinear s) {t0 : triangle ℝ P} (ht0s : set.range t0.points ⊆ s)
+    (hr : ∀ (t : triangle ℝ P), set.range t.points ⊆ s → t.circumradius = t0.circumradius)
+    (hos : t0.orthocenter ∈ s) (hor : dist t0.orthocenter t0.circumcenter ≠ t0.circumradius)
+    {p : P} (hp : p ∈ s) (hpno : p ≠ t0.orthocenter) (hpnt0 : p ∉ set.range t0.points)
+    (hpr : dist p t0.circumcenter = t0.circumradius) :
+  false :=
 begin
   sorry
 end
@@ -191,7 +209,7 @@ begin
     simp_rw ←ne.def at hc,
     simp_rw ←hr t0 ht0s at hr,
     rcases hc with ⟨p, hps, hpr⟩,
-    have hpo := p2_eq_orthocentre ht0s hr hps hpr,
+    have hpo := p2_eq_orthocentre hd2 ht0s hr hps hpr,
     split,
     { rw ←hpo,
       rintros ⟨i, rfl⟩,
@@ -208,15 +226,9 @@ begin
       push_neg at hp1c,
       rcases hp1c with ⟨hp1no, hp1nt0⟩,
       by_cases hp1r : dist p1 t0.circumcenter = t0.circumradius,
-      { -- Given p1 on the circumcircle of t0, not a vertex, not the
-        -- orthocentre, the orthocentre not on the circumcircle; must
-        -- derive a contradiction.  Consider a triangle t1 made of two
-        -- of the vertices of t0 plus the orthocentre of t0.  Then the
-        -- two circumcircles meet only at the two shared vertices, so
-        -- p1 does not lie on the circumcircle of t1, so must be its
-        -- orthocentre, but that is the third vertex of t0.
-        sorry },
-      { exact hp1no (p2_eq_orthocentre ht0s hr hp1 hp1r) } } }
+      { rw hpo at hpr hps,
+        exact p2_orthocentre_extra hd2 hn3 ht0s hr hps hpr hp1 hp1no hp1nt0 hp1r },
+      { exact hp1no (p2_eq_orthocentre hd2 ht0s hr hp1 hp1r) } } }
 end
 
 -- The result of the problem.
