@@ -158,6 +158,85 @@ def reflection {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
   ... = inner (p₁ -ᵥ p₂) (p₁ -ᵥ p₂) : by simp
   end }
 
+/-- The result of reflecting. -/
+lemma reflection_apply {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
+    (hc : is_complete (s.direction : set V)) (p : P) :
+  reflection hn hc p = (orthogonal_projection hn hc p -ᵥ p) +ᵥ orthogonal_projection hn hc p :=
+rfl
+
+/-- Reflecting twice in the same subspace. -/
+@[simp] lemma reflection_reflection {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
+    (hc : is_complete (s.direction : set V)) (p : P) :
+  reflection hn hc (reflection hn hc p) = p :=
+(reflection hn hc).left_inv p
+
+/-- Reflection is involutive. -/
+lemma reflection_involutive {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
+    (hc : is_complete (s.direction : set V)) :
+  function.involutive (reflection hn hc) :=
+reflection_reflection hn hc
+
+/-- A point is its own reflection if and only if it is in the
+subspace. -/
+lemma reflection_eq_self_iff {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
+    (hc : is_complete (s.direction : set V)) (p : P) :
+  reflection hn hc p = p ↔ p ∈ s :=
+begin
+  rw [←orthogonal_projection_eq_self_iff hn hc, reflection_apply],
+  split,
+  { intro h,
+    rw [←@vsub_eq_zero_iff_eq V, vadd_vsub_assoc,
+        ←two_smul ℝ (orthogonal_projection hn hc p -ᵥ p), smul_eq_zero] at h,
+    norm_num at h,
+    exact h },
+  { intro h,
+    simp [h] }
+end
+
+/-- Reflecting a point in two subspaces produces the same result if
+and only if the point has the same orthogonal projection in each of
+those subspaces. -/
+lemma reflection_eq_iff_orthogonal_projection_eq {s₁ s₂ : affine_subspace ℝ P}
+    (hn₁ : (s₁ : set P).nonempty) (hc₁ : is_complete (s₁.direction : set V))
+    (hn₂ : (s₂ : set P).nonempty) (hc₂ : is_complete (s₂.direction : set V))
+    (p : P) :
+  reflection hn₁ hc₁ p = reflection hn₂ hc₂ p ↔
+    orthogonal_projection hn₁ hc₁ p = orthogonal_projection hn₂ hc₂ p :=
+begin
+  rw [reflection_apply, reflection_apply],
+  split,
+  { intro h,
+    rw [←@vsub_eq_zero_iff_eq V, vsub_vadd_eq_vsub_sub, vadd_vsub_assoc, add_comm,
+        add_sub_assoc, vsub_sub_vsub_cancel_right,
+        ←two_smul ℝ (orthogonal_projection hn₁ hc₁ p -ᵥ orthogonal_projection hn₂ hc₂ p),
+        smul_eq_zero] at h,
+    norm_num at h,
+    exact h },
+  { intro h,
+    rw h }
+end
+
+/-- The distance between `p₁` and the reflection of `p₂` equals that
+between the reflection of `p₁` and `p₂`. -/
+lemma dist_reflection {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
+    (hc : is_complete (s.direction : set V)) (p₁ p₂ : P) :
+  dist p₁ (reflection hn hc p₂) = dist (reflection hn hc p₁) p₂ :=
+begin
+  conv_lhs { rw ←reflection_reflection hn hc p₁ },
+  exact (reflection hn hc).dist_eq _ _
+end
+
+/-- A point in the subspace is equidistant from another point and its
+reflection. -/
+lemma dist_reflection_eq_of_mem {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
+    (hc : is_complete (s.direction : set V)) {p₁ : P} (hp₁ : p₁ ∈ s) (p₂ : P) :
+  dist p₁ (reflection hn hc p₂) = dist p₁ p₂ :=
+begin
+  rw ←reflection_eq_self_iff hn hc p₁ at hp₁,
+  conv_lhs { rw ←hp₁ },
+  exact (reflection hn hc).dist_eq _ _
+end
+
 -- Any three points in a cospherical set are affinely independent.
 -- Should go in mathlib in some form.
 lemma affine_independent_of_cospherical {s : set P} (hs : cospherical s) {p : fin 3 → P}
