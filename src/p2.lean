@@ -45,19 +45,19 @@ omit V
 
 -- Properties of sets of points in the answer.
 
--- A set of points is concyclic.  Should probably go in mathlib in
+-- A set of points is cospherical.  Should probably go in mathlib in
 -- some form, with relations between versions with or without centre
 -- constrained to be in a given subspace containing the points, and
 -- with versions with bundled spheres in nondegenerate cases.
-def concyclic (s : set P) : Prop :=
+def cospherical (s : set P) : Prop :=
 ∃ (centre : P) (radius : ℝ), ∀ p ∈ s, dist p centre = radius
 
 include V
 
--- All n-simplices among concyclic points in n-space have the same
+-- All n-simplices among cospherical points in n-space have the same
 -- circumradius.  This should go in mathlib in some form.
-lemma exists_circumradius_eq_of_concyclic {ps : set P} {n : ℕ} (hd : findim ℝ V = n)
-    (hc : concyclic ps) :
+lemma exists_circumradius_eq_of_cospherical {ps : set P} {n : ℕ} (hd : findim ℝ V = n)
+    (hc : cospherical ps) :
   ∃ r : ℝ, ∀ s : simplex ℝ P n, set.range s.points ⊆ ps → s.circumradius = r :=
 begin
   rcases hc with ⟨c, r, hcr⟩,
@@ -72,10 +72,10 @@ begin
     (λ i, hcr (s.points i) (hsps (set.mem_range_self i)))).symm
 end
 
--- All n-simplices among concyclic points in n-space have the same
+-- All n-simplices among cospherical points in n-space have the same
 -- circumcenter.  This should go in mathlib in some form.
-lemma exists_circumcenter_eq_of_concyclic {ps : set P} {n : ℕ} (hd : findim ℝ V = n)
-    (hc : concyclic ps) :
+lemma exists_circumcenter_eq_of_cospherical {ps : set P} {n : ℕ} (hd : findim ℝ V = n)
+    (hc : cospherical ps) :
   ∃ c : P, ∀ s : simplex ℝ P n, set.range s.points ⊆ ps → s.circumcenter = c :=
 begin
   rcases hc with ⟨c, r, hcr⟩,
@@ -90,9 +90,9 @@ begin
     (λ i, hcr (s.points i) (hsps (set.mem_range_self i)))).symm
 end
 
--- Any three points in a concyclic set are affinely independent.
+-- Any three points in a cospherical set are affinely independent.
 -- Should go in mathlib in some form.
-lemma affine_independent_of_concyclic {s : set P} (hs : concyclic s) {p : fin 3 → P}
+lemma affine_independent_of_cospherical {s : set P} (hs : cospherical s) {p : fin 3 → P}
     (hps : set.range p ⊆ s) (hpi : function.injective p) :
   affine_independent ℝ p :=
 begin
@@ -136,7 +136,7 @@ end
 
 -- The description given as an answer to the problem.
 def p2_answer_desc (s : set P) : Prop :=
-at_least_four_points s ∧ (concyclic s ∨ orthocentric_system s)
+at_least_four_points s ∧ (cospherical s ∨ orthocentric_system s)
 
 -- Given three points in a set with no three collinear, pairwise
 -- unequal, they are affinely independent.
@@ -322,7 +322,7 @@ end
 theorem p2_result_main {s : set P} (hd2 : findim ℝ V = 2) (h4 : at_least_four_points s)
     (hn3 : no_three_points_collinear s) {r : ℝ}
     (hr : ∀ (t : triangle ℝ P), set.range t.points ⊆ s → simplex.circumradius t = r) :
-  concyclic s ∨ orthocentric_system s :=
+  cospherical s ∨ orthocentric_system s :=
 begin
   obtain ⟨t0, ht0s⟩ := p2_contains_triangle h4 hn3,
   -- TODO: consider subsequent rework using bundled circumcircles.
@@ -376,8 +376,8 @@ begin
     -- conditions of the problem.
     rintro (hc | ho),
     { split,
-      { exact λ p hpi hps, affine_independent_of_concyclic hc hps hpi },
-      { exact exists_circumradius_eq_of_concyclic hd2 hc } },
+      { exact λ p hpi hps, affine_independent_of_cospherical hc hps hpi },
+      { exact exists_circumradius_eq_of_cospherical hd2 hc } },
     { split,
       { exact λ p hpi hps, affine_independent_of_orthocentric_system ho hps hpi },
       { exact exists_circumradius_eq_of_orthocentric_system ho } } }
