@@ -103,14 +103,15 @@ begin
     (λ i, hcr (s.points i) (hsps (set.mem_range_self i)))).symm
 end
 
--- The linear map corresponding to `orthogonal_projection`.  This
--- should go in mathlib.
+-- Definitions and results about reflection, for mathlib.
+
+/-- The linear map corresponding to `orthogonal_projection`. -/
 @[simp] lemma orthogonal_projection_linear {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
     (hc : is_complete (s.direction : set V)) :
   (orthogonal_projection hn hc).linear = orthogonal_projection hc :=
 rfl
 
--- Orthogonal projection is idempotent.  This should go in mathlib.
+/-- Orthogonal projection is idempotent. -/
 @[simp] lemma orthogonal_projection_orthgonal_projection {s : affine_subspace ℝ P}
     (hn : (s : set P).nonempty) (hc : is_complete (s.direction : set V)) {p : P} :
    orthogonal_projection hn hc (orthogonal_projection hn hc p) = orthogonal_projection hn hc p :=
@@ -119,10 +120,9 @@ begin
   exact orthogonal_projection_mem hn hc p
 end
 
--- Reflection in a nonempty affine subspace, whose direction is
--- complete (generalization of both the common cases of reflection in
--- a point and reflection in a codimension-one subspace).  This should
--- go in mathlib.
+/-- Reflection in a nonempty affine subspace, whose direction is
+complete (generalization of both the common cases of reflection in a
+point and reflection in a codimension-one subspace). -/
 def reflection {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
     (hc : is_complete (s.direction : set V)) : P ≃ᵢ P :=
 { to_fun := λ p, (orthogonal_projection hn hc p -ᵥ p) +ᵥ orthogonal_projection hn hc p,
@@ -135,15 +135,27 @@ def reflection {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
     intros p₁ p₂,
     rw [←mul_self_inj_of_nonneg dist_nonneg dist_nonneg, dist_eq_norm_vsub V
           ((orthogonal_projection hn hc p₁ -ᵥ p₁) +ᵥ orthogonal_projection hn hc p₁),
-        dist_eq_norm_vsub V p₁, vsub_vadd_eq_vsub_sub, vadd_vsub_assoc, add_comm, add_sub_assoc,
-        ←vsub_vadd_eq_vsub_sub, vsub_vadd_comm, vsub_vadd_eq_vsub_sub, ←add_sub_assoc,
-        ←affine_map.linear_map_vsub, orthogonal_projection_linear, ←inner_self_eq_norm_square,
-        ←inner_self_eq_norm_square, inner_sub_sub_self, inner_add_left, inner_add_right,
-        inner_add_left, ←two_mul, ←two_mul, ←two_mul, ←mul_sub_left_distrib,
-        ←mul_sub_left_distrib, ←inner_sub_right, inner_comm, ←inner_neg_neg, neg_sub,
-        inner_neg_right,
-        orthogonal_projection_inner_eq_zero hc _ _ (orthogonal_projection_mem hc _)],
-    simp
+        dist_eq_norm_vsub V p₁, ←inner_self_eq_norm_square, ←inner_self_eq_norm_square],
+    calc inner
+      (orthogonal_projection hn hc p₁ -ᵥ p₁ +ᵥ orthogonal_projection hn hc p₁ -ᵥ
+       (orthogonal_projection hn hc p₂ -ᵥ p₂ +ᵥ orthogonal_projection hn hc p₂))
+      (orthogonal_projection hn hc p₁ -ᵥ p₁ +ᵥ orthogonal_projection hn hc p₁ -ᵥ
+       (orthogonal_projection hn hc p₂ -ᵥ p₂ +ᵥ orthogonal_projection hn hc p₂))
+      = inner
+      ((orthogonal_projection hc (p₁ -ᵥ p₂) : V) + orthogonal_projection hc (p₁ -ᵥ p₂) - (p₁ -ᵥ p₂))
+      (orthogonal_projection hc (p₁ -ᵥ p₂) + orthogonal_projection hc (p₁ -ᵥ p₂) - (p₁ -ᵥ p₂))
+    : by rw [vsub_vadd_eq_vsub_sub, vadd_vsub_assoc, add_comm, add_sub_assoc,
+             ←vsub_vadd_eq_vsub_sub, vsub_vadd_comm, vsub_vadd_eq_vsub_sub, ←add_sub_assoc,
+             ←affine_map.linear_map_vsub, orthogonal_projection_linear]
+  ... = -4 * inner (p₁ -ᵥ p₂ - (orthogonal_projection hc (p₁ -ᵥ p₂) : V))
+                   (orthogonal_projection hc (p₁ -ᵥ p₂) : V) +
+          inner (p₁ -ᵥ p₂) (p₁ -ᵥ p₂)
+    : by { simp [inner_sub_left, inner_sub_right, inner_add_left, inner_add_right,
+                 inner_comm (p₁ -ᵥ p₂)],
+           ring }
+  ... = -4 * 0 + inner (p₁ -ᵥ p₂) (p₁ -ᵥ p₂)
+    : by rw orthogonal_projection_inner_eq_zero hc _ _ (orthogonal_projection_mem hc _)
+  ... = inner (p₁ -ᵥ p₂) (p₁ -ᵥ p₂) : by simp
   end }
 
 -- Any three points in a cospherical set are affinely independent.
