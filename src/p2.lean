@@ -20,7 +20,20 @@ import geometry.euclidean
 noncomputable theory
 open_locale classical
 
-open affine finite_dimensional
+section add_torsor
+
+variables {G : Type*} {P : Type*} [add_comm_group G] [add_torsor G P]
+
+lemma vsub_vadd_comm (p1 p2 p3 : P) :
+  (p1 -ᵥ p2 : G) +ᵥ p3 = p3 -ᵥ p2 +ᵥ p1 :=
+begin
+  rw [←@vsub_eq_zero_iff_eq G, vadd_vsub_assoc, vsub_vadd_eq_vsub_sub],
+  simp
+end
+
+end add_torsor
+
+open affine finite_dimensional euclidean_geometry
 
 variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
     [normed_add_torsor V P] [finite_dimensional ℝ V]
@@ -89,6 +102,49 @@ begin
     hc
     (λ i, hcr (s.points i) (hsps (set.mem_range_self i)))).symm
 end
+
+-- The linear map corresponding to `orthogonal_projection`.  This
+-- should go in mathlib.
+@[simp] lemma orthogonal_projection_linear {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
+    (hc : is_complete (s.direction : set V)) :
+  (orthogonal_projection hn hc).linear = orthogonal_projection hc :=
+rfl
+
+-- Orthogonal projection is idempotent.  This should go in mathlib.
+@[simp] lemma orthogonal_projection_orthgonal_projection {s : affine_subspace ℝ P}
+    (hn : (s : set P).nonempty) (hc : is_complete (s.direction : set V)) {p : P} :
+   orthogonal_projection hn hc (orthogonal_projection hn hc p) = orthogonal_projection hn hc p :=
+begin
+  rw orthogonal_projection_eq_self_iff hn hc,
+  exact orthogonal_projection_mem hn hc p
+end
+
+-- Reflection in a nonempty affine subspace, whose direction is
+-- complete (generalization of both the common cases of reflection in
+-- a point and reflection in a codimension-one subspace).  This should
+-- go in mathlib.
+def reflection {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
+    (hc : is_complete (s.direction : set V)) : P ≃ᵢ P :=
+{ to_fun := λ p, (orthogonal_projection hn hc p -ᵥ p) +ᵥ orthogonal_projection hn hc p,
+  inv_fun := λ p, (orthogonal_projection hn hc p -ᵥ p) +ᵥ orthogonal_projection hn hc p,
+  left_inv := λ p, by simp [vsub_vadd_eq_vsub_sub, -orthogonal_projection_linear],
+  right_inv := λ p, by simp [vsub_vadd_eq_vsub_sub, -orthogonal_projection_linear],
+  isometry_to_fun := begin
+    dsimp only,
+    rw isometry_emetric_iff_metric,
+    intros p₁ p₂,
+    rw [←mul_self_inj_of_nonneg dist_nonneg dist_nonneg, dist_eq_norm_vsub V
+          ((orthogonal_projection hn hc p₁ -ᵥ p₁) +ᵥ orthogonal_projection hn hc p₁),
+        dist_eq_norm_vsub V p₁, vsub_vadd_eq_vsub_sub, vadd_vsub_assoc, add_comm, add_sub_assoc,
+        ←vsub_vadd_eq_vsub_sub, vsub_vadd_comm, vsub_vadd_eq_vsub_sub, ←add_sub_assoc,
+        ←affine_map.linear_map_vsub, orthogonal_projection_linear, ←inner_self_eq_norm_square,
+        ←inner_self_eq_norm_square, inner_sub_sub_self, inner_add_left, inner_add_right,
+        inner_add_left, ←two_mul, ←two_mul, ←two_mul, ←mul_sub_left_distrib,
+        ←mul_sub_left_distrib, ←inner_sub_right, inner_comm, ←inner_neg_neg, neg_sub,
+        inner_neg_right,
+        orthogonal_projection_inner_eq_zero hc _ _ (orthogonal_projection_mem hc _)],
+    simp
+  end }
 
 -- Any three points in a cospherical set are affinely independent.
 -- Should go in mathlib in some form.
