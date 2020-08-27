@@ -20,19 +20,6 @@ import geometry.euclidean
 noncomputable theory
 open_locale classical
 
-section add_torsor
-
-variables {G : Type*} {P : Type*} [add_comm_group G] [add_torsor G P]
-
-lemma vsub_vadd_comm (p1 p2 p3 : P) :
-  (p1 -ᵥ p2 : G) +ᵥ p3 = p3 -ᵥ p2 +ᵥ p1 :=
-begin
-  rw [←@vsub_eq_zero_iff_eq G, vadd_vsub_assoc, vsub_vadd_eq_vsub_sub],
-  simp
-end
-
-end add_torsor
-
 open affine finite_dimensional euclidean_geometry
 
 variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
@@ -103,140 +90,6 @@ begin
     (λ i, hcr (s.points i) (hsps (set.mem_range_self i)))).symm
 end
 
--- Definitions and results about reflection, for mathlib.
-
-/-- The linear map corresponding to `orthogonal_projection`. -/
-@[simp] lemma orthogonal_projection_linear {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
-    (hc : is_complete (s.direction : set V)) :
-  (orthogonal_projection hn hc).linear = orthogonal_projection hc :=
-rfl
-
-/-- Orthogonal projection is idempotent. -/
-@[simp] lemma orthogonal_projection_orthgonal_projection {s : affine_subspace ℝ P}
-    (hn : (s : set P).nonempty) (hc : is_complete (s.direction : set V)) {p : P} :
-   orthogonal_projection hn hc (orthogonal_projection hn hc p) = orthogonal_projection hn hc p :=
-begin
-  rw orthogonal_projection_eq_self_iff hn hc,
-  exact orthogonal_projection_mem hn hc p
-end
-
-/-- Reflection in a nonempty affine subspace, whose direction is
-complete (generalization of both the common cases of reflection in a
-point and reflection in a codimension-one subspace). -/
-def reflection {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
-    (hc : is_complete (s.direction : set V)) : P ≃ᵢ P :=
-{ to_fun := λ p, (orthogonal_projection hn hc p -ᵥ p) +ᵥ orthogonal_projection hn hc p,
-  inv_fun := λ p, (orthogonal_projection hn hc p -ᵥ p) +ᵥ orthogonal_projection hn hc p,
-  left_inv := λ p, by simp [vsub_vadd_eq_vsub_sub, -orthogonal_projection_linear],
-  right_inv := λ p, by simp [vsub_vadd_eq_vsub_sub, -orthogonal_projection_linear],
-  isometry_to_fun := begin
-    dsimp only,
-    rw isometry_emetric_iff_metric,
-    intros p₁ p₂,
-    rw [←mul_self_inj_of_nonneg dist_nonneg dist_nonneg, dist_eq_norm_vsub V
-          ((orthogonal_projection hn hc p₁ -ᵥ p₁) +ᵥ orthogonal_projection hn hc p₁),
-        dist_eq_norm_vsub V p₁, ←inner_self_eq_norm_square, ←inner_self_eq_norm_square],
-    calc inner
-      (orthogonal_projection hn hc p₁ -ᵥ p₁ +ᵥ orthogonal_projection hn hc p₁ -ᵥ
-       (orthogonal_projection hn hc p₂ -ᵥ p₂ +ᵥ orthogonal_projection hn hc p₂))
-      (orthogonal_projection hn hc p₁ -ᵥ p₁ +ᵥ orthogonal_projection hn hc p₁ -ᵥ
-       (orthogonal_projection hn hc p₂ -ᵥ p₂ +ᵥ orthogonal_projection hn hc p₂))
-      = inner
-      ((orthogonal_projection hc (p₁ -ᵥ p₂) : V) + orthogonal_projection hc (p₁ -ᵥ p₂) - (p₁ -ᵥ p₂))
-      (orthogonal_projection hc (p₁ -ᵥ p₂) + orthogonal_projection hc (p₁ -ᵥ p₂) - (p₁ -ᵥ p₂))
-    : by rw [vsub_vadd_eq_vsub_sub, vadd_vsub_assoc, add_comm, add_sub_assoc,
-             ←vsub_vadd_eq_vsub_sub, vsub_vadd_comm, vsub_vadd_eq_vsub_sub, ←add_sub_assoc,
-             ←affine_map.linear_map_vsub, orthogonal_projection_linear]
-  ... = -4 * inner (p₁ -ᵥ p₂ - (orthogonal_projection hc (p₁ -ᵥ p₂) : V))
-                   (orthogonal_projection hc (p₁ -ᵥ p₂) : V) +
-          inner (p₁ -ᵥ p₂) (p₁ -ᵥ p₂)
-    : by { simp [inner_sub_left, inner_sub_right, inner_add_left, inner_add_right,
-                 inner_comm (p₁ -ᵥ p₂)],
-           ring }
-  ... = -4 * 0 + inner (p₁ -ᵥ p₂) (p₁ -ᵥ p₂)
-    : by rw orthogonal_projection_inner_eq_zero hc _ _ (orthogonal_projection_mem hc _)
-  ... = inner (p₁ -ᵥ p₂) (p₁ -ᵥ p₂) : by simp
-  end }
-
-/-- The result of reflecting. -/
-lemma reflection_apply {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
-    (hc : is_complete (s.direction : set V)) (p : P) :
-  reflection hn hc p = (orthogonal_projection hn hc p -ᵥ p) +ᵥ orthogonal_projection hn hc p :=
-rfl
-
-/-- Reflecting twice in the same subspace. -/
-@[simp] lemma reflection_reflection {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
-    (hc : is_complete (s.direction : set V)) (p : P) :
-  reflection hn hc (reflection hn hc p) = p :=
-(reflection hn hc).left_inv p
-
-/-- Reflection is involutive. -/
-lemma reflection_involutive {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
-    (hc : is_complete (s.direction : set V)) :
-  function.involutive (reflection hn hc) :=
-reflection_reflection hn hc
-
-/-- A point is its own reflection if and only if it is in the
-subspace. -/
-lemma reflection_eq_self_iff {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
-    (hc : is_complete (s.direction : set V)) (p : P) :
-  reflection hn hc p = p ↔ p ∈ s :=
-begin
-  rw [←orthogonal_projection_eq_self_iff hn hc, reflection_apply],
-  split,
-  { intro h,
-    rw [←@vsub_eq_zero_iff_eq V, vadd_vsub_assoc,
-        ←two_smul ℝ (orthogonal_projection hn hc p -ᵥ p), smul_eq_zero] at h,
-    norm_num at h,
-    exact h },
-  { intro h,
-    simp [h] }
-end
-
-/-- Reflecting a point in two subspaces produces the same result if
-and only if the point has the same orthogonal projection in each of
-those subspaces. -/
-lemma reflection_eq_iff_orthogonal_projection_eq {s₁ s₂ : affine_subspace ℝ P}
-    (hn₁ : (s₁ : set P).nonempty) (hc₁ : is_complete (s₁.direction : set V))
-    (hn₂ : (s₂ : set P).nonempty) (hc₂ : is_complete (s₂.direction : set V))
-    (p : P) :
-  reflection hn₁ hc₁ p = reflection hn₂ hc₂ p ↔
-    orthogonal_projection hn₁ hc₁ p = orthogonal_projection hn₂ hc₂ p :=
-begin
-  rw [reflection_apply, reflection_apply],
-  split,
-  { intro h,
-    rw [←@vsub_eq_zero_iff_eq V, vsub_vadd_eq_vsub_sub, vadd_vsub_assoc, add_comm,
-        add_sub_assoc, vsub_sub_vsub_cancel_right,
-        ←two_smul ℝ (orthogonal_projection hn₁ hc₁ p -ᵥ orthogonal_projection hn₂ hc₂ p),
-        smul_eq_zero] at h,
-    norm_num at h,
-    exact h },
-  { intro h,
-    rw h }
-end
-
-/-- The distance between `p₁` and the reflection of `p₂` equals that
-between the reflection of `p₁` and `p₂`. -/
-lemma dist_reflection {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
-    (hc : is_complete (s.direction : set V)) (p₁ p₂ : P) :
-  dist p₁ (reflection hn hc p₂) = dist (reflection hn hc p₁) p₂ :=
-begin
-  conv_lhs { rw ←reflection_reflection hn hc p₁ },
-  exact (reflection hn hc).dist_eq _ _
-end
-
-/-- A point in the subspace is equidistant from another point and its
-reflection. -/
-lemma dist_reflection_eq_of_mem {s : affine_subspace ℝ P} (hn : (s : set P).nonempty)
-    (hc : is_complete (s.direction : set V)) {p₁ : P} (hp₁ : p₁ ∈ s) (p₂ : P) :
-  dist p₁ (reflection hn hc p₂) = dist p₁ p₂ :=
-begin
-  rw ←reflection_eq_self_iff hn hc p₁ at hp₁,
-  conv_lhs { rw ←hp₁ },
-  exact (reflection hn hc).dist_eq _ _
-end
-
 -- Any three points in a cospherical set are affinely independent.
 -- Should go in mathlib in some form.
 lemma affine_independent_of_cospherical {s : set P} (hs : cospherical s) {p : fin 3 → P}
@@ -284,6 +137,18 @@ end
 -- The description given as an answer to the problem.
 def p2_answer_desc (s : set P) : Prop :=
 at_least_four_points s ∧ (cospherical s ∨ orthocentric_system s)
+
+omit V
+
+-- This used not to be needed as of mathlib commit
+-- e21675586b974322f8221ee42b384a6932d75440, but as of mathlib commit
+-- eaaac992d0a564071242d08fadffeee3043f91d7 it was needed for simp to
+-- reduce extraction of elements of `fin 3`-indexed families
+-- automatically.
+@[simp] lemma p2_fin_third {α : Type*} (a b c : α) : ![a, b, c] 2 = c :=
+rfl
+
+include V
 
 -- Given three points in a set with no three collinear, pairwise
 -- unequal, they are affinely independent.
