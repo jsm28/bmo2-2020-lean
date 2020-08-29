@@ -301,13 +301,12 @@ begin
   { rintros ⟨p, hp2, hpt⟩,
     rw mem_filter at hp2,
     split,
-    { use p,
-      exact and.intro hp2.1 hpt },
+    { exact ⟨p, hp2.1, hpt⟩ },
     { unfold transpose_cell at hpt,
       rw ←hpt,
       unfold prod.fst prod.snd,
       rcases hp2 with ⟨hp2a, hp2b, hp2c, hp2d, hp2e⟩,
-      exact and.intro hp2c (and.intro hp2b (and.intro hp2e hp2d)) } },
+      exact ⟨hp2c, hp2b, hp2e, hp2d⟩ } },
   { rintros ⟨⟨p, hp1, hpt⟩, h2⟩,
     unfold transpose_cell at hpt,
     rw ←hpt at h2,
@@ -315,7 +314,7 @@ begin
     rcases h2 with ⟨h2a, h2b, h2c, h2d⟩,
     use p,
     rw mem_filter,
-    exact and.intro (and.intro hp1 (and.intro h2b (and.intro h2a (and.intro h2d h2c)))) hpt },
+    exact ⟨⟨hp1, h2b, h2a, h2d, h2c⟩, hpt⟩ },
 end
 
 -- The number of black cells in a subgrid behaves as expected under
@@ -531,7 +530,7 @@ begin
     unfold balanced_colourings at *,
     rw mem_filter at *,
     rw ←transpose_balanced_iff,
-    exact and.intro (and.intro (and.intro (mem_univ _) hb.2) (and.intro hnc hr)) rfl },
+    exact ⟨⟨⟨(mem_univ _), hb.2⟩, hnc, hr⟩, rfl⟩ },
   { rintros ⟨b, hb1, hb2⟩,
     rw mem_filter at hb1,
     rcases hb1 with ⟨hb1bal, ⟨hb1nr, hb1c⟩⟩,
@@ -545,7 +544,7 @@ begin
     rw ←transpose_balanced_iff at hb1bal,
     rw ←rows_alternate_iff_transpose at hb1c,
     rw [rows_alternate_iff_transpose, transpose_colouring_twice_id'] at hb1nr,
-    exact and.intro (and.intro (mem_univ _) hb1bal.2) (and.intro hb1c hb1nr) }
+    exact ⟨⟨(mem_univ _), hb1bal.2⟩, hb1c, hb1nr⟩ }
 end
 
 -- Thus the cardinality of the set of balanced colourings, in three parts.
@@ -641,28 +640,23 @@ begin
             exact hye (le_antisymm hlt h3) },
           tauto } } } },
   { rintros ⟨h1, h⟩,
-    repeat { cases h },
+    repeat { cases h }; subst h_left; subst h_right,
     { split,
       { exact h1 },
-      { repeat { rw [h_left, h_right] },
-        exact and.intro (by refl) (and.intro (by refl) (and.intro
-          (lt_add_of_pos_right _ dec_trivial) (lt_add_of_pos_right _ dec_trivial))) } },
+      { exact ⟨le_rfl, le_rfl, (lt_add_of_pos_right _ dec_trivial),
+               (lt_add_of_pos_right _ dec_trivial)⟩ } },
     { split,
       { exact h1 },
-      { repeat { rw [h_left, h_right] },
-        exact and.intro (by refl) (and.intro (le_add_of_nonneg_right dec_trivial)
-          (and.intro (lt_add_of_pos_right _ dec_trivial)
-                     (by linarith))) } },
+      { exact ⟨le_rfl, (le_add_of_nonneg_right dec_trivial),
+               (lt_add_of_pos_right _ dec_trivial), (by linarith)⟩ } },
     { split,
       { exact h1 },
-      { repeat { rw [h_left, h_right] },
-        exact and.intro (le_add_of_nonneg_right dec_trivial) (and.intro (by refl) (and.intro
-          (by linarith) (lt_add_of_pos_right _ dec_trivial))) } },
+      { exact ⟨(le_add_of_nonneg_right dec_trivial), le_rfl, (by linarith),
+               (lt_add_of_pos_right _ dec_trivial)⟩ } },
     { split,
       { exact h1 },
-      { repeat { rw [h_left, h_right] },
-        exact and.intro (le_add_of_nonneg_right dec_trivial) (and.intro
-          (le_add_of_nonneg_right dec_trivial) (and.intro (by linarith) (by linarith))) } } }
+      { exact ⟨(le_add_of_nonneg_right dec_trivial), (le_add_of_nonneg_right dec_trivial),
+               (by linarith), (by linarith)⟩ } } }
 end
 
 -- A subgrid of side 2 has number of black cells given by the
@@ -1199,7 +1193,7 @@ begin
       { symmetry,
         exact row_alternating_first_row' c h.1.2 },
       rw hc,
-      exact and.intro (and.intro (mem_univ _) h.1.1.2) h.2 },
+      exact ⟨⟨(mem_univ _), h.1.1.2⟩, h.2⟩ },
     { symmetry,
       apply row_alternating_first_row',
       unfold balanced_colourings_r_c balanced_colourings_r at h,
@@ -1243,7 +1237,7 @@ begin
       { symmetry,
         exact row_alternating_first_row' c h.1.2 },
       rw hc,
-      exact and.intro (and.intro (mem_univ _) h.1.1.2) h.2 },
+      exact ⟨⟨(mem_univ _), h.1.1.2⟩, h.2⟩ },
     { symmetry,
       apply row_alternating_first_row',
       unfold balanced_colourings_r_no_c balanced_colourings_r at h,
@@ -1324,7 +1318,7 @@ begin
       { exact hmc },
       { by_cases hx : (x.fst : ℕ) < (a : ℕ) + k1_1,
         { left,
-          exact and.intro ha1 (and.intro hb1 (and.intro hx hb2)) },
+          exact ⟨ha1, hb1, hx, hb2⟩ },
         { right,
           rw [fin.le_iff_coe_le_coe, fin.coe_coe_of_lt h],
           repeat { split },
@@ -1822,7 +1816,7 @@ begin
       { exact hmc },
       { by_cases hx : (x : ℕ) < (a : ℕ) + k2_1,
         { left,
-          exact and.intro ha1 hx },
+          exact ⟨ha1, hx⟩ },
         { right,
           rw not_lt at hx,
           split,
@@ -1879,7 +1873,7 @@ begin
       rw ←fin.ext_iff at hxa,
       exact hxa },
     { rintros rfl,
-      exact and.intro h (and.intro (by refl) (by linarith)) } },
+      exact ⟨h, le_rfl, (by linarith)⟩ } },
   { rw if_neg h,
     convert card_empty,
     unfold row_subcolouring,
@@ -2409,7 +2403,7 @@ begin
     { intros k hk0 hk1,
       exfalso,
       linarith },
-    { exact and.intro hnalt1 hnalt2 } },
+    { exact ⟨hnalt1, hnalt2⟩ } },
   { by_cases hnalt : ∃ k : ℕ, 0 < k ∧ k < 2 * (nat.succ k2a) + 1 ∧
         ((((a : ℕ) + k : ℕ) : fin (n + 1)) ∈ c ↔ (((a : ℕ) + k + 1 : ℕ) : fin (n + 1)) ∈ c),
     { rcases hnalt with ⟨k, hk0, hk1, halt⟩,
@@ -2468,8 +2462,8 @@ begin
       { intros k hk0 hk1,
         rw [iff.comm, ←not_iff, iff.comm],
         intro halt,
-        exact hnalt k (and.intro hk0 (and.intro hk1 halt)) },
-      { exact and.intro hnalt1 hnalt2 } } }
+        exact hnalt k ⟨hk0, hk1, halt⟩ },
+      { exact ⟨hnalt1, hnalt2⟩ } } }
 end
 
 -- Thus, not row_balanced in that case.
@@ -2525,7 +2519,7 @@ begin
         (show a1 + 2 * k2 + 2 = a1 + (2 * k2 + 1) + 1, by ring),
         (show a1 + 2 * k2 + 1 = a1 + (2 * k2 + 1), by ring), ←ha2a1, add_comm a1 (a2 - a1),
         nat.sub_add_cancel (le_of_lt h)],
-    exact and.intro (by linarith) (and.intro ha1nalt ha2nalt) },
+    exact ⟨(by linarith), ha1nalt, ha2nalt⟩ },
   { set k2 := (a1 - a2) / 2 with hk2,
     use [(a2 : fin (n + 1)), k2],
     rw fin.coe_coe_of_lt (show a2 < n + 1, by linarith),
@@ -2545,7 +2539,7 @@ begin
         (show a2 + 2 * k2 + 2 = a2 + (2 * k2 + 1) + 1, by ring),
         (show a2 + 2 * k2 + 1 = a2 + (2 * k2 + 1), by ring), ←ha1a2, add_comm a2 (a1 - a2),
         nat.sub_add_cancel (le_of_not_lt h)],
-    exact and.intro (by linarith) (and.intro ha2nalt ha1nalt) }
+    exact ⟨(by linarith), ha2nalt, ha1nalt⟩ }
 end
 
 -- Thus, not row_balanced in that case.

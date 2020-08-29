@@ -510,8 +510,7 @@ begin
       (set.countable.mono hsub p4_countable_zero_set_prop.left) },
   rw set.not_subset at hns,
   rcases hns with ⟨k, ⟨hk1, hk2⟩⟩,
-  use k,
-  exact and.intro hk1 hk2
+  exact ⟨k, hk1, hk2⟩
 end
 
 -- The actual result that a suitable value is in the interval.
