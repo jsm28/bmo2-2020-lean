@@ -140,12 +140,22 @@ at_least_four_points s ∧ (cospherical s ∨ orthocentric_system s)
 
 omit V
 
--- This used not to be needed as of mathlib commit
+-- None of these lemmas were needed as of mathlib commit
 -- e21675586b974322f8221ee42b384a6932d75440, but as of mathlib commit
--- eaaac992d0a564071242d08fadffeee3043f91d7 it was needed for simp to
--- reduce extraction of elements of `fin 3`-indexed families
--- automatically.
-@[simp] lemma p2_fin_third {α : Type*} (a b c : α) : ![a, b, c] 2 = c :=
+-- eaaac992d0a564071242d08fadffeee3043f91d7 the last one was needed
+-- for simp to reduce extraction of elements of `fin 3`-indexed
+-- families automatically.  As of Lean 3.19.0 and mathlib commit
+-- 14e7fe83aec976c37de482d6b443b8ccafb4e2d2, all three lemmas were
+-- needed and the last argument needed to be stated using fin.mk
+-- rather than using a numeral as before.
+
+@[simp] lemma p2_fin_0 {α : Type*} (a b c : α) : ![a, b, c] (fin.mk 0 (by norm_num)) = a :=
+rfl
+
+@[simp] lemma p2_fin_1 {α : Type*} (a b c : α) : ![a, b, c] (fin.mk 1 (by norm_num)) = b :=
+rfl
+
+@[simp] lemma p2_fin_3 {α : Type*} (a b c : α) : ![a, b, c] (fin.mk 2 (by norm_num)) = c :=
 rfl
 
 include V
