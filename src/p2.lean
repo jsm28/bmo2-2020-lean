@@ -20,6 +20,54 @@ import geometry.euclidean
 noncomputable theory
 open_locale classical
 
+section nontrivial
+
+-- For mathlib?
+
+variables {α : Type*} {β : Type*}
+
+/-- An injective function from a nontrivial type has an argument at
+which it does not take a given value. -/
+protected lemma function.injective.exists_ne [nontrivial α] {f : α → β}
+  (hf : function.injective f) (y : β) : ∃ x, f x ≠ y :=
+begin
+  rcases exists_pair_ne α with ⟨x₁, x₂, hx⟩,
+  by_cases h : f x₁ = y,
+  { exact ⟨x₂, h ▸ (hf.ne hx).symm⟩ },
+  { exact ⟨x₁, h⟩ }
+end
+
+end nontrivial
+
+section fin
+
+-- For mathlib.
+
+instance {n : ℕ} : nontrivial (fin (n + 2)) := ⟨⟨0, 1, dec_trivial⟩⟩
+
+end fin
+
+namespace affine
+namespace simplex
+
+-- For mathlib.
+
+variables {k : Type*} {V : Type*} {P : Type*} [division_ring k] [char_zero k]
+          [add_comm_group V] [module k V] [affine_space V P]
+include V
+
+/-- Over a characteristic-zero division ring, the centroids of two
+faces of a simplex are equal if and only if those faces are given by
+the same subset of points. -/
+@[simp] lemma face_centroid_eq_iff {n : ℕ} (s : simplex k P n) {fs₁ fs₂ : finset (fin (n + 1))}
+  {m₁ m₂ : ℕ} (h₁ : fs₁.card = m₁ + 1) (h₂ : fs₂.card = m₂ + 1) :
+  finset.univ.centroid k (s.face h₁).points = finset.univ.centroid k (s.face h₂).points ↔
+    fs₁ = fs₂ :=
+sorry
+
+end simplex
+end affine
+
 open affine finite_dimensional euclidean_geometry
 
 variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
@@ -53,6 +101,55 @@ def cospherical (s : set P) : Prop :=
 ∃ (centre : P) (radius : ℝ), ∀ p ∈ s, dist p centre = radius
 
 include V
+
+namespace affine
+namespace simplex
+
+-- The circumcenter of a 1-simplex equals its centroid.
+lemma circumcenter_eq_centroid (s : simplex ℝ P 1) :
+  s.circumcenter = finset.univ.centroid ℝ s.points :=
+sorry
+
+-- The orthogonal projection of the circumcenter onto a face is the
+-- circumcenter of that face.  This should go in mathlib in some form.
+lemma orthogonal_projection_circumcenter {n : ℕ} (s : simplex ℝ P n) {fs : finset (fin (n + 1))}
+    {m : ℕ} (h : fs.card = m + 1) :
+  orthogonal_projection (affine_span ℝ (s.points '' ↑fs)) s.circumcenter =
+    (s.face h).circumcenter :=
+sorry
+
+-- The distance from the orthocenter to the reflection of the
+-- circumcenter in a side equals the circumradius.  This should go in
+-- mathlib in some form.
+lemma dist_orthocenter_reflection_circumcenter (t : triangle ℝ P) {i₁ i₂ : fin 3} (h : i₁ ≠ i₂) :
+  dist t.orthocenter (reflection (affine_span ℝ (t.points '' {i₁, i₂})) t.circumcenter) =
+    t.circumradius :=
+sorry
+
+-- The distance from the orthocenter to the reflection of the
+-- circumcenter in a side equals the circumradius, variant using a
+-- finset.  This should go in mathlib in some form.
+lemma dist_orthocenter_reflection_circumcenter_finset (t : triangle ℝ P) {i₁ i₂ : fin 3}
+    (h : i₁ ≠ i₂) :
+  dist t.orthocenter (reflection (affine_span ℝ (t.points '' ↑({i₁, i₂} : finset (fin 3))))
+                                 t.circumcenter) =
+    t.circumradius :=
+begin
+  convert dist_orthocenter_reflection_circumcenter t h,
+  simp
+end
+
+end simplex
+end affine
+
+-- Distances from two different points determine at most two points in
+-- 2-space.  This should go in mathlib in some form.
+lemma eq_of_dist_eq_of_dist_eq_of_findim_eq_two (hd : findim ℝ V = 2) {c₁ c₂ p₁ p₂ p : P}
+    {r₁ r₂ : ℝ} (hc : c₁ ≠ c₂) (hp : p₁ ≠ p₂) (hp₁c₁ : dist p₁ c₁ = r₁) (hp₂c₁ : dist p₂ c₁ = r₁)
+    (hpc₁ : dist p c₁ = r₁) (hp₁c₂ : dist p₁ c₂ = r₂) (hp₂c₂ : dist p₂ c₂ = r₂)
+    (hpc₂ : dist p c₂ = r₂) :
+  p = p₁ ∨ p = p₂ :=
+sorry
 
 -- All n-simplices among cospherical points in n-space have the same
 -- circumradius.  This should go in mathlib in some form.
@@ -238,6 +335,21 @@ end
 
 -- Given a triangle in a set with the properties of the problem, any
 -- point in that set that is not on the circumcircle of the triangle
+-- must have distance to the reflection of the circumcentre in a side
+-- equal to the circumradius.
+theorem p2_dist_reflection_circumcentre {s : set P} (hd2 : findim ℝ V = 2) {t0 : triangle ℝ P}
+    {p : P} (ht0s : set.range t0.points ⊆ s)
+    (hr : ∀ (t : triangle ℝ P), set.range t.points ⊆ s → t.circumradius = t0.circumradius)
+    (hp : p ∈ s) (hpn : dist p t0.circumcenter ≠ t0.circumradius) {i1 i2 : fin 3}
+    (hi12 : i1 ≠ i2) :
+  dist p (reflection (affine_span ℝ (t0.points '' ↑({i1, i2} : finset (fin 3)))) t0.circumcenter) =
+    t0.circumradius :=
+begin
+  sorry
+end
+
+-- Given a triangle in a set with the properties of the problem, any
+-- point in that set that is not on the circumcircle of the triangle
 -- must be its orthocentre.
 theorem p2_eq_orthocentre {s : set P} (hd2 : findim ℝ V = 2) {t0 : triangle ℝ P} {p : P}
     (ht0s : set.range t0.points ⊆ s)
@@ -245,7 +357,51 @@ theorem p2_eq_orthocentre {s : set P} (hd2 : findim ℝ V = 2) {t0 : triangle �
     (hp : p ∈ s) (hpn : dist p t0.circumcenter ≠ t0.circumradius) :
   p = t0.orthocenter :=
 begin
-  sorry
+  -- First find a vertex not equal to the orthocentre.
+  obtain ⟨i1 : fin 3, hi1o⟩ :=
+    (injective_of_affine_independent t0.independent).exists_ne t0.orthocenter,
+  obtain ⟨i2, i3, h12, h23, h13, hc12, hc13, h1213⟩ :
+    ∃ i2 i3, i1 ≠ i2 ∧ i2 ≠ i3 ∧ i1 ≠ i3 ∧ finset.card ({i1, i2} : finset (fin 3)) = 2 ∧
+      finset.card ({i1, i3} : finset (fin 3)) = 2 ∧ ({i1, i2} : finset (fin 3)) ≠ {i1, i3},
+  { clear hi1o, dec_trivial! },
+  -- We have the distance of p from the reflection of the circumcentre
+  -- in the relevant sides.
+  have hp12 := p2_dist_reflection_circumcentre hd2 ht0s hr hp hpn h12,
+  have hp13 := p2_dist_reflection_circumcentre hd2 ht0s hr hp hpn h13,
+  -- Also the distance of vertex i1 from those reflections.
+  have hi12 : dist (t0.points i1)
+                   (reflection (affine_span ℝ (t0.points '' ↑({i1, i2} : finset (fin 3))))
+                               t0.circumcenter) = t0.circumradius,
+  { rw dist_reflection_eq_of_mem _ (mem_affine_span ℝ (set.mem_image_of_mem _
+         (finset.mem_coe.2 (finset.mem_insert_self _ _)))),
+    exact t0.dist_circumcenter_eq_circumradius i1 },
+  have hi13 : dist (t0.points i1)
+                   (reflection (affine_span ℝ (t0.points '' ↑({i1, i3} : finset (fin 3))))
+                               t0.circumcenter) = t0.circumradius,
+  { rw dist_reflection_eq_of_mem _ (mem_affine_span ℝ (set.mem_image_of_mem _
+         (finset.mem_coe.2 (finset.mem_insert_self _ _)))),
+    exact t0.dist_circumcenter_eq_circumradius i1 },
+  -- Also the distance of the orthocentre from those reflection.
+  have ho2 := affine.simplex.dist_orthocenter_reflection_circumcenter_finset t0 h12,
+  have ho3 := affine.simplex.dist_orthocenter_reflection_circumcenter_finset t0 h13,
+  -- The reflections of the circumcentre in the relevant sides are not
+  -- the same point.
+  have hrne : reflection (affine_span ℝ (t0.points '' ↑({i1, i2} : finset (fin 3))))
+                         t0.circumcenter ≠
+              reflection (affine_span ℝ (t0.points '' ↑({i1, i3} : finset (fin 3))))
+                         t0.circumcenter,
+  { intro h,
+    rw [reflection_eq_iff_orthogonal_projection_eq, t0.orthogonal_projection_circumcenter hc12,
+        t0.orthogonal_projection_circumcenter hc13, (t0.face hc12).circumcenter_eq_centroid,
+        (t0.face hc13).circumcenter_eq_centroid, t0.face_centroid_eq_iff] at h,
+    exact h1213 h },
+  -- Thus p is either vertex i1 or the orthocentre.
+  have hpeq :=
+    eq_of_dist_eq_of_dist_eq_of_findim_eq_two hd2 hrne hi1o hi12 ho2 hp12 hi13 ho3 hp13,
+  cases hpeq,
+  { rw [hpeq, t0.dist_circumcenter_eq_circumradius] at hpn,
+    exact false.elim (hpn rfl) },
+  { exact hpeq }
 end
 
 -- Given p on the circumcircle of t0, not a vertex, not the
