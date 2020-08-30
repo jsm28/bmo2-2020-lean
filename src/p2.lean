@@ -22,7 +22,7 @@ open_locale classical
 
 section nontrivial
 
--- For mathlib?
+-- For mathlib (PR #3983).
 
 variables {α : Type*} {β : Type*}
 
@@ -41,11 +41,32 @@ end nontrivial
 
 section fin
 
--- For mathlib.
+-- Now in mathlib (PR #3979).
 
 instance {n : ℕ} : nontrivial (fin (n + 2)) := ⟨⟨0, 1, dec_trivial⟩⟩
 
 end fin
+
+section affine
+
+-- For mathlib.
+
+variables (k : Type*) {V : Type*} {P : Type*} [ring k] [add_comm_group V] [module k V]
+variables [affine_space V P] {ι : Type*}
+include V
+
+-- Two different points are affinely independent.
+lemma affine_independent_of_ne (p : ι → P) {i₁ i₂ : ι} (he : ∀ i, i = i₁ ∨ i = i₂)
+    (hn : p i₁ ≠ p i₂) :
+  affine_independent k p :=
+sorry
+
+-- Two different points are affinely independent, version indexed by `fin 2`.
+lemma affine_independent_of_ne_fin {p₁ p₂ : P} (h : p₁ ≠ p₂) :
+  affine_independent k ![p₁, p₂] :=
+affine_independent_of_ne k ![p₁, p₂] (dec_trivial : ∀ i : fin 2, i = 0 ∨ i = 1) h
+
+end affine
 
 namespace affine
 namespace simplex
@@ -143,12 +164,25 @@ end simplex
 end affine
 
 -- Distances from two different points determine at most two points in
--- 2-space.  This should go in mathlib in some form.
+-- 2-space (two circles intersect in at most two points).  This should
+-- go in mathlib in some form.
 lemma eq_of_dist_eq_of_dist_eq_of_findim_eq_two (hd : findim ℝ V = 2) {c₁ c₂ p₁ p₂ p : P}
     {r₁ r₂ : ℝ} (hc : c₁ ≠ c₂) (hp : p₁ ≠ p₂) (hp₁c₁ : dist p₁ c₁ = r₁) (hp₂c₁ : dist p₂ c₁ = r₁)
     (hpc₁ : dist p c₁ = r₁) (hp₁c₂ : dist p₁ c₂ = r₂) (hp₂c₂ : dist p₂ c₂ = r₂)
     (hpc₂ : dist p c₂ = r₂) :
   p = p₁ ∨ p = p₂ :=
+sorry
+
+-- Suppose all distances from `p₁` and `p₂` to the points of a simplex
+-- are equal, and that `p₁` and `p₂` lie in the affine span of `p`
+-- with the vertices of that simplex.  Then `p₁` and `p₂` are equal or
+-- reflections of each other in the affine span of the vertices of the
+-- simplex.
+lemma eq_or_eq_reflection_of_dist_eq {n : ℕ} {s : simplex ℝ P n} {p p₁ p₂ : P} {r : ℝ}
+    (hp₁ : p₁ ∈ affine_span ℝ (insert p (set.range s.points)))
+    (hp₂ : p₂ ∈ affine_span ℝ (insert p (set.range s.points)))
+    (h₁ : ∀ i, dist p₁ (s.points i) = r) (h₂ : ∀ i, dist p₂ (s.points i) = r) :
+  p₁ = p₂ ∨ p₁ = reflection (affine_span ℝ (set.range s.points)) p₂ :=
 sorry
 
 -- All n-simplices among cospherical points in n-space have the same
@@ -246,13 +280,21 @@ omit V
 -- needed and the last argument needed to be stated using fin.mk
 -- rather than using a numeral as before.
 
-@[simp] lemma p2_fin_0 {α : Type*} (a b c : α) : ![a, b, c] (fin.mk 0 (by norm_num)) = a :=
+@[simp] lemma p2_fin3_0 {α : Type*} (a b c : α) : ![a, b, c] (fin.mk 0 (by norm_num)) = a :=
 rfl
 
-@[simp] lemma p2_fin_1 {α : Type*} (a b c : α) : ![a, b, c] (fin.mk 1 (by norm_num)) = b :=
+@[simp] lemma p2_fin3_1 {α : Type*} (a b c : α) : ![a, b, c] (fin.mk 1 (by norm_num)) = b :=
 rfl
 
-@[simp] lemma p2_fin_3 {α : Type*} (a b c : α) : ![a, b, c] (fin.mk 2 (by norm_num)) = c :=
+@[simp] lemma p2_fin3_3 {α : Type*} (a b c : α) : ![a, b, c] (fin.mk 2 (by norm_num)) = c :=
+rfl
+
+-- Likewise, lemmas for fin 2.
+
+@[simp] lemma p2_fin2_0 {α : Type*} (a b : α) : ![a, b] (fin.mk 0 (by norm_num)) = a :=
+rfl
+
+@[simp] lemma p2_fin2_1 {α : Type*} (a b : α) : ![a, b] (fin.mk 1 (by norm_num)) = b :=
 rfl
 
 include V
@@ -337,22 +379,89 @@ end
 -- point in that set that is not on the circumcircle of the triangle
 -- must have distance to the reflection of the circumcentre in a side
 -- equal to the circumradius.
-theorem p2_dist_reflection_circumcentre {s : set P} (hd2 : findim ℝ V = 2) {t0 : triangle ℝ P}
-    {p : P} (ht0s : set.range t0.points ⊆ s)
+theorem p2_dist_reflection_circumcentre {s : set P} (hd2 : findim ℝ V = 2)
+    (hn3 : no_three_points_collinear s) {t0 : triangle ℝ P} {p : P}
+    (ht0s : set.range t0.points ⊆ s)
     (hr : ∀ (t : triangle ℝ P), set.range t.points ⊆ s → t.circumradius = t0.circumradius)
     (hp : p ∈ s) (hpn : dist p t0.circumcenter ≠ t0.circumradius) {i1 i2 : fin 3}
     (hi12 : i1 ≠ i2) :
   dist p (reflection (affine_span ℝ (t0.points '' ↑({i1, i2} : finset (fin 3)))) t0.circumcenter) =
     t0.circumradius :=
 begin
-  sorry
+  -- Let i3 be the index of the third vertex of t0.
+  obtain ⟨i3, h13, h23, heq⟩ : ∃ i3, i1 ≠ i3 ∧ i2 ≠ i3 ∧ ∀ i, i ∈ ({i3, i1, i2} : finset (fin 3)),
+  { dec_trivial! },
+  rw ←finset.eq_univ_iff_forall at heq,
+  -- Construct the triangle t1 whose vertices are vertices i1 and i2
+  -- of t0, together with p.
+  have h0s : ∀ i : fin 3, t0.points i ∈ s,
+  { rwa set.range_subset_iff at ht0s },
+  have h12 := (injective_of_affine_independent t0.independent).ne hi12,
+  have hnp : ∀ i : fin 3, t0.points i ≠ p,
+  { intros i he,
+    rw ←he at hpn,
+    exact hpn (t0.dist_circumcenter_eq_circumradius _) },
+  let t1 := p2_triangle_of_ne hn3 (h0s i1) (h0s i2) hp h12 (hnp i1) (hnp i2),
+  -- t1 has the same circumradius as t0, but different circumcenter.
+  have ht1cr := hr t1 (p2_triangle_of_ne_range_subset
+    hn3 (h0s i1) (h0s i2) hp h12 (hnp i1) (hnp i2)),
+  have ht1cc : t1.circumcenter ≠ t0.circumcenter,
+  { intro h,
+    have hpc : dist p t1.circumcenter = t1.circumradius := t1.dist_circumcenter_eq_circumradius 2,
+    rw [h, ht1cr] at hpc,
+    exact hpn hpc },
+  -- Consider the side with vertices i1 and i2 as a 1-simplex.
+  let t12 : simplex ℝ P 1 := ⟨![t0.points i1, t0.points i2], affine_independent_of_ne_fin ℝ h12⟩,
+  -- Vertex i3 together with those of t12 spans the whole space.
+  have hu2f : (finset.univ : finset (fin 2)) = {0, 1}, { dec_trivial },
+  have hu2 : (set.univ : set (fin 2)) = {0, 1},
+  { rw [←finset.coe_univ, hu2f],
+    simp },
+  have hu3 : (set.univ : set (fin 3)) = {i3, i1, i2},
+  { rw [←finset.coe_univ, ←heq],
+    simp },
+  have h123 : affine_span ℝ (insert (t0.points i3) (set.range t12.points)) = ⊤,
+  { have ht0span : affine_span ℝ (set.range t0.points) = ⊤,
+    { refine affine_span_eq_top_of_affine_independent_of_card_eq_findim_add_one t0.independent _,
+      simp [hd2] },
+    rw ←ht0span,
+    congr,
+    rw [←set.image_univ, ←set.image_univ, hu2, hu3, set.image_insert_eq, set.image_singleton,
+        set.image_insert_eq, set.image_insert_eq, set.image_singleton],
+    refl },
+  -- So the circumcentres of t1 and t2 are in that span.
+  have hc0s : t0.circumcenter ∈ affine_span ℝ (insert (t0.points i3) (set.range t12.points)),
+  { simp [h123] },
+  have hc1s : t1.circumcenter ∈ affine_span ℝ (insert (t0.points i3) (set.range t12.points)),
+  { simp [h123] },
+  -- All points of t12 have distance from the circumcentres of t0 and
+  -- t1 equal to the circumradius of t1.
+  have hr0 : ∀ i, dist t0.circumcenter (t12.points i) = t0.circumradius,
+  { intro i,
+    fin_cases i; simp [t12] },
+  have hr1 : ∀ i, dist t1.circumcenter (t12.points i) = t0.circumradius,
+  { intro i,
+    fin_cases i,
+    { change dist _ (t1.points 0) = _,
+      simp [←ht1cr] },
+    { change dist _ (t1.points 1) = _,
+      simp [←ht1cr] } },
+  -- So the circumcentres are the same or reflections of each other.
+  cases eq_or_eq_reflection_of_dist_eq hc1s hc0s hr1 hr0,
+  { exact false.elim (ht1cc h) },
+  { have hr : t0.points '' ↑({i1, i2} : finset (fin 3)) = set.range t12.points,
+    { rw [←set.image_univ, hu2],
+      simp [t12, set.image_insert_eq] },
+    rw [hr, ←h],
+    change dist (t1.points 2) _ = _,
+    simp [ht1cr] }
 end
 
 -- Given a triangle in a set with the properties of the problem, any
 -- point in that set that is not on the circumcircle of the triangle
 -- must be its orthocentre.
-theorem p2_eq_orthocentre {s : set P} (hd2 : findim ℝ V = 2) {t0 : triangle ℝ P} {p : P}
-    (ht0s : set.range t0.points ⊆ s)
+theorem p2_eq_orthocentre {s : set P} (hd2 : findim ℝ V = 2) (hn3 : no_three_points_collinear s)
+    {t0 : triangle ℝ P} {p : P} (ht0s : set.range t0.points ⊆ s)
     (hr : ∀ (t : triangle ℝ P), set.range t.points ⊆ s → t.circumradius = t0.circumradius)
     (hp : p ∈ s) (hpn : dist p t0.circumcenter ≠ t0.circumradius) :
   p = t0.orthocenter :=
@@ -366,8 +475,8 @@ begin
   { clear hi1o, dec_trivial! },
   -- We have the distance of p from the reflection of the circumcentre
   -- in the relevant sides.
-  have hp12 := p2_dist_reflection_circumcentre hd2 ht0s hr hp hpn h12,
-  have hp13 := p2_dist_reflection_circumcentre hd2 ht0s hr hp hpn h13,
+  have hp12 := p2_dist_reflection_circumcentre hd2 hn3 ht0s hr hp hpn h12,
+  have hp13 := p2_dist_reflection_circumcentre hd2 hn3 ht0s hr hp hpn h13,
   -- Also the distance of vertex i1 from those reflections.
   have hi12 : dist (t0.points i1)
                    (reflection (affine_span ℝ (t0.points '' ↑({i1, i2} : finset (fin 3))))
@@ -472,7 +581,7 @@ begin
     change dist (t1.points 2) _ ≠ _ at hor,
     simpa using hor },
   have hpt1o : p = t1.orthocenter,
-  { refine p2_eq_orthocentre hd2 ht1s _ hp hpt1,
+  { refine p2_eq_orthocentre hd2 hn3 ht1s _ hp hpt1,
     intros t ht,
     rw [hr t ht, hr t1 ht1s] },
   let s' := insert t0.orthocenter (set.range t0.points),
@@ -516,7 +625,7 @@ begin
     simp_rw ←ne.def at hc,
     simp_rw ←hr t0 ht0s at hr,
     rcases hc with ⟨p, hps, hpr⟩,
-    have hpo := p2_eq_orthocentre hd2 ht0s hr hps hpr,
+    have hpo := p2_eq_orthocentre hd2 hn3 ht0s hr hps hpr,
     split,
     { rw ←hpo,
       rintros ⟨i, rfl⟩,
@@ -535,7 +644,7 @@ begin
       by_cases hp1r : dist p1 t0.circumcenter = t0.circumradius,
       { rw hpo at hpr hps,
         exact p2_orthocentre_extra hd2 hn3 ht0s hr hps hpr hp1 hp1no hp1nt0 hp1r },
-      { exact hp1no (p2_eq_orthocentre hd2 ht0s hr hp1 hp1r) } } }
+      { exact hp1no (p2_eq_orthocentre hd2 hn3 ht0s hr hp1 hp1r) } } }
 end
 
 -- The result of the problem.
