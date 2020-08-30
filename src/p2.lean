@@ -21,6 +21,23 @@ noncomputable theory
 open_locale big_operators
 open_locale classical
 
+namespace finset
+
+-- For mathlib.
+
+variables {α β : Type*}
+variables [decidable_linear_order α]
+
+/-- The range of `mono_of_fin`. -/
+@[simp] lemma range_mono_of_fin (s : finset α) {k : ℕ} (h : s.card = k) :
+  set.range (s.mono_of_fin h) = ↑s :=
+begin
+  rw ←set.image_univ,
+  exact (finset.mono_of_fin_bij_on s h).image_eq
+end
+
+end finset
+
 section affine
 
 -- For mathlib.
@@ -50,8 +67,7 @@ begin
   exact linear_independent_unique h
 end
 
-/-- Two different points are affinely independent, version indexed by
-`fin 2`. -/
+/-- Two different points indexed by `fin 2` are affinely independent. -/
 lemma affine_independent_of_ne_fin {p₁ p₂ : P} (h : p₁ ≠ p₂) :
   affine_independent k ![p₁, p₂] :=
 affine_independent_of_ne k ![p₁, p₂] (dec_trivial : ∀ i : fin 2, i = 0 ∨ i = 1) h
@@ -60,8 +76,45 @@ end affine
 
 namespace finset
 
+variables {k : Type*} {V : Type*} {P : Type*} [ring k] [add_comm_group V] [module k V]
+variables [S : affine_space V P]
+include S
+variables {ι : Type*} (s : finset ι)
+variables {ι₂ : Type*} (s₂ : finset ι₂)
+
+/-- A weighted sum combined with an embedding. -/
+lemma weighted_vsub_of_point_map (e : ι₂ ↪ ι) (w : ι → k) (p : ι → P) (b : P) :
+  (s₂.map e).weighted_vsub_of_point p b w = s₂.weighted_vsub_of_point (p ∘ e) b (w ∘ e) :=
+begin
+  simp_rw [weighted_vsub_of_point_apply],
+  exact finset.sum_map _ _ _
+end
+
+/-- A weighted subtraction combined with an embedding. -/
+lemma weighted_vsub_map (e : ι₂ ↪ ι) (w : ι → k) (p : ι → P) :
+  (s₂.map e).weighted_vsub p w = s₂.weighted_vsub (p ∘ e) (w ∘ e) :=
+s₂.weighted_vsub_of_point_map _ _ _ _
+
+/-- An affine combination combined with an embedding. -/
+lemma affine_combination_map (e : ι₂ ↪ ι) (w : ι → k) (p : ι → P) :
+  (s₂.map e).affine_combination p w = s₂.affine_combination (p ∘ e) (w ∘ e) :=
+by simp_rw [affine_combination_apply, weighted_vsub_of_point_map]
+
+end finset
+
+namespace finset
+
 variables (k : Type*) {V : Type*} {P : Type*} [division_ring k] [add_comm_group V] [module k V]
 variables [affine_space V P] {ι : Type*} (s : finset ι)
+variables {ι₂ : Type*} (s₂ : finset ι₂)
+
+include V
+
+/-- The centroid combined with an embedding. -/
+lemma centroid_map (e : ι₂ ↪ ι) (p : ι → P) : (s₂.map e).centroid k p = s₂.centroid k (p ∘ e) :=
+by simp [centroid_def, affine_combination_map, centroid_weights]
+
+omit V
 
 /-- The weights for the centroid indexed by a `fintype`, for sums over
 `univ`. -/
@@ -120,7 +173,9 @@ namespace simplex
 
 -- For mathlib.
 
-variables {k : Type*} {V : Type*} {P : Type*} [division_ring k]
+section ring
+
+variables {k : Type*} {V : Type*} {P : Type*} [ring k]
           [add_comm_group V] [module k V] [affine_space V P]
 include V
 
@@ -129,10 +184,15 @@ include V
     {m : ℕ} (h : fs.card = m + 1) :
   set.range (s.face h).points = s.points '' ↑fs :=
 begin
-  rw [face, set.range_comp, ←set.image_univ],
-  congr,
-  exact (finset.mono_of_fin_bij_on fs h).image_eq
+  rw [face, set.range_comp],
+  simp
 end
+
+end ring
+
+variables {k : Type*} {V : Type*} {P : Type*} [division_ring k]
+          [add_comm_group V] [module k V] [affine_space V P]
+include V
 
 /-- The centroid of a face of a simplex as the centroid of a subset of
 the points. -/
@@ -140,24 +200,16 @@ the points. -/
     {m : ℕ} (h : fs.card = m + 1) :
   finset.univ.centroid k (s.face h).points = fs.centroid k s.points :=
 begin
-  simp_rw [finset.centroid_def, finset.affine_combination_apply,
-           finset.weighted_vsub_of_point_apply],
-  congr' 1,
-  symmetry,
-  convert finset.sum_map _ ⟨fs.mono_of_fin h, fs.mono_of_fin_injective h⟩ _,
-  { rw [←finset.coe_inj, finset.coe_map, function.embedding.coe_fn_mk, finset.coe_univ],
-    exact (finset.mono_of_fin_bij_on fs h).image_eq.symm },
-  { simp [h],
-    refl }
+  convert (finset.univ.centroid_map k ⟨fs.mono_of_fin h, fs.mono_of_fin_injective h⟩ s.points).symm,
+  rw [←finset.coe_inj, finset.coe_map, function.embedding.coe_fn_mk],
+  simp
 end
-
-variables [char_zero k]
 
 /-- Over a characteristic-zero division ring, the centroids of two
 faces of a simplex are equal if and only if those faces are given by
 the same subset of points. -/
-@[simp] lemma face_centroid_eq_iff {n : ℕ} (s : simplex k P n) {fs₁ fs₂ : finset (fin (n + 1))}
-  {m₁ m₂ : ℕ} (h₁ : fs₁.card = m₁ + 1) (h₂ : fs₂.card = m₂ + 1) :
+@[simp] lemma face_centroid_eq_iff [char_zero k] {n : ℕ} (s : simplex k P n)
+  {fs₁ fs₂ : finset (fin (n + 1))} {m₁ m₂ : ℕ} (h₁ : fs₁.card = m₁ + 1) (h₂ : fs₂.card = m₂ + 1) :
   finset.univ.centroid k (s.face h₁).points = finset.univ.centroid k (s.face h₂).points ↔
     fs₁ = fs₂ :=
 begin
