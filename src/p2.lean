@@ -20,33 +20,6 @@ import geometry.euclidean
 noncomputable theory
 open_locale classical
 
-section nontrivial
-
--- For mathlib (PR #3983).
-
-variables {α : Type*} {β : Type*}
-
-/-- An injective function from a nontrivial type has an argument at
-which it does not take a given value. -/
-protected lemma function.injective.exists_ne [nontrivial α] {f : α → β}
-  (hf : function.injective f) (y : β) : ∃ x, f x ≠ y :=
-begin
-  rcases exists_pair_ne α with ⟨x₁, x₂, hx⟩,
-  by_cases h : f x₁ = y,
-  { exact ⟨x₂, h ▸ (hf.ne hx).symm⟩ },
-  { exact ⟨x₁, h⟩ }
-end
-
-end nontrivial
-
-section fin
-
--- Now in mathlib (PR #3979).
-
-instance {n : ℕ} : nontrivial (fin (n + 2)) := ⟨⟨0, 1, dec_trivial⟩⟩
-
-end fin
-
 section affine
 
 -- For mathlib.
