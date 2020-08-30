@@ -18,37 +18,140 @@ import data.matrix.notation
 import geometry.euclidean
 
 noncomputable theory
+open_locale big_operators
 open_locale classical
 
 section affine
 
 -- For mathlib.
 
-variables (k : Type*) {V : Type*} {P : Type*} [ring k] [add_comm_group V] [module k V]
+variables (k : Type*) {V : Type*} {P : Type*} [field k] [add_comm_group V] [module k V]
 variables [affine_space V P] {ι : Type*}
 include V
 
--- Two different points are affinely independent.
+/-- Two different points are affinely independent. -/
 lemma affine_independent_of_ne (p : ι → P) {i₁ i₂ : ι} (he : ∀ i, i = i₁ ∨ i = i₂)
     (hn : p i₁ ≠ p i₂) :
   affine_independent k p :=
-sorry
+begin
+  rw affine_independent_iff_linear_independent_vsub k p i₁,
+  have hne : i₂ ≠ i₁,
+  { intro h,
+    rw h at hn,
+    exact hn rfl },
+  let i₂' : {x // x ≠ i₁} := ⟨i₂, hne⟩,
+  have he' : ∀ i, i = i₂' := λ ⟨i, hi⟩, subtype.mk_eq_mk.2 (or.resolve_left (he i) hi),
+  haveI : unique {x // x ≠ i₁} := ⟨⟨i₂'⟩, he'⟩,
+  have h : (p ↑(default {x // x ≠ i₁}) -ᵥ p i₁ : V) ≠ 0,
+  { rw he' (default _),
+    intro h,
+    rw vsub_eq_zero_iff_eq at h,
+    exact hn h.symm },
+  exact linear_independent_unique h
+end
 
--- Two different points are affinely independent, version indexed by `fin 2`.
+/-- Two different points are affinely independent, version indexed by
+`fin 2`. -/
 lemma affine_independent_of_ne_fin {p₁ p₂ : P} (h : p₁ ≠ p₂) :
   affine_independent k ![p₁, p₂] :=
 affine_independent_of_ne k ![p₁, p₂] (dec_trivial : ∀ i : fin 2, i = 0 ∨ i = 1) h
 
 end affine
 
+namespace finset
+
+variables (k : Type*) {V : Type*} {P : Type*} [division_ring k] [add_comm_group V] [module k V]
+variables [affine_space V P] {ι : Type*} (s : finset ι)
+
+/-- The weights for the centroid indexed by a `fintype`, for sums over
+`univ`. -/
+def centroid_weights_fintype [fintype ι] : ι → k := set.indicator ↑s (s.centroid_weights k)
+
+/-- The definition of `centroid_weights_fintype`. -/
+lemma centroid_weights_fintype_def [fintype ι] :
+  s.centroid_weights_fintype k = set.indicator ↑s (s.centroid_weights k) :=
+rfl
+
+/-- The sum of the weights for the centroid indexed by a `fintype`. -/
+lemma sum_centroid_weights_fintype [fintype ι] :
+  ∑ i, s.centroid_weights_fintype k i = ∑ i in s, s.centroid_weights k i :=
+(set.sum_indicator_subset _ (subset_univ _)).symm
+
+/-- In the characteristic zero case, the weights in the centroid
+indexed by a `fintype` sum to 1 if the number of points is not
+zero. -/
+lemma sum_centroid_weights_fintype_eq_one_of_card_ne_zero [char_zero k] [fintype ι]
+    (h : card s ≠ 0) :
+  ∑ i, s.centroid_weights_fintype k i = 1 :=
+begin
+  rw sum_centroid_weights_fintype,
+  exact s.sum_centroid_weights_eq_one_of_card_ne_zero k h
+end
+
+/-- In the characteristic zero case, the weights in the centroid
+indexed by a `fintype` sum to 1 if the set is nonempty. -/
+lemma sum_centroid_weights_fintype_eq_one_of_nonempty [char_zero k] [fintype ι] (h : s.nonempty) :
+  ∑ i, s.centroid_weights_fintype k i = 1 :=
+begin
+  rw sum_centroid_weights_fintype,
+  exact s.sum_centroid_weights_eq_one_of_nonempty k h
+end
+
+/-- In the characteristic zero case, the weights in the centroid
+indexed by a `fintype` sum to 1 if the number of points is `n + 1`. -/
+lemma sum_centroid_weights_fintype_eq_one_of_card_eq_add_one [char_zero k] [fintype ι] {n : ℕ}
+  (h : card s = n + 1) : ∑ i, s.centroid_weights_fintype k i = 1 :=
+begin
+  rw sum_centroid_weights_fintype,
+  exact s.sum_centroid_weights_eq_one_of_card_eq_add_one k h
+end
+
+include V
+
+/-- The centroid as an affine combination over a `fintype`. -/
+lemma centroid_eq_affine_combination_fintype [fintype ι] (p : ι → P) :
+  s.centroid k p = univ.affine_combination p (s.centroid_weights_fintype k) :=
+affine_combination_indicator_subset _ _ (subset_univ _)
+
+end finset
+
 namespace affine
 namespace simplex
 
 -- For mathlib.
 
-variables {k : Type*} {V : Type*} {P : Type*} [division_ring k] [char_zero k]
+variables {k : Type*} {V : Type*} {P : Type*} [division_ring k]
           [add_comm_group V] [module k V] [affine_space V P]
 include V
+
+/-- The set of points of a face. -/
+@[simp] lemma range_face_points {n : ℕ} (s : simplex k P n) {fs : finset (fin (n + 1))}
+    {m : ℕ} (h : fs.card = m + 1) :
+  set.range (s.face h).points = s.points '' ↑fs :=
+begin
+  rw [face, set.range_comp, ←set.image_univ],
+  congr,
+  exact (finset.mono_of_fin_bij_on fs h).image_eq
+end
+
+/-- The centroid of a face of a simplex as the centroid of a subset of
+the points. -/
+@[simp] lemma face_centroid_eq_centroid {n : ℕ} (s : simplex k P n) {fs : finset (fin (n + 1))}
+    {m : ℕ} (h : fs.card = m + 1) :
+  finset.univ.centroid k (s.face h).points = fs.centroid k s.points :=
+begin
+  simp_rw [finset.centroid_def, finset.affine_combination_apply,
+           finset.weighted_vsub_of_point_apply],
+  congr' 1,
+  symmetry,
+  convert finset.sum_map _ ⟨fs.mono_of_fin h, fs.mono_of_fin_injective h⟩ _,
+  { rw [←finset.coe_inj, finset.coe_map, function.embedding.coe_fn_mk, finset.coe_univ],
+    exact (finset.mono_of_fin_bij_on fs h).image_eq.symm },
+  { simp [h],
+    refl }
+end
+
+variables [char_zero k]
 
 /-- Over a characteristic-zero division ring, the centroids of two
 faces of a simplex are equal if and only if those faces are given by
@@ -57,7 +160,33 @@ the same subset of points. -/
   {m₁ m₂ : ℕ} (h₁ : fs₁.card = m₁ + 1) (h₂ : fs₂.card = m₂ + 1) :
   finset.univ.centroid k (s.face h₁).points = finset.univ.centroid k (s.face h₂).points ↔
     fs₁ = fs₂ :=
-sorry
+begin
+  split,
+  { intro h,
+    rw [face_centroid_eq_centroid, face_centroid_eq_centroid,
+        finset.centroid_eq_affine_combination_fintype,
+        finset.centroid_eq_affine_combination_fintype] at h,
+    have ha := (affine_independent_iff_indicator_eq_of_affine_combination_eq k s.points).1
+      s.independent _ _ _ _ (fs₁.sum_centroid_weights_fintype_eq_one_of_card_eq_add_one k h₁)
+      (fs₂.sum_centroid_weights_fintype_eq_one_of_card_eq_add_one k h₂) h,
+    simp_rw [finset.coe_univ, set.indicator_univ, function.funext_iff,
+             finset.centroid_weights_fintype_def, finset.centroid_weights, h₁, h₂] at ha,
+    ext i,
+    replace ha := ha i,
+    split,
+    all_goals
+    { intro hi,
+      by_contradiction hni,
+      simp [hi, hni] at ha,
+      norm_cast at ha } },
+  { intro h,
+    have hm : m₁ = m₂,
+    { subst h,
+      simpa [h₁] using h₂ },
+    subst hm,
+    congr,
+    exact h }
+end
 
 end simplex
 end affine
@@ -104,13 +233,32 @@ lemma circumcenter_eq_centroid (s : simplex ℝ P 1) :
   s.circumcenter = finset.univ.centroid ℝ s.points :=
 sorry
 
--- The orthogonal projection of the circumcenter onto a face is the
--- circumcenter of that face.  This should go in mathlib in some form.
+/-- The orthogonal projection of the circumcenter onto a face is the
+circumcenter of that face. -/
 lemma orthogonal_projection_circumcenter {n : ℕ} (s : simplex ℝ P n) {fs : finset (fin (n + 1))}
     {m : ℕ} (h : fs.card = m + 1) :
   orthogonal_projection (affine_span ℝ (s.points '' ↑fs)) s.circumcenter =
     (s.face h).circumcenter :=
-sorry
+begin
+  have hr : ∃ r, ∀ p ∈ set.range (s.face h).points, dist p s.circumcenter = r,
+  { use s.circumradius,
+    intros p hp,
+    rcases set.mem_range.1 hp with ⟨i, rfl⟩,
+    simp [face_points] },
+  have hs : set.range (s.face h).points ⊆ affine_span ℝ (s.points '' ↑fs),
+  { rw s.range_face_points h,
+    exact subset_span_points ℝ _ },
+  rw exists_dist_eq_iff_exists_dist_orthogonal_projection_eq hs s.circumcenter at hr,
+  cases hr with r hr,
+  have ho : orthogonal_projection (affine_span ℝ (s.points '' ↑fs)) s.circumcenter ∈
+    affine_span ℝ (set.range (s.face h).points),
+  { rw s.range_face_points h,
+    have hn : (affine_span ℝ (s.points '' ↑fs) : set P).nonempty,
+    { simp [←finset.card_pos, h] },
+    refine orthogonal_projection_mem hn (submodule.complete_of_finite_dimensional _) _ },
+  rw set.forall_range_iff at hr,
+  exact (s.face h).eq_circumcenter_of_dist_eq ho hr
+end
 
 -- The distance from the orthocenter to the reflection of the
 -- circumcenter in a side equals the circumradius.  This should go in
