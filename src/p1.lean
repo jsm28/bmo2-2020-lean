@@ -115,12 +115,7 @@ begin
                          (int.le_of_lt (power_of_2_pos m)) hdvd hrdvd, },
     rw [hmm1, add_comm, pow_succ] at heq,
     have heqx : (2^m1 : ℤ) - 2^m1 = 2*2^m1 - 2^m1,
-    { conv
-      begin
-        to_lhs,
-        congr,
-        rw heq,
-      end, },
+    { conv_lhs { congr, rw heq } },
     rw sub_self at heqx,
     have heqxx : 2 * (2^m1 : ℤ) - 2^m1 = 2^m1, { ring },
     rw heqxx at heqx,
@@ -142,23 +137,10 @@ begin
     rw mod_def at hc1,
     set d := a / (2 * 2) with hd,
     have hc1m : a = 1 + 2 * 2 * d,
-    { conv
-      begin
-        to_rhs,
-        congr,
-        rw ← hc1,
-      end,
-      simp, },
+    { conv_rhs { congr, rw ←hc1 },
+      simp },
     rw hc1m at hb,
-    conv at hb
-    begin
-      to_lhs,
-      congr,
-      congr,
-      congr,
-      skip,
-      rw [add_comm, add_sub_assoc, sub_self, add_zero],
-    end,
+    conv_lhs at hb { congr, congr, congr, skip, rw [add_comm, add_sub_assoc, sub_self, add_zero] },
     rw [mul_comm, mul_assoc, mul_assoc] at hb,
     have hbm : 2 * (2 * (d * (1 + 2 * 2 * d))) / 2 = 2 * (d * (1 + 2 * 2 * d)) :=
       int.mul_div_cancel_left _ dec_trivial,

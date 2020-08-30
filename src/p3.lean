@@ -680,15 +680,11 @@ begin
      (c.filter (λ p, p = ((((a : ℕ) + 1 : ℕ) : fin (n + 1)), b))))
     (c.filter (λ p : grid (n + 1), p = ((((a : ℕ) + 1 : ℕ) : fin (n + 1)),
                                         (((b : ℕ) + 1 : ℕ) : fin (n + 1))))),
-  { conv
-    begin
-      to_lhs,
-      rw ←nat.add_zero (card ((c.filter (λ p, p = (a, b))) ∪
-           (c.filter (λ p, p = (a, (((b : ℕ) + 1 : ℕ) : fin (n + 1))))) ∪
-           (c.filter (λ p, p = ((((a : ℕ) + 1 : ℕ) : fin (n + 1)), b))) ∪
-           (c.filter (λ p, p = ((((a : ℕ) + 1 : ℕ) : fin (n + 1)),
-                                (((b : ℕ) + 1 : ℕ) : fin (n + 1)))))))
-    end,
+  { conv_lhs { rw ←nat.add_zero (card ((c.filter (λ p, p = (a, b))) ∪
+                    (c.filter (λ p, p = (a, (((b : ℕ) + 1 : ℕ) : fin (n + 1))))) ∪
+                    (c.filter (λ p, p = ((((a : ℕ) + 1 : ℕ) : fin (n + 1)), b))) ∪
+                    (c.filter (λ p, p = ((((a : ℕ) + 1 : ℕ) : fin (n + 1)),
+                                         (((b : ℕ) + 1 : ℕ) : fin (n + 1))))))) },
     rw add_left_cancel_iff,
     symmetry,
     rw [card_eq_zero, ←filter_or, ←filter_or, ←filter_and],
@@ -706,13 +702,9 @@ begin
       ((c.filter (λ p, p = (a, b))) ∪
        (c.filter (λ p, p = (a, (((b : ℕ) + 1 : ℕ) : fin (n + 1))))))
       (c.filter (λ p, p = ((((a : ℕ) + 1 : ℕ) : fin (n + 1)), b))),
-    { conv
-      begin
-        to_lhs,
-        rw ←nat.add_zero (card ((c.filter (λ p, p = (a, b))) ∪
-             (c.filter (λ p, p = (a, (((b : ℕ) + 1 : ℕ) : fin (n + 1))))) ∪
-             (c.filter (λ p, p = ((((a : ℕ) + 1 : ℕ) : fin (n + 1)), b)))))
-      end,
+    { conv_lhs { rw ←nat.add_zero (card ((c.filter (λ p, p = (a, b))) ∪
+                      (c.filter (λ p, p = (a, (((b : ℕ) + 1 : ℕ) : fin (n + 1))))) ∪
+                      (c.filter (λ p, p = ((((a : ℕ) + 1 : ℕ) : fin (n + 1)), b))))) },
       rw add_left_cancel_iff,
       symmetry,
       rw [card_eq_zero, ←filter_or, ←filter_and],
@@ -729,12 +721,8 @@ begin
       convert card_union_add_card_inter
         (c.filter (λ p, p = (a, b)))
         (c.filter (λ p, p = (a, (((b : ℕ) + 1 : ℕ) : fin (n + 1))))),
-      conv
-      begin
-        to_lhs,
-        rw ←nat.add_zero (card ((c.filter (λ p, p = (a, b))) ∪
-             (c.filter (λ p, p = (a, (((b : ℕ) + 1 : ℕ) : fin (n + 1)))))))
-      end,
+      conv_lhs { rw ←nat.add_zero (card ((c.filter (λ p, p = (a, b))) ∪
+                      (c.filter (λ p, p = (a, (((b : ℕ) + 1 : ℕ) : fin (n + 1))))))) },
       rw add_left_cancel_iff,
       symmetry,
       rw [card_eq_zero, ←filter_and],
@@ -759,13 +747,7 @@ end
 theorem cell_card_eq {n : ℕ} (c : colouring n) (a : grid n) :
   (c.filter (λ p : grid n, p = a)).card = (ite (a ∈ c) 1 0) :=
 begin
-  conv
-  begin
-    to_lhs,
-    congr,
-    congr,
-    rw cell_eq_eq
-  end,
+  conv_lhs { congr, congr, rw cell_eq_eq },
   rw filter_eq,
   by_cases a ∈ c,
   all_goals { finish }
@@ -871,13 +853,7 @@ theorem rows_alternate_any_two_cols' {n : ℕ} (c : colouring (n + 1)) (hbal2 : 
     ((a, b2) ∈ c ↔ ((((a : ℕ) + 1 : ℕ) : fin (n + 1)), b2) ∈ c) :=
 begin
   rw [←not_iff_not, not_iff, not_iff_comm, not_iff],
-  conv
-  begin
-    congr,
-    rw iff.comm,
-    skip,
-    rw [not_iff_comm, iff.comm]
-  end,
+  conv { congr, rw iff.comm, skip, rw [not_iff_comm, iff.comm] },
   exact rows_alternate_any_two_cols c hbal2 a b b2 ha
 end
 
@@ -1414,12 +1390,7 @@ theorem row_sub_black_complement {n : ℕ} (c : row_colouring (n + 1)) (a : fin 
     (hk2 : (a : ℕ) + k2 ≤ n + 1) :
   row_sub_black (row_complement c) a k2 = k2 - row_sub_black c a k2 :=
 begin
-  conv
-  begin
-    to_rhs,
-    congr,
-    rw ←row_sub_black_add_complement c a k2 hk2
-  end,
+  conv_rhs { congr, rw ←row_sub_black_add_complement c a k2 hk2 },
   rw nat.add_sub_cancel_left
 end
 
@@ -1906,13 +1877,7 @@ begin
     have hx3 : x < k2, { linarith },
     have hx4 := hx hx3,
     have hax := halt x hx2,
-    conv
-    begin
-      congr,
-      congr,
-      congr,
-      rw [nat.succ_eq_add_one, ←add_assoc],
-    end,
+    conv { congr, congr, congr, rw [nat.succ_eq_add_one, ←add_assoc] },
     rw [←nat.even_iff, nat.even_succ, nat.even_iff],
     tauto }
 end
@@ -1928,146 +1893,55 @@ begin
   induction k2 with x hx,
   { norm_num,
     exact row_sub_black_zero_cols c a },
-  { conv
-    begin
-      to_lhs,
-      rw nat.succ_eq_add_one
-    end,
+  { conv_lhs { rw nat.succ_eq_add_one },
     rw [row_sub_black_split_cols c a x 1 hk2, row_sub_black_one_col _ _],
     rw hx _ _,
-    { conv
-      begin
-        to_lhs,
-        congr,
-        skip,
-        congr,
-        rw row_cols_alternate_colour c a (nat.succ x) hk2 halt x (nat.lt_succ_self x)
-      end,
-      conv
-      begin
-        to_rhs,
-        rw nat.succ_eq_add_one x,
-      end,
+    { conv_lhs
+      { congr, skip, congr,
+        rw row_cols_alternate_colour c a (nat.succ x) hk2 halt x (nat.lt_succ_self x) },
+      conv_rhs { rw nat.succ_eq_add_one x },
       by_cases h : a ∈ c; by_cases he : nat.even x,
-      { conv
-        begin
-          to_lhs,
-          congr,
-          skip,
-          congr,
-          rw ←nat.even_iff
-        end,
+      { conv_lhs { congr, skip, congr, rw ←nat.even_iff },
         rw [if_pos h, if_pos h],
-        conv
-        begin
-          to_lhs,
-          congr,
-          skip,
-          congr,
-          rw iff_true_intro (iff_of_true h he),
-        end,
+        conv_lhs { congr, skip, congr, rw iff_true_intro (iff_of_true h he) },
         rw if_true,
         rw nat.even_iff at he,
         rw [←nat.mod_add_div x 2, he, zero_add, add_assoc],
-        conv
-        begin
-          to_lhs,
-          congr,
-          congr,
-          rw add_comm
-        end,
+        conv_lhs { congr, congr, rw add_comm },
         rw nat.add_mul_div_left _ _ (dec_trivial : 2 > 0),
-        conv
-        begin
-          to_rhs,
-          rw add_comm
-        end,
+        conv_rhs { rw add_comm },
         rw nat.add_mul_div_left _ _ (dec_trivial : 2 > 0),
         norm_num,
         exact add_comm _ _ },
-      { conv
-        begin
-          to_lhs,
-          congr,
-          skip,
-          congr,
-          rw ←nat.even_iff
-        end,
+      { conv_lhs { congr, skip, congr, rw ←nat.even_iff },
         rw [if_pos h, if_pos h],
         have hn: ¬ (a ∈ c ↔ nat.even x), { tauto },
-        conv
-        begin
-          to_lhs,
-          congr,
-          skip,
-          congr,
-          rw iff_false_intro hn,
-        end,
+        conv_lhs { congr, skip, congr, rw iff_false_intro hn },
         rw if_false,
         rw nat.not_even_iff at he,
         rw [←nat.mod_add_div x 2, he, add_zero],
-        conv
-        begin
-          to_lhs,
-          rw [add_comm, ←add_assoc, nat.add_mul_div_left _ _ (dec_trivial : 2 > 0)]
-        end,
+        conv_lhs { rw [add_comm, ←add_assoc, nat.add_mul_div_left _ _ (dec_trivial : 2 > 0)] },
         rw [(show 1 + 2 * (x / 2) + 1 + 1 = 3 + 2 * (x / 2), by ring),
             nat.add_mul_div_left _ _ (dec_trivial : 2 > 0)],
         norm_num },
-      { conv
-        begin
-          to_lhs,
-          congr,
-          skip,
-          congr,
-          rw ←nat.even_iff
-        end,
+      { conv_lhs { congr, skip, congr, rw ←nat.even_iff },
         rw [if_neg h, if_neg h],
         have hn: ¬ (a ∈ c ↔ nat.even x), { tauto },
-        conv
-        begin
-          to_lhs,
-          congr,
-          skip,
-          congr,
-          rw iff_false_intro hn,
-        end,
+        conv_lhs { congr, skip, congr, rw iff_false_intro hn },
         rw if_false,
         rw nat.even_iff at he,
         rw [←nat.mod_add_div x 2, he, add_zero, zero_add,
             nat.mul_div_cancel_left _ (dec_trivial : 2 > 0), add_comm,
             nat.add_mul_div_left _ _ (dec_trivial : 2 > 0)],
         norm_num },
-      { conv
-        begin
-          to_lhs,
-          congr,
-          skip,
-          congr,
-          rw ←nat.even_iff
-        end,
+      { conv_lhs { congr, skip, congr, rw ←nat.even_iff },
         rw [if_neg h, if_neg h],
         have hn: (a ∈ c ↔ nat.even x), { tauto },
-        conv
-        begin
-          to_lhs,
-          congr,
-          skip,
-          congr,
-          rw iff_true_intro hn,
-        end,
+        conv_lhs { congr, skip, congr, rw iff_true_intro hn },
         rw if_true,
         rw nat.not_even_iff at he,
         rw [←nat.mod_add_div x 2, he, nat.add_mul_div_left _ _ (dec_trivial : 2 > 0)],
-        conv
-        begin
-          to_rhs,
-          rw add_assoc,
-          congr,
-          congr,
-          skip,
-          rw add_comm,
-        end,
+        conv_rhs { rw add_assoc, congr, congr, skip, rw add_comm },
         rw [←add_assoc, nat.add_mul_div_left _ _ (dec_trivial : 2 > 0)],
         norm_num,
         exact add_comm _ _ } },
@@ -2293,54 +2167,25 @@ begin
   have hs2 : (a : ℕ) + 1 < n + 1, { linarith },
   have hendcol : (((a : ℕ) + 2 * k2 + 2 : ℕ) : fin (n + 1)) ∈ c ↔ a ∈ c,
   { rw [hnalt1, ←hnalt2, (show (a : ℕ) + 2 * k2 + 1 = (a : ℕ) + 1 + 2 * k2, by ring)],
-    conv
-    begin
-      to_lhs,
-      congr,
-      congr,
-      rw ←fin.coe_coe_of_lt hs2
-    end,
+    conv_lhs { congr, congr, rw ←fin.coe_coe_of_lt hs2 },
     rw row_cols_alternate_colour c (((a : ℕ) + 1 : ℕ) : fin (n + 1)) (2 * k2 + 1) _ _ (2 * k2) _,
     all_goals { try { rw fin.coe_coe_of_lt hs2 } },
     { simp },
     { linarith },
     { exact row_cols_alternate_ends_middle_alt c a k2 hk2 halt },
     { linarith } },
-  conv
-  begin
-    to_lhs,
-    congr,
-    skip,
-    congr,
-    rw hendcol
-  end,
+  conv_lhs { congr, skip, congr, rw hendcol },
   rw [row_sub_black_split_cols _ _ _ _ hs2, row_sub_black_one_col],
   rw row_sub_black_cols_alternate c (((a : ℕ) + 1 : ℕ) : fin (n + 1)) (2 * k2 + 1) _ _,
   all_goals { try { rw fin.coe_coe_of_lt hs2 } },
-  { conv
-    begin
-      to_lhs,
-      congr,
-      congr,
-      skip,
-      congr,
-      rw ←hnalt1
-    end,
+  { conv_lhs { congr, congr, skip, congr, rw ←hnalt1 },
     by_cases h : a ∈ c,
     { simp [h, (show 2 * k2 + 1 + 1 = 2 * (k2 + 1), by ring)],
       ring },
-    { conv
-      begin
-        to_lhs,
-        congr,
-        congr,
-        skip,
-        congr,
-        skip,
-        skip,
+    { conv_lhs
+      { congr, congr, skip, congr, skip, skip,
         rw [add_comm, nat.add_mul_div_left 1 k2 (show 2 > 0, by norm_num)],
-        norm_num
-      end,
+        norm_num },
       simp [h] } },
   { linarith },
   { exact row_cols_alternate_ends_middle_alt c a k2 hk2 halt }
@@ -2443,12 +2288,7 @@ begin
         set k3 := k / 2 with hk3,
         have hk3a : 2 * k3 + 1 = k,
         { rw [hk3, add_comm],
-          conv
-          begin
-            to_lhs,
-            congr,
-            rw ←hpar
-          end,
+          conv_lhs { congr, rw ←hpar },
           rw nat.mod_add_div },
         have hk3b : k3 ≤ k2a,
         { rw [←hk3a, nat.succ_eq_add_one] at hk1,
@@ -2507,11 +2347,7 @@ begin
     have ha2a1 : a2 - a1 = 2 * k2 + 1,
     { rw hk2,
       rw add_comm,
-      conv
-      begin
-        to_lhs,
-        rw ←nat.mod_add_div (a2 - a1) 2
-      end,
+      conv_lhs { rw ←nat.mod_add_div (a2 - a1) 2 },
       congr,
       rw [←nat.not_even_iff, nat.even_sub (le_of_lt h), nat.even_iff, nat.even_iff, ha1p, ha2p],
       norm_num },
@@ -2526,11 +2362,7 @@ begin
     have ha1a2 : a1 - a2 = 2 * k2 + 1,
     { rw hk2,
       rw add_comm,
-      conv
-      begin
-        to_lhs,
-        rw ←nat.mod_add_div (a1 - a2) 2
-      end,
+      conv_lhs { rw ←nat.mod_add_div (a1 - a2) 2 },
       congr,
       rw [←nat.not_even_iff, nat.even_sub (le_of_not_lt h), nat.even_iff, nat.even_iff, ha1p,
           ha2p],
@@ -2837,13 +2669,10 @@ begin
         rw [iff_true_intro (mem_univ _), true_and,
             fin.coe_coe_of_lt (show t < n + 1, by linarith only [hst])] at ht,
         rw [ht, iff_true_intro (mem_univ _), true_and],
-        conv
-        begin
-          to_lhs,
-          congr,
+        conv_lhs
+        { congr,
           rw [mem_filter, Ico.mem, iff_true_intro (zero_le _), iff_true_intro (nat.succ_pos _),
-              iff_false_intro (nat.succ_ne_zero _), true_and, true_and, false_and, false_or]
-        end,
+              iff_false_intro (nat.succ_ne_zero _), true_and, true_and, false_and, false_or] },
         erw mem_filter at h,
         cases h with hcu h,
         unfold row_cols_alternate_at_parity at h,
@@ -2851,12 +2680,7 @@ begin
         { rw nat.succ_eq_add_one t,
           have hht := h t (by linarith only [hst]) hpar,
           interval_cases parity; simp [hpar]; tauto },
-        { conv
-          begin
-            to_lhs,
-            congr,
-            rw [iff_false_intro hpar, false_or, nat.left_distrib]
-          end,
+        { conv_lhs { congr, rw [iff_false_intro hpar, false_or, nat.left_distrib] },
           have hpar2 : t % 2 = 1 - parity,
           { interval_cases parity,
             { rw [←nat.even_iff, nat.not_even_iff] at hpar,
@@ -2874,12 +2698,7 @@ begin
               rw [←ht4, (show 2 * (t / 2) + 1 + 1 = 2 * (t / 2 + 1), by ring)] at hst2,
               have hst3 : 2 * (t / 2 + 1) / 2 ≤ n / 2 := nat.div_le_div_right hst2,
               rw nat.mul_div_right _ (show 2 > 0, by norm_num) at hst3,
-              conv
-              begin
-                to_rhs,
-                congr,
-                rw add_zero,
-              end,
+              conv_rhs { congr, rw add_zero },
               linarith only [hst3] },
             { have hst2 : t + 1 + 1 ≤ n + 1, { linarith only [hst] },
               rw [nat.sub_self, add_zero] at ht4,
@@ -2891,12 +2710,7 @@ begin
                   nat.add_mul_div_left _ _ (show 2 > 0, by norm_num),
                   nat.div_eq_of_lt (nat.mod_lt _ (show 2 > 0, by norm_num))] at hst3,
               linarith only [hst3] } },
-          conv
-          begin
-            congr,
-            congr,
-            rw iff_true_intro hst4
-          end,
+          conv { congr, congr, rw iff_true_intro hst4 },
           norm_num,
           rw [nat.add_sub_assoc (show parity ≤ 1, by linarith only [hparity]),
               nat.add_sub_assoc (show parity ≤ 2, by linarith only [hparity]),
