@@ -536,7 +536,9 @@ at_least_four_points s ∧ (cospherical s ∨ orthocentric_system s)
 omit V
 
 -- This was not needed as of mathlib commit
--- e21675586b974322f8221ee42b384a6932d75440, but as of mathlib commit
+-- e21675586b974322f8221ee42b384a6932d75440 (although even with that
+-- commit, simp didn't prove this reduced lemma, only the larger
+-- result required after `fin_cases`), but as of mathlib commit
 -- eaaac992d0a564071242d08fadffeee3043f91d7 it was needed for simp to
 -- reduce extraction of elements of `fin 3`-indexed families
 -- automatically.
