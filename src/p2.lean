@@ -21,23 +21,6 @@ noncomputable theory
 open_locale big_operators
 open_locale classical
 
-namespace finset
-
--- For mathlib.
-
-variables {α β : Type*}
-variables [decidable_linear_order α]
-
-/-- The range of `mono_of_fin`. -/
-@[simp] lemma range_mono_of_fin (s : finset α) {k : ℕ} (h : s.card = k) :
-  set.range (s.mono_of_fin h) = ↑s :=
-begin
-  rw ←set.image_univ,
-  exact (finset.mono_of_fin_bij_on s h).image_eq
-end
-
-end finset
-
 section affine
 
 -- For mathlib.
