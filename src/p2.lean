@@ -125,44 +125,44 @@ omit V
 
 /-- The weights for the centroid indexed by a `fintype`, for sums over
 `univ`. -/
-def centroid_weights_fintype [fintype ι] : ι → k := set.indicator ↑s (s.centroid_weights k)
+def centroid_weights_indicator [fintype ι] : ι → k := set.indicator ↑s (s.centroid_weights k)
 
-/-- The definition of `centroid_weights_fintype`. -/
-lemma centroid_weights_fintype_def [fintype ι] :
-  s.centroid_weights_fintype k = set.indicator ↑s (s.centroid_weights k) :=
+/-- The definition of `centroid_weights_indicator`. -/
+lemma centroid_weights_indicator_def [fintype ι] :
+  s.centroid_weights_indicator k = set.indicator ↑s (s.centroid_weights k) :=
 rfl
 
 /-- The sum of the weights for the centroid indexed by a `fintype`. -/
-lemma sum_centroid_weights_fintype [fintype ι] :
-  ∑ i, s.centroid_weights_fintype k i = ∑ i in s, s.centroid_weights k i :=
+lemma sum_centroid_weights_indicator [fintype ι] :
+  ∑ i, s.centroid_weights_indicator k i = ∑ i in s, s.centroid_weights k i :=
 (set.sum_indicator_subset _ (subset_univ _)).symm
 
 /-- In the characteristic zero case, the weights in the centroid
 indexed by a `fintype` sum to 1 if the number of points is not
 zero. -/
-lemma sum_centroid_weights_fintype_eq_one_of_card_ne_zero [char_zero k] [fintype ι]
+lemma sum_centroid_weights_indicator_eq_one_of_card_ne_zero [char_zero k] [fintype ι]
     (h : card s ≠ 0) :
-  ∑ i, s.centroid_weights_fintype k i = 1 :=
+  ∑ i, s.centroid_weights_indicator k i = 1 :=
 begin
-  rw sum_centroid_weights_fintype,
+  rw sum_centroid_weights_indicator,
   exact s.sum_centroid_weights_eq_one_of_card_ne_zero k h
 end
 
 /-- In the characteristic zero case, the weights in the centroid
 indexed by a `fintype` sum to 1 if the set is nonempty. -/
-lemma sum_centroid_weights_fintype_eq_one_of_nonempty [char_zero k] [fintype ι] (h : s.nonempty) :
-  ∑ i, s.centroid_weights_fintype k i = 1 :=
+lemma sum_centroid_weights_indicator_eq_one_of_nonempty [char_zero k] [fintype ι] (h : s.nonempty) :
+  ∑ i, s.centroid_weights_indicator k i = 1 :=
 begin
-  rw sum_centroid_weights_fintype,
+  rw sum_centroid_weights_indicator,
   exact s.sum_centroid_weights_eq_one_of_nonempty k h
 end
 
 /-- In the characteristic zero case, the weights in the centroid
 indexed by a `fintype` sum to 1 if the number of points is `n + 1`. -/
-lemma sum_centroid_weights_fintype_eq_one_of_card_eq_add_one [char_zero k] [fintype ι] {n : ℕ}
-  (h : card s = n + 1) : ∑ i, s.centroid_weights_fintype k i = 1 :=
+lemma sum_centroid_weights_indicator_eq_one_of_card_eq_add_one [char_zero k] [fintype ι] {n : ℕ}
+  (h : card s = n + 1) : ∑ i, s.centroid_weights_indicator k i = 1 :=
 begin
-  rw sum_centroid_weights_fintype,
+  rw sum_centroid_weights_indicator,
   exact s.sum_centroid_weights_eq_one_of_card_eq_add_one k h
 end
 
@@ -170,7 +170,7 @@ include V
 
 /-- The centroid as an affine combination over a `fintype`. -/
 lemma centroid_eq_affine_combination_fintype [fintype ι] (p : ι → P) :
-  s.centroid k p = univ.affine_combination p (s.centroid_weights_fintype k) :=
+  s.centroid k p = univ.affine_combination p (s.centroid_weights_indicator k) :=
 affine_combination_indicator_subset _ _ (subset_univ _)
 
 end finset
@@ -226,10 +226,10 @@ begin
         finset.centroid_eq_affine_combination_fintype,
         finset.centroid_eq_affine_combination_fintype] at h,
     have ha := (affine_independent_iff_indicator_eq_of_affine_combination_eq k s.points).1
-      s.independent _ _ _ _ (fs₁.sum_centroid_weights_fintype_eq_one_of_card_eq_add_one k h₁)
-      (fs₂.sum_centroid_weights_fintype_eq_one_of_card_eq_add_one k h₂) h,
+      s.independent _ _ _ _ (fs₁.sum_centroid_weights_indicator_eq_one_of_card_eq_add_one k h₁)
+      (fs₂.sum_centroid_weights_indicator_eq_one_of_card_eq_add_one k h₂) h,
     simp_rw [finset.coe_univ, set.indicator_univ, function.funext_iff,
-             finset.centroid_weights_fintype_def, finset.centroid_weights, h₁, h₂] at ha,
+             finset.centroid_weights_indicator_def, finset.centroid_weights, h₁, h₂] at ha,
     ext i,
     replace ha := ha i,
     split,
