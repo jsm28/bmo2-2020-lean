@@ -43,6 +43,24 @@ section affine
 -- For mathlib.
 
 variables (k : Type*) {V : Type*} {P : Type*} [field k] [add_comm_group V] [module k V]
+          [affine_space V P]
+variables {ι : Type*}
+include V
+
+/-- The direction of the affine span of a subset of a family indexed
+by a `fintype` is finite-dimensional. -/
+instance finite_dimensional_direction_affine_span_image_of_fintype [fintype ι] (p : ι → P)
+    (s : set ι) :
+  finite_dimensional k (affine_span k (p '' s)).direction :=
+finite_dimensional_direction_affine_span_of_finite k ((set.finite.of_fintype _).image _)
+
+end affine
+
+section affine
+
+-- For mathlib.
+
+variables (k : Type*) {V : Type*} {P : Type*} [field k] [add_comm_group V] [module k V]
 variables [affine_space V P] {ι : Type*}
 include V
 
@@ -246,7 +264,7 @@ end affine
 open affine finite_dimensional euclidean_geometry
 
 variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
-    [normed_add_torsor V P] [finite_dimensional ℝ V]
+    [normed_add_torsor V P]
 
 -- Properties of sets of points in the problem.
 
@@ -280,10 +298,61 @@ include V
 namespace affine
 namespace simplex
 
--- The circumcenter of a 1-simplex equals its centroid.
+/-- The circumradius is non-negative. -/
+lemma circumradius_nonneg {n : ℕ} (s : simplex ℝ P n) : 0 ≤ s.circumradius :=
+s.dist_circumcenter_eq_circumradius 0 ▸ dist_nonneg
+
+/-- The circumradius of a simplex with at least two points is
+positive. -/
+lemma circumradius_pos {n : ℕ} (s : simplex ℝ P (n + 1)) : 0 < s.circumradius :=
+begin
+  refine lt_of_le_of_ne s.circumradius_nonneg _,
+  intro h,
+  have hr := s.dist_circumcenter_eq_circumradius,
+  simp_rw [←h, dist_eq_zero] at hr,
+  have h01 := (injective_of_affine_independent s.independent).ne
+    (dec_trivial : (0 : fin (n + 2)) ≠ 1),
+  simpa [hr] using h01
+end
+
+/-- The circumcenter of a 0-simplex equals its unique point. -/
+lemma circumcenter_eq_point (s : simplex ℝ P 0) (i : fin 1) :
+  s.circumcenter = s.points i :=
+begin
+  have h := s.circumcenter_mem_affine_span,
+  rw [set.range_unique, affine_subspace.mem_affine_span_singleton] at h,
+  rw h,
+  congr
+end
+
+/-- The circumcenter of a 1-simplex equals its centroid. -/
 lemma circumcenter_eq_centroid (s : simplex ℝ P 1) :
   s.circumcenter = finset.univ.centroid ℝ s.points :=
-sorry
+begin
+  have hu : (finset.univ : finset (fin 2)) = {0, 1}, by dec_trivial,
+  have h0 : (0 : fin 2) ∉ ({1} : finset (fin 2)), by dec_trivial,
+  have hr : set.pairwise_on set.univ
+    (λ i j : fin 2, dist (s.points i) (finset.univ.centroid ℝ s.points) =
+                    dist (s.points j) (finset.univ.centroid ℝ s.points)),
+  { intros i hi j hj hij,
+    simp_rw [←mul_self_inj_of_nonneg dist_nonneg dist_nonneg,
+             centroid_eq_affine_combination_of_points_with_circumcenter,
+             point_eq_affine_combination_of_points_with_circumcenter,
+             dist_affine_combination _ (sum_point_weights_with_circumcenter _)
+               (sum_centroid_weights_with_circumcenter ⟨(0 : fin 2), finset.mem_univ _⟩),
+             sum_points_with_circumcenter, pi.sub_apply, points_with_circumcenter,
+             point_weights_with_circumcenter, centroid_weights_with_circumcenter,
+             hu, finset.sum_insert h0, finset.sum_singleton],
+    have hc0 : ((fin.mk 0 dec_trivial : fin 2) : ℕ) = 0, by dec_trivial,
+    have hc1 : ((fin.mk 1 dec_trivial : fin 2) : ℕ) = 1, by dec_trivial,
+    simp [dist_comm (s.points 0) (s.points 1), fin.ext_iff],
+    fin_cases i; fin_cases j; simp [hc0, hc1]; ring },
+  rw set.pairwise_on_eq_iff_exists_eq at hr,
+  cases hr with r hr,
+  exact (s.eq_circumcenter_of_dist_eq
+          (centroid_mem_affine_span_of_card_eq_add_one ℝ _ (finset.card_fin 2))
+          (λ i, hr i (set.mem_univ _))).symm
+end
 
 /-- The orthogonal projection of the circumcenter onto a face is the
 circumcenter of that face. -/
@@ -336,15 +405,34 @@ end
 end simplex
 end affine
 
--- Distances from two different points determine at most two points in
--- 2-space (two circles intersect in at most two points).  This should
--- go in mathlib in some form.
-lemma eq_of_dist_eq_of_dist_eq_of_findim_eq_two (hd : findim ℝ V = 2) {c₁ c₂ p₁ p₂ p : P}
-    {r₁ r₂ : ℝ} (hc : c₁ ≠ c₂) (hp : p₁ ≠ p₂) (hp₁c₁ : dist p₁ c₁ = r₁) (hp₂c₁ : dist p₂ c₁ = r₁)
-    (hpc₁ : dist p c₁ = r₁) (hp₁c₂ : dist p₁ c₂ = r₂) (hp₂c₂ : dist p₂ c₂ = r₂)
-    (hpc₂ : dist p c₂ = r₂) :
-  p = p₁ ∨ p = p₂ :=
+/-- Distances from two different points determine at most two points
+in a two-dimensional subspace containing those points (two circles
+intersect in at most two points). -/
+lemma eq_of_dist_eq_of_dist_eq_of_mem_of_findim_eq_two {s : affine_subspace ℝ P}
+  [finite_dimensional ℝ s.direction] (hd : findim ℝ s.direction = 2) {c₁ c₂ p₁ p₂ p : P}
+  (hc₁s : c₁ ∈ s) (hc₂s : c₂ ∈ s) (hp₁s : p₁ ∈ s) (hp₂s : p₂ ∈ s) (hps : p ∈ s) {r₁ r₂ : ℝ}
+  (hc : c₁ ≠ c₂) (hp : p₁ ≠ p₂) (hp₁c₁ : dist p₁ c₁ = r₁) (hp₂c₁ : dist p₂ c₁ = r₁)
+  (hpc₁ : dist p c₁ = r₁) (hp₁c₂ : dist p₁ c₂ = r₂) (hp₂c₂ : dist p₂ c₂ = r₂)
+  (hpc₂ : dist p c₂ = r₂) : p = p₁ ∨ p = p₂ :=
 sorry
+
+/-- Distances from two different points determine at most two points
+in two-dimensional space (two circles intersect in at most two
+points). -/
+lemma eq_of_dist_eq_of_dist_eq_of_findim_eq_two [finite_dimensional ℝ V] (hd : findim ℝ V = 2)
+    {c₁ c₂ p₁ p₂ p : P} {r₁ r₂ : ℝ} (hc : c₁ ≠ c₂) (hp : p₁ ≠ p₂) (hp₁c₁ : dist p₁ c₁ = r₁)
+    (hp₂c₁ : dist p₂ c₁ = r₁) (hpc₁ : dist p c₁ = r₁) (hp₁c₂ : dist p₁ c₂ = r₂)
+    (hp₂c₂ : dist p₂ c₂ = r₂) (hpc₂ : dist p c₂ = r₂) :
+  p = p₁ ∨ p = p₂ :=
+begin
+  have hd' : findim ℝ (⊤ : affine_subspace ℝ P).direction = 2,
+  { rw [affine_subspace.direction_top, findim_top],
+    exact hd },
+  exact eq_of_dist_eq_of_dist_eq_of_mem_of_findim_eq_two hd'
+    (affine_subspace.mem_top ℝ V _) (affine_subspace.mem_top ℝ V _)
+    (affine_subspace.mem_top ℝ V _) (affine_subspace.mem_top ℝ V _)
+    (affine_subspace.mem_top ℝ V _) hc hp hp₁c₁ hp₂c₁ hpc₁ hp₁c₂ hp₂c₂ hpc₂
+end
 
 -- Suppose all distances from `p₁` and `p₂` to the points of a simplex
 -- are equal, and that `p₁` and `p₂` lie in the affine span of `p`
@@ -360,8 +448,8 @@ sorry
 
 -- All n-simplices among cospherical points in n-space have the same
 -- circumradius.  This should go in mathlib in some form.
-lemma exists_circumradius_eq_of_cospherical {ps : set P} {n : ℕ} (hd : findim ℝ V = n)
-    (hc : cospherical ps) :
+lemma exists_circumradius_eq_of_cospherical {ps : set P} {n : ℕ} [finite_dimensional ℝ V]
+    (hd : findim ℝ V = n) (hc : cospherical ps) :
   ∃ r : ℝ, ∀ s : simplex ℝ P n, set.range s.points ⊆ ps → s.circumradius = r :=
 begin
   rcases hc with ⟨c, r, hcr⟩,
@@ -378,8 +466,8 @@ end
 
 -- All n-simplices among cospherical points in n-space have the same
 -- circumcenter.  This should go in mathlib in some form.
-lemma exists_circumcenter_eq_of_cospherical {ps : set P} {n : ℕ} (hd : findim ℝ V = n)
-    (hc : cospherical ps) :
+lemma exists_circumcenter_eq_of_cospherical {ps : set P} {n : ℕ} [finite_dimensional ℝ V]
+    (hd : findim ℝ V = n) (hc : cospherical ps) :
   ∃ c : P, ∀ s : simplex ℝ P n, set.range s.points ⊆ ps → s.circumcenter = c :=
 begin
   rcases hc with ⟨c, r, hcr⟩,
@@ -437,6 +525,8 @@ lemma eq_insert_orthocenter_of_orthocentric_system {s : set P} (ho : orthocentri
 begin
   sorry
 end
+
+variables [finite_dimensional ℝ V]
 
 -- The description given as an answer to the problem.
 def p2_answer_desc (s : set P) : Prop :=
