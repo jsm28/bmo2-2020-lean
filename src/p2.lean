@@ -117,6 +117,28 @@ variables {ι₂ : Type*} (s₂ : finset ι₂)
 
 include V
 
+/-- The centroid of two points. -/
+lemma centroid_insert_singleton [char_zero k] (p : ι → P) (i₁ i₂ : ι) :
+  ({i₁, i₂} : finset ι).centroid k p = (2 ⁻¹ : k) • (p i₂ -ᵥ p i₁) +ᵥ p i₁ :=
+begin
+  by_cases h : i₁ = i₂,
+  { simp [h] },
+  { rw [centroid_def,
+        affine_combination_eq_weighted_vsub_of_point_vadd_of_sum_eq_one _ _ _
+          (sum_centroid_weights_eq_one_of_nonempty k _ ⟨i₁, mem_insert_self _ _⟩) (p i₁)],
+    simp [h],
+    norm_num }
+end
+
+/-- The centroid of two points indexed by `fin 2`. -/
+lemma centroid_insert_singleton_fin [char_zero k] (p : fin 2 → P) :
+  univ.centroid k p = (2 ⁻¹ : k) • (p 1 -ᵥ p 0) +ᵥ p 0 :=
+begin
+  have hu : (finset.univ : finset (fin 2)) = {0, 1}, by dec_trivial,
+  rw hu,
+  convert centroid_insert_singleton k p 0 1
+end
+
 /-- The centroid combined with an embedding. -/
 lemma centroid_map (e : ι₂ ↪ ι) (p : ι → P) : (s₂.map e).centroid k p = s₂.centroid k (p ∘ e) :=
 by simp [centroid_def, affine_combination_map, centroid_weights]
@@ -318,22 +340,14 @@ end
 lemma circumcenter_eq_centroid (s : simplex ℝ P 1) :
   s.circumcenter = finset.univ.centroid ℝ s.points :=
 begin
-  have hu : (finset.univ : finset (fin 2)) = {0, 1}, by dec_trivial,
-  have h0 : (0 : fin 2) ∉ ({1} : finset (fin 2)), by dec_trivial,
   have hr : set.pairwise_on set.univ
     (λ i j : fin 2, dist (s.points i) (finset.univ.centroid ℝ s.points) =
                     dist (s.points j) (finset.univ.centroid ℝ s.points)),
   { intros i hi j hj hij,
-    simp_rw [←mul_self_inj_of_nonneg dist_nonneg dist_nonneg,
-             centroid_eq_affine_combination_of_points_with_circumcenter,
-             point_eq_affine_combination_of_points_with_circumcenter,
-             dist_affine_combination _ (sum_point_weights_with_circumcenter _)
-               (sum_centroid_weights_with_circumcenter ⟨(0 : fin 2), finset.mem_univ _⟩),
-             sum_points_with_circumcenter, pi.sub_apply, points_with_circumcenter,
-             point_weights_with_circumcenter, centroid_weights_with_circumcenter,
-             hu, finset.sum_insert h0, finset.sum_singleton],
-    simp [dist_comm (s.points 0) (s.points 1), fin.ext_iff],
-    fin_cases i; fin_cases j; simp; ring },
+    rw [finset.centroid_insert_singleton_fin, dist_eq_norm_vsub V (s.points i),
+        dist_eq_norm_vsub V (s.points j), vsub_vadd_eq_vsub_sub, vsub_vadd_eq_vsub_sub,
+        ←one_smul ℝ (s.points i -ᵥ s.points 0), ←one_smul ℝ (s.points j -ᵥ s.points 0)],
+    fin_cases i; fin_cases j; simp [-one_smul, ←sub_smul]; norm_num },
   rw set.pairwise_on_eq_iff_exists_eq at hr,
   cases hr with r hr,
   exact (s.eq_circumcenter_of_dist_eq
