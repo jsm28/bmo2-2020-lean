@@ -21,15 +21,9 @@ noncomputable theory
 open_locale big_operators
 open_locale classical
 
-namespace fin
-
-@[simp] lemma mk_eq_subtype_mk {n : ℕ} (a : ℕ) (h : a < n) : mk a h = ⟨a, h⟩ := rfl
-
-end fin
+-- The following affine space lemmas are mathlib PR #3990.
 
 section affine
-
--- For mathlib.
 
 variables (k : Type*) {V : Type*} {P : Type*} [field k] [add_comm_group V] [module k V]
           [affine_space V P]
@@ -46,8 +40,6 @@ finite_dimensional_direction_affine_span_of_finite k ((set.finite.of_fintype _).
 end affine
 
 section affine
-
--- For mathlib.
 
 variables (k : Type*) {V : Type*} {P : Type*} [field k] [add_comm_group V] [module k V]
 variables [affine_space V P] {ι : Type*}
@@ -200,8 +192,6 @@ end finset
 namespace affine
 namespace simplex
 
--- For mathlib.
-
 section ring
 
 variables {k : Type*} {V : Type*} {P : Type*} [ring k]
@@ -271,6 +261,9 @@ end
 
 end simplex
 end affine
+
+-- Content below here is a mixture of content specific to this problem
+-- and geometrical definitions and results that should go in mathlib.
 
 open affine finite_dimensional euclidean_geometry
 
