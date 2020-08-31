@@ -265,7 +265,49 @@ end affine
 -- Content below here is a mixture of content specific to this problem
 -- and geometrical definitions and results that should go in mathlib.
 
-open affine finite_dimensional euclidean_geometry
+namespace finite_dimensional
+
+variables {K : Type*} {V : Type*} [field K] [add_comm_group V] [vector_space K V]
+
+-- mathlib PR #4005.
+
+/-- If a submodule is less than or equal to a finite-dimensional
+submodule with the same dimension, they are equal. -/
+lemma eq_of_le_of_findim_eq {S₁ S₂ : submodule K V} [finite_dimensional K S₂] (hle : S₁ ≤ S₂)
+  (hd : findim K S₁ = findim K S₂) : S₁ = S₂ :=
+begin
+  rw ←linear_equiv.findim_eq (submodule.comap_subtype_equiv_of_le hle) at hd,
+  exact le_antisymm hle (submodule.comap_subtype_eq_top.1 (eq_top_of_findim_eq hd))
+end
+
+end finite_dimensional
+
+section inner_product
+
+variables {α : Type*} [inner_product_space α]
+
+-- mathlib PR #4004.
+
+/-- The sum and difference of two vectors are orthogonal if and only
+if they have the same norm. -/
+lemma inner_add_sub_eq_zero_iff (x y : α) : inner (x + y) (x - y) = 0 ↔ ∥x∥ = ∥y∥ :=
+begin
+  conv_rhs { rw ←mul_self_inj_of_nonneg (norm_nonneg _) (norm_nonneg _) },
+  simp [←inner_self_eq_norm_square, inner_add_left, inner_sub_right, inner_comm y x,
+        sub_eq_zero, add_comm (inner x y)]
+end
+
+/-- A family of vectors is linearly independent if they are nonzero
+and orthogonal. -/
+lemma linear_independent_of_ne_zero_of_inner_eq_zero {ι : Type*} {v : ι → α}
+  (hz : ∀ i, v i ≠ 0) (ho : ∀ i j, i ≠ j → inner (v i) (v j) = 0) : linear_independent ℝ v :=
+begin
+  sorry
+end
+
+end inner_product
+
+open affine affine_subspace finite_dimensional euclidean_geometry
 
 variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
     [normed_add_torsor V P]
@@ -324,7 +366,7 @@ lemma circumcenter_eq_point (s : simplex ℝ P 0) (i : fin 1) :
   s.circumcenter = s.points i :=
 begin
   have h := s.circumcenter_mem_affine_span,
-  rw [set.range_unique, affine_subspace.mem_affine_span_singleton] at h,
+  rw [set.range_unique, mem_affine_span_singleton] at h,
   rw h,
   congr
 end
@@ -399,6 +441,26 @@ end
 end simplex
 end affine
 
+/-- Suppose that `c₁` is equidistant from `p₁` and `p₂`, and the same
+applies to `c₂`.  Then the vector between `c₁` and `c₂` is orthogonal
+to that between `p₁` and `p₂`.  (In two dimensions, this says that the
+diagonals of a kite are orthogonal.) -/
+lemma inner_vsub_vsub_of_dist_eq_of_dist_eq {c₁ c₂ p₁ p₂ : P} (hc₁ : dist p₁ c₁ = dist p₂ c₁)
+  (hc₂ : dist p₁ c₂ = dist p₂ c₂) : inner (c₂ -ᵥ c₁) (p₂ -ᵥ p₁) = 0 :=
+begin
+  have h : inner ((c₂ -ᵥ c₁) + (c₂ -ᵥ c₁)) (p₂ -ᵥ p₁) = 0,
+  { conv_lhs { congr, congr, rw ←vsub_sub_vsub_cancel_right c₂ c₁ p₁,
+               skip, rw ←vsub_sub_vsub_cancel_right c₂ c₁ p₂ },
+    rw [←add_sub_comm, inner_sub_left],
+    conv_lhs { congr, rw ←vsub_sub_vsub_cancel_right p₂ p₁ c₂,
+               skip, rw ←vsub_sub_vsub_cancel_right p₂ p₁ c₁ },
+    rw [dist_comm p₁, dist_comm p₂, dist_eq_norm_vsub V _ p₁,
+        dist_eq_norm_vsub V _ p₂, ←inner_add_sub_eq_zero_iff] at hc₁ hc₂,
+    simp_rw [←neg_vsub_eq_vsub_rev c₁, ←neg_vsub_eq_vsub_rev c₂, sub_neg_eq_add,
+             neg_add_eq_sub, hc₁, hc₂, sub_zero] },
+  simpa [inner_add_left, ←mul_two, (by norm_num : (2 : ℝ) ≠ 0)] using h
+end
+
 /-- Distances from two different points determine at most two points
 in a two-dimensional subspace containing those points (two circles
 intersect in at most two points). -/
@@ -408,7 +470,39 @@ lemma eq_of_dist_eq_of_dist_eq_of_mem_of_findim_eq_two {s : affine_subspace ℝ 
   (hc : c₁ ≠ c₂) (hp : p₁ ≠ p₂) (hp₁c₁ : dist p₁ c₁ = r₁) (hp₂c₁ : dist p₂ c₁ = r₁)
   (hpc₁ : dist p c₁ = r₁) (hp₁c₂ : dist p₁ c₂ = r₂) (hp₂c₂ : dist p₂ c₂ = r₂)
   (hpc₂ : dist p c₂ = r₂) : p = p₁ ∨ p = p₂ :=
-sorry
+begin
+  have ho : inner (c₂ -ᵥ c₁) (p₂ -ᵥ p₁) = 0 :=
+    inner_vsub_vsub_of_dist_eq_of_dist_eq (by cc) (by cc),
+  let b : fin 2 → V := ![c₂ -ᵥ c₁, p₂ -ᵥ p₁],
+  have hb : linear_independent ℝ b,
+  { refine linear_independent_of_ne_zero_of_inner_eq_zero _ _,
+    { intro i,
+      fin_cases i; simp [b, hc.symm, hp.symm] },
+    { intros i j hij,
+      fin_cases i; fin_cases j; try { exact false.elim (hij rfl) },
+      { exact ho },
+      { rw inner_comm, exact ho } } },
+  have hbs : submodule.span ℝ (set.range b) = s.direction,
+  { refine eq_of_le_of_findim_eq _ _,
+    { rw [submodule.span_le, set.range_subset_iff],
+      intro i,
+      fin_cases i,
+      { exact vsub_mem_direction hc₂s hc₁s },
+      { exact vsub_mem_direction hp₂s hp₁s } },
+    { rw [findim_span_eq_card hb, fintype.card_fin, hd] } },
+  have hv : ∀ v ∈ s.direction, ∃ t₁ t₂ : ℝ, v = t₁ • (c₂ -ᵥ c₁) + t₂ • (p₂ -ᵥ p₁),
+  { sorry },
+  rcases hv (p -ᵥ p₁) (vsub_mem_direction hps hp₁s) with ⟨t₁, t₂, hpt⟩,
+  have hop : inner (c₂ -ᵥ c₁) (p -ᵥ p₁) = 0 :=
+    inner_vsub_vsub_of_dist_eq_of_dist_eq (by cc) (by cc),
+  simp only [hpt, inner_add_right, inner_smul_right, ho, mul_zero, add_zero, mul_eq_zero,
+             inner_self_eq_zero, vsub_eq_zero_iff_eq, hc.symm, or_false] at hop,
+  rw [hop, zero_smul, zero_add, ←eq_vadd_iff_vsub_eq] at hpt,
+  subst hpt,
+  -- TODO: at this point, factor out a general lemma about distance
+  -- for point plus multiple of vector.
+  sorry
+end
 
 /-- Distances from two different points determine at most two points
 in two-dimensional space (two circles intersect in at most two
@@ -420,12 +514,11 @@ lemma eq_of_dist_eq_of_dist_eq_of_findim_eq_two [finite_dimensional ℝ V] (hd :
   p = p₁ ∨ p = p₂ :=
 begin
   have hd' : findim ℝ (⊤ : affine_subspace ℝ P).direction = 2,
-  { rw [affine_subspace.direction_top, findim_top],
+  { rw [direction_top, findim_top],
     exact hd },
   exact eq_of_dist_eq_of_dist_eq_of_mem_of_findim_eq_two hd'
-    (affine_subspace.mem_top ℝ V _) (affine_subspace.mem_top ℝ V _)
-    (affine_subspace.mem_top ℝ V _) (affine_subspace.mem_top ℝ V _)
-    (affine_subspace.mem_top ℝ V _) hc hp hp₁c₁ hp₂c₁ hpc₁ hp₁c₂ hp₂c₂ hpc₂
+    (mem_top ℝ V _) (mem_top ℝ V _) (mem_top ℝ V _) (mem_top ℝ V _) (mem_top ℝ V _)
+    hc hp hp₁c₁ hp₂c₁ hpc₁ hp₁c₂ hp₂c₂ hpc₂
 end
 
 -- Suppose all distances from `p₁` and `p₂` to the points of a simplex
@@ -452,7 +545,7 @@ begin
   have hs : affine_span ℝ (set.range s.points) = ⊤,
   { refine affine_span_eq_top_of_affine_independent_of_card_eq_findim_add_one s.independent _,
     simp [hd] },
-  have hc : c ∈ affine_span ℝ (set.range s.points) := hs.symm ▸ affine_subspace.mem_top ℝ V c,
+  have hc : c ∈ affine_span ℝ (set.range s.points) := hs.symm ▸ mem_top ℝ V c,
   exact (s.eq_circumradius_of_dist_eq
     hc
     (λ i, hcr (s.points i) (hsps (set.mem_range_self i)))).symm
@@ -470,7 +563,7 @@ begin
   have hs : affine_span ℝ (set.range s.points) = ⊤,
   { refine affine_span_eq_top_of_affine_independent_of_card_eq_findim_add_one s.independent _,
     simp [hd] },
-  have hc : c ∈ affine_span ℝ (set.range s.points) := hs.symm ▸ affine_subspace.mem_top ℝ V c,
+  have hc : c ∈ affine_span ℝ (set.range s.points) := hs.symm ▸ mem_top ℝ V c,
   exact (s.eq_circumcenter_of_dist_eq
     hc
     (λ i, hcr (s.points i) (hsps (set.mem_range_self i)))).symm
@@ -808,7 +901,7 @@ begin
     { have h : ∀ (i : fin 3), dist (t2.points i) t0.circumcenter = t0.circumradius,
       { intro i,
         fin_cases i; simp [t2, p2_triangle_of_ne, hpr] },
-      exact t2.eq_circumcenter_of_dist_eq (ht2span.symm ▸ affine_subspace.mem_top ℝ V _) h },
+      exact t2.eq_circumcenter_of_dist_eq (ht2span.symm ▸ mem_top ℝ V _) h },
     have ht12cc : t1.circumcenter = t2.circumcenter,
     { have h : ∀ (i : fin 3), dist (t2.points i) t1.circumcenter = t1.circumradius,
       { intro i,
@@ -818,7 +911,7 @@ begin
         { change dist (t1.points 1) _ = _,
           simp },
         { simp [t2, p2_triangle_of_ne, heq] } },
-      exact t2.eq_circumcenter_of_dist_eq (ht2span.symm ▸ affine_subspace.mem_top ℝ V _) h },
+      exact t2.eq_circumcenter_of_dist_eq (ht2span.symm ▸ mem_top ℝ V _) h },
     rw [ht02cc, ←ht12cc, ←hr t1 ht1s] at hor,
     change dist (t1.points 2) _ ≠ _ at hor,
     simpa using hor },
