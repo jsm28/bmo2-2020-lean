@@ -433,6 +433,18 @@ begin
   simpa [inner_add_left, ←mul_two, (by norm_num : (2 : ℝ) ≠ 0)] using h
 end
 
+/-- The squared distance between points on a line (expressed as a
+multiple of a fixed vector added to a point) and another point,
+expressed as a quadratic. -/
+lemma dist_smul_vadd_square (r : ℝ) (v : V) (p₁ p₂ : P) :
+  dist (r • v +ᵥ p₁) p₂ * dist (r • v +ᵥ p₁) p₂ =
+    inner v v * r * r + 2 * inner v (p₁ -ᵥ p₂) * r + inner (p₁ -ᵥ p₂) (p₁ -ᵥ p₂) :=
+begin
+  rw [dist_eq_norm_vsub V _ p₂, ←inner_self_eq_norm_square, vadd_vsub_assoc, inner_add_add_self,
+      inner_smul_left, inner_smul_left, inner_smul_right],
+  ring
+end
+
 /-- Distances from two different points determine at most two points
 in a two-dimensional subspace containing those points (two circles
 intersect in at most two points). -/
@@ -463,7 +475,17 @@ begin
       { exact vsub_mem_direction hp₂s hp₁s } },
     { rw [findim_span_eq_card hb, fintype.card_fin, hd] } },
   have hv : ∀ v ∈ s.direction, ∃ t₁ t₂ : ℝ, v = t₁ • (c₂ -ᵥ c₁) + t₂ • (p₂ -ᵥ p₁),
-  { sorry },
+  { intros v hv,
+    have hr : set.range b = {c₂ -ᵥ c₁, p₂ -ᵥ p₁},
+    { have hu : (finset.univ : finset (fin 2)) = {0, 1}, by dec_trivial,
+      rw [←fintype.coe_image_univ, hu],
+      simp,
+      refl },
+    rw [←hbs, hr, submodule.mem_span_insert] at hv,
+    rcases hv with ⟨t₁, v', hv', hv⟩,
+    rw submodule.mem_span_singleton at hv',
+    rcases hv' with ⟨t₂, rfl⟩,
+    exact ⟨t₁, t₂, hv⟩ },
   rcases hv (p -ᵥ p₁) (vsub_mem_direction hps hp₁s) with ⟨t₁, t₂, hpt⟩,
   have hop : inner (c₂ -ᵥ c₁) (p -ᵥ p₁) = 0 :=
     inner_vsub_vsub_of_dist_eq_of_dist_eq (by cc) (by cc),
@@ -471,8 +493,7 @@ begin
              inner_self_eq_zero, vsub_eq_zero_iff_eq, hc.symm, or_false] at hop,
   rw [hop, zero_smul, zero_add, ←eq_vadd_iff_vsub_eq] at hpt,
   subst hpt,
-  -- TODO: at this point, factor out a general lemma about distance
-  -- for point plus multiple of vector.
+  -- TODO: at this point, factor out another lemma using dist_smul_vadd_square.
   sorry
 end
 
