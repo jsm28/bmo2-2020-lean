@@ -265,37 +265,9 @@ end affine
 -- Content below here is a mixture of content specific to this problem
 -- and geometrical definitions and results that should go in mathlib.
 
-namespace finite_dimensional
-
-variables {K : Type*} {V : Type*} [field K] [add_comm_group V] [vector_space K V]
-
--- mathlib PR #4005.
-
-/-- If a submodule is less than or equal to a finite-dimensional
-submodule with the same dimension, they are equal. -/
-lemma eq_of_le_of_findim_eq {S₁ S₂ : submodule K V} [finite_dimensional K S₂] (hle : S₁ ≤ S₂)
-  (hd : findim K S₁ = findim K S₂) : S₁ = S₂ :=
-begin
-  rw ←linear_equiv.findim_eq (submodule.comap_subtype_equiv_of_le hle) at hd,
-  exact le_antisymm hle (submodule.comap_subtype_eq_top.1 (eq_top_of_findim_eq hd))
-end
-
-end finite_dimensional
-
 section inner_product
 
 variables {α : Type*} [inner_product_space α]
-
--- mathlib PR #4004.
-
-/-- The sum and difference of two vectors are orthogonal if and only
-if they have the same norm. -/
-lemma inner_add_sub_eq_zero_iff (x y : α) : inner (x + y) (x - y) = 0 ↔ ∥x∥ = ∥y∥ :=
-begin
-  conv_rhs { rw ←mul_self_inj_of_nonneg (norm_nonneg _) (norm_nonneg _) },
-  simp [←inner_self_eq_norm_square, inner_add_left, inner_sub_right, inner_comm y x,
-        sub_eq_zero, add_comm (inner x y)]
-end
 
 /-- A family of vectors is linearly independent if they are nonzero
 and orthogonal. -/
