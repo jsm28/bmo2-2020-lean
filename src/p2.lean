@@ -21,12 +21,11 @@ noncomputable theory
 open_locale big_operators
 open_locale classical
 
--- Content below here is a mixture of content specific to this problem
--- and geometrical definitions and results that should go in mathlib.
-
 section inner_product
 
 variables {α : Type*} [inner_product_space α]
+
+-- mathlib PR #4045.
 
 /-- A family of vectors is linearly independent if they are nonzero
 and orthogonal. -/
@@ -48,66 +47,24 @@ end
 
 end inner_product
 
+-- Geometrical definitions and results that should go in mathlib in
+-- some form (possibly more general).
+
+namespace euclidean_geometry
+
 open affine affine_subspace finite_dimensional euclidean_geometry
 
 variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
     [normed_add_torsor V P]
 
--- Properties of sets of points in the problem.
-
-def at_least_four_points (s : set P) : Prop := 4 ≤ cardinal.mk s
-
-include V
-
-def no_three_points_collinear (s : set P) : Prop :=
-∀ p : fin 3 → P, function.injective p → set.range p ⊆ s → affine_independent ℝ p
-
-def same_circumradius (s : set P) : Prop :=
-∃ r : ℝ, ∀ t : triangle ℝ P, set.range t.points ⊆ s → t.circumradius = r
-
--- The description given in the problem.
-def p2_problem_desc (s : set P) : Prop :=
-at_least_four_points s ∧ no_three_points_collinear s ∧ same_circumradius s
-
-omit V
-
--- Properties of sets of points in the answer.
-
--- A set of points is cospherical.  Should probably go in mathlib in
--- some form, with relations between versions with or without centre
--- constrained to be in a given subspace containing the points, and
--- with versions with bundled spheres in nondegenerate cases.
+-- A set of points is cospherical.  Should add relations between
+-- versions with or without centre constrained to be in a given
+-- subspace containing the points, and with versions with bundled
+-- spheres in nondegenerate cases.
 def cospherical (s : set P) : Prop :=
 ∃ (centre : P) (radius : ℝ), ∀ p ∈ s, dist p centre = radius
 
 include V
-
-namespace affine
-namespace simplex
-
--- The distance from the orthocenter to the reflection of the
--- circumcenter in a side equals the circumradius.  This should go in
--- mathlib in some form.
-lemma dist_orthocenter_reflection_circumcenter (t : triangle ℝ P) {i₁ i₂ : fin 3} (h : i₁ ≠ i₂) :
-  dist t.orthocenter (reflection (affine_span ℝ (t.points '' {i₁, i₂})) t.circumcenter) =
-    t.circumradius :=
-sorry
-
--- The distance from the orthocenter to the reflection of the
--- circumcenter in a side equals the circumradius, variant using a
--- finset.  This should go in mathlib in some form.
-lemma dist_orthocenter_reflection_circumcenter_finset (t : triangle ℝ P) {i₁ i₂ : fin 3}
-    (h : i₁ ≠ i₂) :
-  dist t.orthocenter (reflection (affine_span ℝ (t.points '' ↑({i₁, i₂} : finset (fin 3))))
-                                 t.circumcenter) =
-    t.circumradius :=
-begin
-  convert dist_orthocenter_reflection_circumcenter t h,
-  simp
-end
-
-end simplex
-end affine
 
 /-- Suppose that `c₁` is equidistant from `p₁` and `p₂`, and the same
 applies to `c₂`.  Then the vector between `c₁` and `c₂` is orthogonal
@@ -302,7 +259,65 @@ begin
   sorry
 end
 
-variables [finite_dimensional ℝ V]
+end euclidean_geometry
+
+namespace affine
+namespace simplex
+
+open affine affine_subspace finite_dimensional euclidean_geometry
+
+variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
+    [normed_add_torsor V P]
+include V
+
+-- The distance from the orthocenter to the reflection of the
+-- circumcenter in a side equals the circumradius.  This should go in
+-- mathlib in some form.
+lemma dist_orthocenter_reflection_circumcenter (t : triangle ℝ P) {i₁ i₂ : fin 3} (h : i₁ ≠ i₂) :
+  dist t.orthocenter (reflection (affine_span ℝ (t.points '' {i₁, i₂})) t.circumcenter) =
+    t.circumradius :=
+sorry
+
+-- The distance from the orthocenter to the reflection of the
+-- circumcenter in a side equals the circumradius, variant using a
+-- finset.  This should go in mathlib in some form.
+lemma dist_orthocenter_reflection_circumcenter_finset (t : triangle ℝ P) {i₁ i₂ : fin 3}
+    (h : i₁ ≠ i₂) :
+  dist t.orthocenter (reflection (affine_span ℝ (t.points '' ↑({i₁, i₂} : finset (fin 3))))
+                                 t.circumcenter) =
+    t.circumradius :=
+begin
+  convert dist_orthocenter_reflection_circumcenter t h,
+  simp
+end
+
+end simplex
+end affine
+
+-- Content specific to this problem starts here.
+
+open affine affine_subspace finite_dimensional euclidean_geometry
+
+variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
+    [normed_add_torsor V P]
+
+-- Properties of sets of points in the problem.
+
+def at_least_four_points (s : set P) : Prop := 4 ≤ cardinal.mk s
+
+include V
+
+def no_three_points_collinear (s : set P) : Prop :=
+∀ p : fin 3 → P, function.injective p → set.range p ⊆ s → affine_independent ℝ p
+
+def same_circumradius (s : set P) : Prop :=
+∃ r : ℝ, ∀ t : triangle ℝ P, set.range t.points ⊆ s → t.circumradius = r
+
+-- The description given in the problem.
+def p2_problem_desc (s : set P) : Prop :=
+at_least_four_points s ∧ no_three_points_collinear s ∧ same_circumradius s
+
+-- Properties of sets of points in the answer.
 
 -- The description given as an answer to the problem.
 def p2_answer_desc (s : set P) : Prop :=
@@ -398,6 +413,8 @@ begin
   let t := p2_triangle_of_ne hn3 (hs' hp1s') (hs' hp2s') (hs' hp3s') h12 h13 h23,
   use [t, p2_triangle_of_ne_range_subset hn3 (hs' hp1s') (hs' hp2s') (hs' hp3s') h12 h13 h23]
 end
+
+variables [finite_dimensional ℝ V]
 
 -- Given a triangle in a set with the properties of the problem, any
 -- point in that set that is not on the circumcircle of the triangle
