@@ -23,6 +23,8 @@ open_locale classical
 
 section ite
 
+-- mathlib PR #4050.
+
 lemma apply_dite2 {α β γ : Type*} (f : α → β → γ) (P : Prop) [decidable P] (a : P → α)
   (b : ¬P → α) (c : P → β) (d : ¬P → β) :
   f (dite P a b) (dite P c d) = dite P (λ h, f (a h) (c h)) (λ h, f (b h) (d h)) :=
@@ -78,7 +80,7 @@ open affine_subspace
 /-- Taking the affine span of a set, adding a point and taking the
 span again produces the same results as adding the point to the set
 and taking the span. -/
-@[simp] lemma affine_span_insert_affine_span {p : P} {ps : set P} :
+lemma affine_span_insert_affine_span {p : P} {ps : set P} :
   affine_span k (insert p (affine_span k ps : set P)) = affine_span k (insert p ps) :=
 by rw [set.insert_eq, set.insert_eq, span_union, span_union, affine_span_coe]
 
@@ -178,10 +180,14 @@ lemma reflection_vadd_smul_vsub_orthogonal_projection {s : affine_subspace ℝ P
 reflection_orthogonal_vadd hc hp₁
   (submodule.smul_mem _ _ (vsub_orthogonal_projection_mem_direction_orthogonal s _))
 
--- A set of points is cospherical.  Should add relations between
--- versions with or without centre constrained to be in a given
--- subspace containing the points, and with versions with bundled
--- spheres in nondegenerate cases.
+-- TODO: for adding to mathlib, should add relations between versions
+-- with or without centre constrained to be in a given subspace
+-- containing the points, and with versions with bundled spheres in
+-- nondegenerate cases.
+
+/-- A set of points is cospherical if they are equidistant from some
+point.  In two dimensions, this is the same thing as being
+concyclic. -/
 def cospherical (s : set P) : Prop :=
 ∃ (centre : P) (radius : ℝ), ∀ p ∈ s, dist p centre = radius
 
@@ -374,8 +380,12 @@ begin
           neg_smul] } }
 end
 
--- All n-simplices among cospherical points in n-space have the same
--- circumradius.  This should go in mathlib in some form.
+-- TODO (for when these next two results go in mathlib): variants of
+-- these results using a finite-dimensional subspace not the full
+-- space.
+
+/-- All n-simplices among cospherical points in n-space have the same
+circumradius. -/
 lemma exists_circumradius_eq_of_cospherical {ps : set P} {n : ℕ} [finite_dimensional ℝ V]
     (hd : findim ℝ V = n) (hc : cospherical ps) :
   ∃ r : ℝ, ∀ s : simplex ℝ P n, set.range s.points ⊆ ps → s.circumradius = r :=
@@ -392,8 +402,8 @@ begin
     (λ i, hcr (s.points i) (hsps (set.mem_range_self i)))).symm
 end
 
--- All n-simplices among cospherical points in n-space have the same
--- circumcenter.  This should go in mathlib in some form.
+/-- All n-simplices among cospherical points in n-space have the same
+circumcenter. -/
 lemma exists_circumcenter_eq_of_cospherical {ps : set P} {n : ℕ} [finite_dimensional ℝ V]
     (hd : findim ℝ V = n) (hc : cospherical ps) :
   ∃ c : P, ∀ s : simplex ℝ P n, set.range s.points ⊆ ps → s.circumcenter = c :=
@@ -410,8 +420,7 @@ begin
     (λ i, hcr (s.points i) (hsps (set.mem_range_self i)))).symm
 end
 
--- Any three points in a cospherical set are affinely independent.
--- Should go in mathlib in some form.
+/-- Any three points in a cospherical set are affinely independent. -/
 lemma affine_independent_of_cospherical {s : set P} (hs : cospherical s) {p : fin 3 → P}
     (hps : set.range p ⊆ s) (hpi : function.injective p) :
   affine_independent ℝ p :=
@@ -419,14 +428,14 @@ begin
   sorry
 end
 
--- A set of points forms an orthocentric system.  This should go in
--- mathlib, along with various properties thereof.
+/-- Four points form an orthocentric system if they consist of the
+vertices of a triangle and its orthocenter. -/
 def orthocentric_system (s : set P) : Prop :=
 ∃ t : triangle ℝ P,
   t.orthocenter ∉ set.range t.points ∧ s = insert t.orthocenter (set.range t.points)
 
--- Any three points in an orthocentric system are affinely
--- independent.  This should go in mathlib.
+/-- Any three points in an orthocentric system are affinely
+independent. -/
 lemma affine_independent_of_orthocentric_system {s : set P} (ho : orthocentric_system s)
     {p : fin 3 → P} (hps : set.range p ⊆ s) (hpi : function.injective p) :
   affine_independent ℝ p :=
@@ -434,8 +443,8 @@ begin
   sorry
 end
 
--- All triangles in an orthocentric system have the same circumradius.
--- This should go in mathlib.
+/-- All triangles in an orthocentric system have the same
+circumradius. -/
 lemma exists_circumradius_eq_of_orthocentric_system {s : set P} (ho : orthocentric_system s) :
   ∃ r : ℝ, ∀ t : triangle ℝ P, set.range t.points ⊆ s → t.circumradius = r :=
 begin
@@ -445,8 +454,8 @@ begin
   sorry
 end
 
--- Given any triangle in an orthocentric system, the fourth point is
--- its orthocenter.  This should go in mathlib.
+/-- Given any triangle in an orthocentric system, the fourth point is
+its orthocenter. -/
 lemma eq_insert_orthocenter_of_orthocentric_system {s : set P} (ho : orthocentric_system s)
     {t : triangle ℝ P} (ht : set.range t.points ⊆ s) :
   s = insert t.orthocenter (set.range t.points) :=
@@ -570,8 +579,6 @@ def same_circumradius (s : set P) : Prop :=
 -- The description given in the problem.
 def p2_problem_desc (s : set P) : Prop :=
 at_least_four_points s ∧ no_three_points_collinear s ∧ same_circumradius s
-
--- Properties of sets of points in the answer.
 
 -- The description given as an answer to the problem.
 def p2_answer_desc (s : set P) : Prop :=
