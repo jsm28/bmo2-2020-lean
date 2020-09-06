@@ -1,18 +1,7 @@
 -- BMO2 2020 problem 2.
 
 -- Choices made for formalization: the original problem refers to
--- "collections", which we take as meaning sets.  We take "no three
--- points are collinear" as meaning "any three points are affinely
--- independent", in the absence of a specific definition of
--- "collinear" in mathlib (a possible such definition would be "affine
--- span has dimension at most 1", which would then need proving
--- equivalent to not being affinely independent; another possible
--- definition would be "there exists a subspace of dimension 1
--- containing those points", but that's more awkward in the case where
--- the affine space has dimension 0; a third possible definition,
--- covering the case of affine spaces over arbitrary modules, would be
--- that there exist a point and a vector such that all points in the
--- subspace are multiples of that vector added to that point).
+-- "collections", which we take as meaning sets.
 
 import data.matrix.notation
 import geometry.euclidean
@@ -71,6 +60,29 @@ begin
   rw [←affine_span_insert_affine_span, set.insert_eq_of_mem h, affine_span_coe]
 end
 
+/-- The definition of `affine_independent`. -/
+lemma affine_independent_def (p : ι → P) :
+  affine_independent k p ↔
+    ∀ (s : finset ι) (w : ι → k),
+      ∑ i in s, w i = 0 → s.weighted_vsub p w = (0 : V) → ∀ i ∈ s, w i = 0 :=
+iff.rfl
+
+/-- A family indexed by a `fintype` is affinely independent if and
+only if no nontrivial weighted subtractions over `finset.univ` (where
+the sum of the weights is 0) are 0. -/
+lemma affine_independent_iff_of_fintype [fintype ι] (p : ι → P) :
+  affine_independent k p ↔
+    ∀ w : ι → k, ∑ i, w i = 0 → finset.univ.weighted_vsub p w = (0 : V) → ∀ i, w i = 0 :=
+begin
+  split,
+  { exact λ h w hw hs i, h finset.univ w hw hs i (finset.mem_univ _) },
+  { intros h s w hw hs i hi,
+    rw finset.weighted_vsub_indicator_subset _ _ (finset.subset_univ s) at hs,
+    rw set.sum_indicator_subset _ (finset.subset_univ s) at hw,
+    replace h := h ((↑s : set ι).indicator w) hw hs i,
+    simpa [hi] using h }
+end
+
 variables {k}
 
 /-- If a set of points is affinely independent, so is any subset. -/
@@ -96,6 +108,152 @@ affine_independent_embedding_of_affine_independent
   (⟨λ i, ⟨p i, set.mem_range_self _⟩, λ x y h, hi (subtype.mk_eq_mk.1 h)⟩ : ι ↪ set.range p) ha
 
 end affine
+
+section collinear
+
+variables (k : Type*) {V : Type*} {P : Type*} [ring k] [add_comm_group V] [module k V]
+variables [affine_space V P]
+include V
+
+/-- A set of points is collinear if they can all be expressed as
+multiples of the same vector, added to the same base point. -/
+def collinear (s : set P) : Prop := ∃ (p₀ : P) (v : V), ∀ p ∈ s, ∃ r : k, p = r • v +ᵥ p₀
+
+/-- The definition of `collinear`. -/
+lemma collinear_def (s : set P) :
+  collinear k s ↔ ∃ (p₀ : P) (v : V), ∀ p ∈ s, ∃ r : k, p = r • v +ᵥ p₀ :=
+iff.rfl
+
+variables (P)
+
+/-- The empty set is collinear. -/
+lemma collinear_empty : collinear k (∅ : set P) :=
+begin
+  use add_torsor.nonempty.some,
+  simp
+end
+
+variables {P}
+
+/-- A single point is collinear. -/
+lemma collinear_singleton (p : P) : collinear k ({p} : set P) :=
+begin
+  use [p, 0],
+  simp
+end
+
+/-- Two points are collinear. -/
+lemma collinear_insert_singleton (p₁ p₂ : P) : collinear k ({p₁, p₂} : set P) :=
+begin
+  use [p₁, p₂ -ᵥ p₁],
+  intros p hp,
+  rw [set.mem_insert_iff, set.mem_singleton_iff] at hp,
+  cases hp,
+  { use 0,
+    simp [hp] },
+  { use 1,
+    simp [hp] }
+end
+
+/-- Given a point `p₀` in a set of points, that set is collinear if and
+only if the points can all be expressed as multiples of the same
+vector, added to `p₀`. -/
+lemma collinear_iff_of_mem {s : set P} {p₀ : P} (h : p₀ ∈ s) :
+  collinear k s ↔ ∃ v : V, ∀ p ∈ s, ∃ r : k, p = r • v +ᵥ p₀ :=
+begin
+  split,
+  { rintros ⟨p, v, hv⟩,
+    use v,
+    intros p₁ hp₁,
+    rcases hv p₁ hp₁ with ⟨r, rfl⟩,
+    rcases hv p₀ h with ⟨r₀, rfl⟩,
+    use r - r₀,
+    simp [vadd_assoc, ←add_smul] },
+  { exact λ h, ⟨p₀, h⟩ }
+end
+
+end collinear
+
+section collinear_division_ring
+
+variables (k : Type*) {V : Type*} {P : Type*} [division_ring k] [add_comm_group V] [module k V]
+variables [affine_space V P]
+include V
+
+/-- Three points are affinely independent if and only if they are not
+collinear. -/
+lemma affine_independent_iff_not_collinear (p : fin 3 → P) :
+  affine_independent k p ↔ ¬ collinear k (set.range p) :=
+begin
+  split,
+  { intros ha hc,
+    rw collinear_iff_of_mem k (set.mem_range_self (0 : fin 3)) at hc,
+    rcases hc with ⟨v, hv⟩,
+    rcases hv (p 1) (set.mem_range_self 1) with ⟨r₁, hr₁⟩,
+    rcases hv (p 2) (set.mem_range_self 2) with ⟨r₂, hr₂⟩,
+    by_cases h : (r₁ = 0 ∨ r₂ = 0),
+    { cases h,
+      { rw [h, zero_smul, zero_vadd] at hr₁,
+        exact (dec_trivial : (1 : fin 3) ≠ 0) (injective_of_affine_independent ha hr₁) },
+      { rw [h, zero_smul, zero_vadd] at hr₂,
+        exact (dec_trivial : (2 : fin 3) ≠ 0) (injective_of_affine_independent ha hr₂) } },
+    { push_neg at h,
+      let w : fin 3 → k := ![r₁⁻¹ - r₂⁻¹, -r₁⁻¹, r₂⁻¹],
+      have hu : (finset.univ : finset (fin 3)) = {0, 1, 2}, by dec_trivial,
+      have hw : ∑ i, w i = 0,
+      { simp_rw [w, hu],
+        rw [finset.sum_insert (dec_trivial : 0 ∉ ({1, 2} : finset (fin 3))),
+            finset.sum_insert (dec_trivial : 1 ∉ ({2} : finset (fin 3))), finset.sum_singleton],
+        change r₁⁻¹ - r₂⁻¹ + (-r₁⁻¹ + r₂⁻¹) = 0,
+        abel },
+      have hp : finset.univ.weighted_vsub p w = (0 : V),
+      { rw [finset.univ.weighted_vsub_eq_weighted_vsub_of_point_of_sum_eq_zero w p hw (p 0),
+            finset.weighted_vsub_of_point_apply],
+        simp_rw [w, hu],
+        rw [finset.sum_insert (dec_trivial : 0 ∉ ({1, 2} : finset (fin 3))),
+            finset.sum_insert (dec_trivial : 1 ∉ ({2} : finset (fin 3))), finset.sum_singleton],
+        change (r₁⁻¹ - r₂⁻¹) • (p 0 -ᵥ p 0) + (-r₁⁻¹ • (p 1 -ᵥ p 0) + r₂⁻¹ • (p 2 -ᵥ p 0)) =
+          (0 : V),
+        simp [hr₁, hr₂, smul_smul, h] },
+      exact h.2 (inv_eq_zero.1 (ha finset.univ w hw hp 2 (finset.mem_univ _))) } },
+  { contrapose!,
+    intro hna,
+    rw affine_independent_iff_of_fintype at hna,
+    push_neg at hna,
+    rcases hna with ⟨w, hw, hs, i₁, hi₁⟩,
+    obtain ⟨i₂, h₂₁, hi₂⟩ : ∃ i₂, i₂ ≠ i₁ ∧ w i₂ ≠ 0,
+    { by_contradiction h,
+      push_neg at h,
+      rw finset.sum_eq_single i₁ (λ i _, h i) (λ hnu, false.elim (hnu (finset.mem_univ _))) at hw,
+      exact hi₁ hw },
+    obtain ⟨i₃, h₁₃, h₂₃, hu, hu', h₁, h₂⟩ :
+      ∃ i₃ : fin 3, i₁ ≠ i₃ ∧ i₂ ≠ i₃ ∧ finset.univ = ({i₁, i₂, i₃} : finset (fin 3)) ∧
+        (∀ i, i = i₁ ∨ i = i₂ ∨ i = i₃) ∧ i₁ ∉ ({i₂, i₃} : finset (fin 3)) ∧
+        i₂ ∉ ({i₃} : finset (fin 3)),
+    { clear hi₁ hi₂, dec_trivial! },
+    rw [finset.univ.weighted_vsub_eq_weighted_vsub_of_point_of_sum_eq_zero w p hw (p i₃),
+        finset.weighted_vsub_of_point_apply, hu, finset.sum_insert h₁, finset.sum_insert h₂,
+        finset.sum_singleton, vsub_self, smul_zero, add_zero] at hs,
+    use [p i₃, p i₁ -ᵥ p i₃],
+    rw set.forall_range_iff,
+    intro i,
+    replace hu' := hu' i,
+    repeat { cases hu' },
+    { use 1, simp },
+    { use -(w i₂)⁻¹ * w i₁,
+      rw add_eq_zero_iff_eq_neg at hs,
+      rw [←smul_smul, hs],
+      simp [hi₂, smul_smul] },
+    { use 0, simp } }
+end
+
+/-- Three points are collinear if and only if they are not affinely
+independent. -/
+lemma collinear_iff_not_affine_independent (p : fin 3 → P) :
+  collinear k (set.range p) ↔ ¬ affine_independent k p :=
+(not_iff_comm.1 (affine_independent_iff_not_collinear k p).symm).symm
+
+end collinear_division_ring
 
 -- Geometrical definitions and results that should go in mathlib in
 -- some form (possibly more general).
@@ -451,7 +609,42 @@ lemma affine_independent_of_cospherical {s : set P} (hs : cospherical s) {p : fi
     (hps : set.range p ⊆ s) (hpi : function.injective p) :
   affine_independent ℝ p :=
 begin
-  sorry
+  rw affine_independent_iff_not_collinear,
+  intro hc,
+  rw collinear_iff_of_mem ℝ (set.mem_range_self (0 : fin 3)) at hc,
+  rcases hc with ⟨v, hv⟩,
+  rw set.forall_range_iff at hv,
+  have hv0 : v ≠ 0,
+  { intro h,
+    have he : p 1 = p 0,
+    { have hv1 := hv 1,
+      simpa [h] using hv1 },
+    exact (dec_trivial : (1 : fin 3) ≠ 0) (hpi he) },
+  rcases hs with ⟨c, r, hs⟩,
+  have hs' := λ i, hs (p i) (set.mem_of_mem_of_subset (set.mem_range_self _) hps),
+  choose f hf using hv,
+  have hsd : ∀ i, dist ((f i • v) +ᵥ p 0) c = r,
+  { intro i,
+    rw ←hf,
+    exact hs' i },
+  have hf0 : f 0 = 0,
+  { have hf0' := hf 0,
+    rw [eq_comm, ←@vsub_eq_zero_iff_eq V, vadd_vsub, smul_eq_zero] at hf0',
+    simpa [hv0] using hf0' },
+  have hfi : function.injective f,
+  { intros i j h,
+    have hi := hf i,
+    rw [h, ←hf j] at hi,
+    exact hpi hi },
+  simp_rw [←hsd 0, hf0, zero_smul, zero_vadd] at hsd,
+  simp_rw [dist_smul_vadd_eq_dist (p 0) c hv0] at hsd,
+  have hfn0 : ∀ i, i ≠ 0 → f i ≠ 0 := λ i, (hfi.ne_iff' hf0).2,
+  have hfn0' : ∀ i, i ≠ 0 → f i = (-2) * inner v (p 0 -ᵥ c) / inner v v,
+  { intros i hi,
+    have hsdi := hsd i,
+    simpa [hfn0, hi] using hsdi },
+  have hf12 : f 1 = f 2, { rw [hfn0' 1 dec_trivial, hfn0' 2 dec_trivial] },
+  exact (dec_trivial : (1 : fin 3) ≠ 2) (hfi hf12)
 end
 
 end euclidean_geometry
@@ -695,7 +888,15 @@ def at_least_four_points (s : set P) : Prop := 4 ≤ cardinal.mk s
 include V
 
 def no_three_points_collinear (s : set P) : Prop :=
-∀ p : fin 3 → P, function.injective p → set.range p ⊆ s → affine_independent ℝ p
+∀ p : fin 3 → P, function.injective p → set.range p ⊆ s → ¬ collinear ℝ (set.range p)
+
+lemma no_three_points_collinear_iff (s : set P) :
+  no_three_points_collinear s ↔
+    ∀ p : fin 3 → P, function.injective p → set.range p ⊆ s → affine_independent ℝ p :=
+begin
+  simp_rw affine_independent_iff_not_collinear,
+  refl
+end
 
 def same_circumradius (s : set P) : Prop :=
 ∃ r : ℝ, ∀ t : triangle ℝ P, set.range t.points ⊆ s → t.circumradius = r
@@ -730,6 +931,7 @@ theorem p2_affine_independent_of_ne {s : set P} (hn3 : no_three_points_collinear
     (h23 : p2 ≠ p3) :
   affine_independent ℝ ![p1, p2, p3] :=
 begin
+  rw no_three_points_collinear_iff at hn3,
   have hi : function.injective ![p1, p2, p3],
   { intros i1 i2 hi12,
     fin_cases i1; fin_cases i2;
@@ -1089,9 +1291,11 @@ begin
     -- conditions of the problem.
     rintro (hc | ho),
     { split,
-      { exact λ p hpi hps, affine_independent_of_cospherical hc hps hpi },
+      { rw no_three_points_collinear_iff,
+        exact λ p hpi hps, affine_independent_of_cospherical hc hps hpi },
       { exact exists_circumradius_eq_of_cospherical hd2 hc } },
     { split,
-      { exact λ p hpi hps, affine_independent_of_orthocentric_system ho hps hpi },
+      { rw no_three_points_collinear_iff,
+        exact λ p hpi hps, affine_independent_of_orthocentric_system ho hps hpi },
       { exact exists_circumradius_eq_of_orthocentric_system ho } } }
 end
