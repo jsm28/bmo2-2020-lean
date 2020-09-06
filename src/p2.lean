@@ -39,17 +39,21 @@ end ite
 section affine
 
 variables (k : Type*) {V : Type*} {P : Type*} [ring k] [add_comm_group V] [module k V]
-variables [affine_space V P]
+variables [affine_space V P] {ι : Type*}
 include V
 
 /-- A set is contained in its affine span. -/
 lemma subset_affine_span (s : set P) : s ⊆ affine_span k s :=
 subset_span_points k s
 
+open affine_subspace
+
+/-- `affine_span` is monotone. -/
+lemma affine_span_mono {s₁ s₂ : set P} (h : s₁ ⊆ s₂) : affine_span k s₁ ≤ affine_span k s₂ :=
+span_points_subset_coe_of_subset_coe (set.subset.trans h (subset_affine_span k _))
+
 -- When this is added, simplify
 -- exists_unique_dist_eq_of_affine_independent accordingly.
-
-open affine_subspace
 
 /-- Taking the affine span of a set, adding a point and taking the
 span again produces the same results as adding the point to the set
@@ -57,6 +61,39 @@ and taking the span. -/
 lemma affine_span_insert_affine_span {p : P} {ps : set P} :
   affine_span k (insert p (affine_span k ps : set P)) = affine_span k (insert p ps) :=
 by rw [set.insert_eq, set.insert_eq, span_union, span_union, affine_span_coe]
+
+/-- If a point is in the affine span of a set, adding it to that set
+does not change the affine span. -/
+lemma affine_span_insert_eq_affine_span {p : P} {ps : set P} (h : p ∈ affine_span k ps) :
+  affine_span k (insert p ps) = affine_span k ps :=
+begin
+  rw ←mem_coe at h,
+  rw [←affine_span_insert_affine_span, set.insert_eq_of_mem h, affine_span_coe]
+end
+
+variables {k}
+
+/-- If a set of points is affinely independent, so is any subset. -/
+lemma affine_independent_subset_of_affine_independent {s t : set P}
+  (ha : affine_independent k (λ x, x : t → P)) (hs : s ⊆ t) :
+  affine_independent k (λ x, x : s → P) :=
+begin
+  let f : s → t := λ x, ⟨x, hs x.property⟩,
+  let fe : s ↪ t := ⟨f, λ x y h, begin
+    rw subtype.ext_iff,
+    rw subtype.mk_eq_mk at h,
+    exact h
+  end⟩,
+  exact affine_independent_embedding_of_affine_independent fe ha
+end
+
+/-- If the range of an injective indexed family of points is affinely
+independent, so is that family. -/
+lemma affine_independent_of_affine_independent_set_of_injective {p : ι → P}
+  (ha : affine_independent k (λ x, x : set.range p → P)) (hi : function.injective p) :
+  affine_independent k p :=
+affine_independent_embedding_of_affine_independent
+  (⟨λ i, ⟨p i, set.mem_range_self _⟩, λ x y h, hi (subtype.mk_eq_mk.1 h)⟩ : ι ↪ set.range p) ha
 
 end affine
 
@@ -132,6 +169,19 @@ open affine affine_subspace finite_dimensional euclidean_geometry
 
 variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
     [normed_add_torsor V P]
+include V
+
+/-- The reflection of a point in a subspace is contained in any larger
+subspace containing both the point and the subspace reflected in. -/
+lemma reflection_mem_of_le_of_mem {s₁ s₂ : affine_subspace ℝ P} (hle : s₁ ≤ s₂) {p : P}
+  (hp : p ∈ s₂) : reflection s₁ p ∈ s₂ :=
+begin
+  rw [reflection_apply],
+  by_cases h : (s₁ : set P).nonempty ∧ is_complete (s₁.direction : set V),
+  { have ho : orthogonal_projection s₁ p ∈ s₂ := hle (orthogonal_projection_mem h.1 h.2 p),
+    exact vadd_mem_of_mem_direction (vsub_mem_direction ho hp) ho },
+  { simpa [reflection_apply, orthogonal_projection_def, h] }
+end
 
 /-- Reflecting an orthogonal vector plus a point in the subspace
 produces the negation of that vector plus the point. -/
@@ -153,6 +203,8 @@ lemma reflection_vadd_smul_vsub_orthogonal_projection {s : affine_subspace ℝ P
     -(r • (p₂ -ᵥ orthogonal_projection s p₂)) +ᵥ p₁ :=
 reflection_orthogonal_vadd hc hp₁
   (submodule.smul_mem _ _ (vsub_orthogonal_projection_mem_direction_orthogonal s _))
+
+omit V
 
 -- TODO: for adding to mathlib, should add relations between versions
 -- with or without centre constrained to be in a given subspace
@@ -402,41 +454,6 @@ begin
   sorry
 end
 
-/-- Four points form an orthocentric system if they consist of the
-vertices of a triangle and its orthocenter. -/
-def orthocentric_system (s : set P) : Prop :=
-∃ t : triangle ℝ P,
-  t.orthocenter ∉ set.range t.points ∧ s = insert t.orthocenter (set.range t.points)
-
-/-- Any three points in an orthocentric system are affinely
-independent. -/
-lemma affine_independent_of_orthocentric_system {s : set P} (ho : orthocentric_system s)
-    {p : fin 3 → P} (hps : set.range p ⊆ s) (hpi : function.injective p) :
-  affine_independent ℝ p :=
-begin
-  sorry
-end
-
-/-- All triangles in an orthocentric system have the same
-circumradius. -/
-lemma exists_circumradius_eq_of_orthocentric_system {s : set P} (ho : orthocentric_system s) :
-  ∃ r : ℝ, ∀ t : triangle ℝ P, set.range t.points ⊆ s → t.circumradius = r :=
-begin
-  rcases ho with ⟨t, hto, hts⟩,
-  use t.circumradius,
-  intros t₂ ht₂,
-  sorry
-end
-
-/-- Given any triangle in an orthocentric system, the fourth point is
-its orthocenter. -/
-lemma eq_insert_orthocenter_of_orthocentric_system {s : set P} (ho : orthocentric_system s)
-    {t : triangle ℝ P} (ht : set.range t.points ⊆ s) :
-  s = insert t.orthocenter (set.range t.points) :=
-begin
-  sorry
-end
-
 end euclidean_geometry
 
 namespace affine
@@ -530,6 +547,139 @@ end
 
 end simplex
 end affine
+
+namespace euclidean_geometry
+
+open affine affine_subspace finite_dimensional euclidean_geometry
+
+variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
+    [normed_add_torsor V P]
+
+include V
+
+/-- Four points form an orthocentric system if they consist of the
+vertices of a triangle and its orthocenter. -/
+def orthocentric_system (s : set P) : Prop :=
+∃ t : triangle ℝ P,
+  t.orthocenter ∉ set.range t.points ∧ s = insert t.orthocenter (set.range t.points)
+
+/-- For any three points in an orthocentric system generated by
+triangle `t`, there is a point in the subspace spanned by the triangle
+from which the distance of all those three points equals the
+circumradius. -/
+lemma exists_dist_eq_circumradius_of_subset_insert_orthocenter {t : triangle ℝ P}
+  (ho : t.orthocenter ∉ set.range t.points) {p : fin 3 → P}
+  (hps : set.range p ⊆ insert t.orthocenter (set.range t.points)) (hpi : function.injective p) :
+  ∃ c ∈ affine_span ℝ (set.range t.points), ∀ p₁ ∈ set.range p, dist p₁ c = t.circumradius :=
+begin
+  by_cases h : t.orthocenter ∈ set.range p,
+  { rcases h with ⟨i₁, h₁⟩,
+    obtain ⟨i₂, i₃, h₁₂, h₁₃, h₂₃, h₁₂₃⟩ :
+      ∃ (i₂ i₃ : fin 3), i₁ ≠ i₂ ∧ i₁ ≠ i₃ ∧ i₂ ≠ i₃ ∧ ∀ i : fin 3, i = i₁ ∨ i = i₂ ∨ i = i₃,
+    { clear h₁, dec_trivial! },
+    have h : ∀ i, i₁ ≠ i → ∃ (j : fin 3), t.points j = p i,
+    { intros i hi,
+      replace hps := set.mem_of_mem_insert_of_ne
+        (set.mem_of_mem_of_subset (set.mem_range_self i) hps) (h₁ ▸ hpi.ne hi.symm),
+      exact hps },
+    rcases h i₂ h₁₂ with ⟨j₂, h₂⟩,
+    rcases h i₃ h₁₃ with ⟨j₃, h₃⟩,
+    have hj₂₃ : j₂ ≠ j₃,
+    { intro he,
+      rw [he, h₃] at h₂,
+      exact h₂₃.symm (hpi h₂) },
+    use [reflection (affine_span ℝ (t.points '' {j₂, j₃})) t.circumcenter,
+         reflection_mem_of_le_of_mem (affine_span_mono ℝ (set.image_subset_range _ _))
+                                     t.circumcenter_mem_affine_span],
+    intros p₁ hp₁,
+    rcases hp₁ with ⟨i, rfl⟩,
+    replace h₁₂₃ := h₁₂₃ i,
+    repeat { cases h₁₂₃ },
+    { rw h₁,
+      exact simplex.dist_orthocenter_reflection_circumcenter t hj₂₃ },
+    { rw [←h₂,
+          dist_reflection_eq_of_mem _
+            (mem_affine_span ℝ (set.mem_image_of_mem _ (set.mem_insert _ _)))],
+      exact t.dist_circumcenter_eq_circumradius _ },
+    { rw [←h₃,
+          dist_reflection_eq_of_mem _
+            (mem_affine_span ℝ (set.mem_image_of_mem _
+              (set.mem_insert_of_mem _ (set.mem_singleton _))))],
+      exact t.dist_circumcenter_eq_circumradius _ } },
+  { have hs := set.subset_diff_singleton hps h,
+    rw set.insert_diff_self_of_not_mem ho at hs,
+    use [t.circumcenter, t.circumcenter_mem_affine_span],
+    intros p₁ hp₁,
+    replace hp₁ := set.mem_of_mem_of_subset hp₁ hs,
+    rcases hp₁ with ⟨i, rfl⟩,
+    exact t.dist_circumcenter_eq_circumradius _ }
+end
+
+/-- Any three points in an orthocentric system are affinely
+independent. -/
+lemma affine_independent_of_orthocentric_system {s : set P} (ho : orthocentric_system s)
+    {p : fin 3 → P} (hps : set.range p ⊆ s) (hpi : function.injective p) :
+  affine_independent ℝ p :=
+begin
+  rcases ho with ⟨t, hto, hst⟩,
+  rw hst at hps,
+  rcases exists_dist_eq_circumradius_of_subset_insert_orthocenter hto hps hpi with ⟨c, hcs, hc⟩,
+  exact affine_independent_of_cospherical ⟨c, t.circumradius, hc⟩ set.subset.rfl hpi
+end
+
+/-- Any three points in an orthocentric system span the same subspace
+as the whole orthocentric system. -/
+lemma affine_span_of_orthocentric_system {s : set P} (ho : orthocentric_system s)
+    {p : fin 3 → P} (hps : set.range p ⊆ s) (hpi : function.injective p) :
+  affine_span ℝ (set.range p) = affine_span ℝ s :=
+begin
+  have ha := affine_independent_of_orthocentric_system ho hps hpi,
+  rcases ho with ⟨t, hto, hts⟩,
+  have hs : affine_span ℝ s = affine_span ℝ (set.range t.points),
+  { rw [hts, affine_span_insert_eq_affine_span ℝ t.orthocenter_mem_affine_span] },
+  refine ext_of_direction_eq _
+    ⟨p 0, mem_affine_span ℝ (set.mem_range_self _), mem_affine_span ℝ (hps (set.mem_range_self _))⟩,
+  have hfd : finite_dimensional ℝ (affine_span ℝ s).direction, { rw hs, apply_instance },
+  haveI := hfd,
+  refine eq_of_le_of_findim_eq (direction_le (affine_span_mono ℝ hps)) _,
+  rw [hs, direction_affine_span, direction_affine_span,
+      findim_vector_span_of_affine_independent ha (fintype.card_fin _),
+      findim_vector_span_of_affine_independent t.independent (fintype.card_fin _)]
+end
+
+/-- All triangles in an orthocentric system have the same
+circumradius. -/
+lemma exists_circumradius_eq_of_orthocentric_system {s : set P} (ho : orthocentric_system s) :
+  ∃ r : ℝ, ∀ t : triangle ℝ P, set.range t.points ⊆ s → t.circumradius = r :=
+begin
+  rcases ho with ⟨t, hto, hts⟩,
+  use t.circumradius,
+  intros t₂ ht₂,
+  have ht₂s := ht₂,
+  rw hts at ht₂,
+  rcases exists_dist_eq_circumradius_of_subset_insert_orthocenter hto ht₂
+    (injective_of_affine_independent t₂.independent) with ⟨c, hc, h⟩,
+  rw set.forall_range_iff at h,
+  have hs : set.range t.points ⊆ s,
+  { rw hts,
+    exact set.subset_insert _ _ },
+  rw [affine_span_of_orthocentric_system ⟨t, hto, hts⟩ hs
+        (injective_of_affine_independent t.independent),
+      ←affine_span_of_orthocentric_system ⟨t, hto, hts⟩ ht₂s
+        (injective_of_affine_independent t₂.independent)] at hc,
+  exact (t₂.eq_circumradius_of_dist_eq hc h).symm
+end
+
+/-- Given any triangle in an orthocentric system, the fourth point is
+its orthocenter. -/
+lemma eq_insert_orthocenter_of_orthocentric_system {s : set P} (ho : orthocentric_system s)
+    {t : triangle ℝ P} (ht : set.range t.points ⊆ s) :
+  s = insert t.orthocenter (set.range t.points) :=
+begin
+  sorry
+end
+
+end euclidean_geometry
 
 -- Content specific to this problem starts here.
 
