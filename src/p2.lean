@@ -21,6 +21,19 @@ noncomputable theory
 open_locale big_operators
 open_locale classical
 
+section ite
+
+lemma apply_dite2 {α β γ : Type*} (f : α → β → γ) (P : Prop) [decidable P] (a : P → α)
+  (b : ¬P → α) (c : P → β) (d : ¬P → β) :
+  f (dite P a b) (dite P c d) = dite P (λ h, f (a h) (c h)) (λ h, f (b h) (d h)) :=
+by { by_cases h : P; simp [h] }
+
+lemma apply_ite2 {α β γ : Type*} (f : α → β → γ) (P : Prop) [decidable P] (a b : α) (c d : β) :
+  f (ite P a b) (ite P c d) = ite P (f a c) (f b d) :=
+apply_dite2 f P (λ _, a) (λ _, b) (λ _, c) (λ _, d)
+
+end ite
+
 section inner_product
 
 variables {α : Type*} [inner_product_space α]
@@ -446,25 +459,82 @@ end euclidean_geometry
 namespace affine
 namespace simplex
 
-open affine affine_subspace finite_dimensional euclidean_geometry
+open affine affine_subspace finite_dimensional euclidean_geometry points_with_circumcenter_index
+open finset
 
 variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
     [normed_add_torsor V P]
+
+/-- The weights for the reflection of the circumcenter in an edge of a
+simplex.  This definition is only valid with `i₁ ≠ i₂`. -/
+def reflection_circumcenter_weights_with_circumcenter {n : ℕ} (i₁ i₂ : fin (n + 1)) :
+  points_with_circumcenter_index n → ℝ
+| (point_index i) := if i = i₁ ∨ i = i₂ then 1 else 0
+| circumcenter_index := -1
+
+/-- `reflection_circumcenter_weights_with_circumcenter` sums to 1. -/
+@[simp] lemma sum_reflection_circumcenter_weights_with_circumcenter {n : ℕ} {i₁ i₂ : fin (n + 1)}
+  (h : i₁ ≠ i₂) : ∑ i, reflection_circumcenter_weights_with_circumcenter i₁ i₂ i = 1 :=
+begin
+  simp_rw [sum_points_with_circumcenter, reflection_circumcenter_weights_with_circumcenter,
+           sum_ite, sum_const, filter_or, filter_eq'],
+  rw card_union_eq,
+  { simp },
+  { simp [h.symm] }
+end
+
 include V
 
--- The distance from the orthocenter to the reflection of the
--- circumcenter in a side equals the circumradius.  This should go in
--- mathlib in some form.
+/-- The reflection of the circumcenter of a simplex in an edge, in
+terms of `points_with_circumcenter`. -/
+lemma reflection_circumcenter_eq_affine_combination_of_points_with_circumcenter {n : ℕ}
+  (s : simplex ℝ P n) {i₁ i₂ : fin (n + 1)} (h : i₁ ≠ i₂) :
+  reflection (affine_span ℝ (s.points '' {i₁, i₂})) s.circumcenter =
+    (univ : finset (points_with_circumcenter_index n)).affine_combination
+      s.points_with_circumcenter (reflection_circumcenter_weights_with_circumcenter i₁ i₂) :=
+begin
+  have hc : card ({i₁, i₂} : finset (fin (n + 1))) = 2,
+  { simp [h] },
+  rw [reflection_apply, ←coe_singleton, ←coe_insert, s.orthogonal_projection_circumcenter hc,
+      circumcenter_eq_centroid, s.face_centroid_eq_centroid hc,
+      centroid_eq_affine_combination_of_points_with_circumcenter,
+      circumcenter_eq_affine_combination_of_points_with_circumcenter, ←@vsub_eq_zero_iff_eq V,
+      affine_combination_vsub, weighted_vsub_vadd_affine_combination, affine_combination_vsub,
+      weighted_vsub_apply, sum_points_with_circumcenter],
+  simp_rw [pi.sub_apply, pi.add_apply, pi.sub_apply, sub_smul, add_smul, sub_smul,
+           centroid_weights_with_circumcenter, circumcenter_weights_with_circumcenter,
+           reflection_circumcenter_weights_with_circumcenter, ite_smul, zero_smul, sub_zero,
+           apply_ite2 (+), add_zero, ←add_smul, hc, zero_sub, neg_smul, sub_self, add_zero],
+  convert sum_const_zero,
+  norm_num
+end
+
+/-- The distance from the orthocenter to the reflection of the
+circumcenter in a side equals the circumradius. -/
 lemma dist_orthocenter_reflection_circumcenter (t : triangle ℝ P) {i₁ i₂ : fin 3} (h : i₁ ≠ i₂) :
   dist t.orthocenter (reflection (affine_span ℝ (t.points '' {i₁, i₂})) t.circumcenter) =
     t.circumradius :=
 begin
-  sorry
+  rw [←mul_self_inj_of_nonneg dist_nonneg t.circumradius_nonneg,
+      t.reflection_circumcenter_eq_affine_combination_of_points_with_circumcenter h,
+      t.orthocenter_eq_monge_point,
+      monge_point_eq_affine_combination_of_points_with_circumcenter,
+      dist_affine_combination t.points_with_circumcenter
+        (sum_monge_point_weights_with_circumcenter _)
+        (sum_reflection_circumcenter_weights_with_circumcenter h)],
+  simp_rw [sum_points_with_circumcenter, pi.sub_apply, monge_point_weights_with_circumcenter,
+           reflection_circumcenter_weights_with_circumcenter],
+  have hu : ({i₁, i₂} : finset (fin 3)) ⊆ univ := subset_univ _,
+  obtain ⟨i₃, hi₃, hi₃₁, hi₃₂⟩ :
+    ∃ i₃, univ \ ({i₁, i₂} : finset (fin 3)) = {i₃} ∧ i₃ ≠ i₁ ∧ i₃ ≠ i₂, by dec_trivial!,
+  simp_rw [←sum_sdiff hu, hi₃],
+  simp [hi₃₁, hi₃₂],
+  norm_num
 end
 
--- The distance from the orthocenter to the reflection of the
--- circumcenter in a side equals the circumradius, variant using a
--- finset.  This should go in mathlib in some form.
+/-- The distance from the orthocenter to the reflection of the
+circumcenter in a side equals the circumradius, variant using a
+finset. -/
 lemma dist_orthocenter_reflection_circumcenter_finset (t : triangle ℝ P) {i₁ i₂ : fin 3}
     (h : i₁ ≠ i₂) :
   dist t.orthocenter (reflection (affine_span ℝ (t.points '' ↑({i₁, i₂} : finset (fin 3))))
