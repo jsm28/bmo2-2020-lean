@@ -10,21 +10,6 @@ noncomputable theory
 open_locale big_operators
 open_locale classical
 
-section ite
-
--- mathlib PR #4050.
-
-lemma apply_dite2 {α β γ : Type*} (f : α → β → γ) (P : Prop) [decidable P] (a : P → α)
-  (b : ¬P → α) (c : P → β) (d : ¬P → β) :
-  f (dite P a b) (dite P c d) = dite P (λ h, f (a h) (c h)) (λ h, f (b h) (d h)) :=
-by { by_cases h : P; simp [h] }
-
-lemma apply_ite2 {α β γ : Type*} (f : α → β → γ) (P : Prop) [decidable P] (a b : α) (c d : β) :
-  f (ite P a b) (ite P c d) = ite P (f a c) (f b d) :=
-apply_dite2 f P (λ _, a) (λ _, b) (λ _, c) (λ _, d)
-
-end ite
-
 section affine
 
 variables (k : Type*) {V : Type*} {P : Type*} [ring k] [add_comm_group V] [module k V]
@@ -327,42 +312,6 @@ open affine affine_subspace finite_dimensional euclidean_geometry
 
 variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
     [normed_add_torsor V P]
-include V
-
-/-- The reflection of a point in a subspace is contained in any larger
-subspace containing both the point and the subspace reflected in. -/
-lemma reflection_mem_of_le_of_mem {s₁ s₂ : affine_subspace ℝ P} (hle : s₁ ≤ s₂) {p : P}
-  (hp : p ∈ s₂) : reflection s₁ p ∈ s₂ :=
-begin
-  rw [reflection_apply],
-  by_cases h : (s₁ : set P).nonempty ∧ is_complete (s₁.direction : set V),
-  { have ho : orthogonal_projection s₁ p ∈ s₂ := hle (orthogonal_projection_mem h.1 h.2 p),
-    exact vadd_mem_of_mem_direction (vsub_mem_direction ho hp) ho },
-  { simpa [reflection_apply, orthogonal_projection_def, h] }
-end
-
-/-- Reflecting an orthogonal vector plus a point in the subspace
-produces the negation of that vector plus the point. -/
-lemma reflection_orthogonal_vadd {s : affine_subspace ℝ P}
-  (hc : is_complete (s.direction : set V)) {p : P} (hp : p ∈ s) {v : V}
-  (hv : v ∈ s.direction.orthogonal) : reflection s (v +ᵥ p) = -v +ᵥ p :=
-begin
-  rw [reflection_apply, orthogonal_projection_vadd_eq_self hc hp hv, vsub_vadd_eq_vsub_sub],
-  simp
-end
-
-/-- Reflecting a vector plus a point in the subspace produces the
-negation of that vector plus the point if the vector is a multiple of
-the result of subtracting a point's orthogonal projection from that
-point. -/
-lemma reflection_vadd_smul_vsub_orthogonal_projection {s : affine_subspace ℝ P}
-  (hc : is_complete (s.direction : set V)) {p₁ : P} (p₂ : P) (r : ℝ) (hp₁ : p₁ ∈ s) :
-  reflection s (r • (p₂ -ᵥ orthogonal_projection s p₂) +ᵥ p₁) =
-    -(r • (p₂ -ᵥ orthogonal_projection s p₂)) +ᵥ p₁ :=
-reflection_orthogonal_vadd hc hp₁
-  (submodule.smul_mem _ _ (vsub_orthogonal_projection_mem_direction_orthogonal s _))
-
-omit V
 
 -- TODO: for adding to mathlib, should add relations between versions
 -- with or without centre constrained to be in a given subspace
