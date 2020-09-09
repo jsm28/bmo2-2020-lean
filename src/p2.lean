@@ -10,90 +10,6 @@ noncomputable theory
 open_locale big_operators
 open_locale classical
 
-section affine
-
-variables (k : Type*) {V : Type*} {P : Type*} [ring k] [add_comm_group V] [module k V]
-variables [affine_space V P] {ι : Type*}
-include V
-
-/-- A set is contained in its affine span. -/
-lemma subset_affine_span (s : set P) : s ⊆ affine_span k s :=
-subset_span_points k s
-
-open affine_subspace
-
-/-- `affine_span` is monotone. -/
-lemma affine_span_mono {s₁ s₂ : set P} (h : s₁ ⊆ s₂) : affine_span k s₁ ≤ affine_span k s₂ :=
-span_points_subset_coe_of_subset_coe (set.subset.trans h (subset_affine_span k _))
-
--- When this is added, simplify
--- exists_unique_dist_eq_of_affine_independent accordingly.
-
-/-- Taking the affine span of a set, adding a point and taking the
-span again produces the same results as adding the point to the set
-and taking the span. -/
-lemma affine_span_insert_affine_span {p : P} {ps : set P} :
-  affine_span k (insert p (affine_span k ps : set P)) = affine_span k (insert p ps) :=
-by rw [set.insert_eq, set.insert_eq, span_union, span_union, affine_span_coe]
-
-/-- If a point is in the affine span of a set, adding it to that set
-does not change the affine span. -/
-lemma affine_span_insert_eq_affine_span {p : P} {ps : set P} (h : p ∈ affine_span k ps) :
-  affine_span k (insert p ps) = affine_span k ps :=
-begin
-  rw ←mem_coe at h,
-  rw [←affine_span_insert_affine_span, set.insert_eq_of_mem h, affine_span_coe]
-end
-
-/-- The definition of `affine_independent`. -/
-lemma affine_independent_def (p : ι → P) :
-  affine_independent k p ↔
-    ∀ (s : finset ι) (w : ι → k),
-      ∑ i in s, w i = 0 → s.weighted_vsub p w = (0 : V) → ∀ i ∈ s, w i = 0 :=
-iff.rfl
-
-/-- A family indexed by a `fintype` is affinely independent if and
-only if no nontrivial weighted subtractions over `finset.univ` (where
-the sum of the weights is 0) are 0. -/
-lemma affine_independent_iff_of_fintype [fintype ι] (p : ι → P) :
-  affine_independent k p ↔
-    ∀ w : ι → k, ∑ i, w i = 0 → finset.univ.weighted_vsub p w = (0 : V) → ∀ i, w i = 0 :=
-begin
-  split,
-  { exact λ h w hw hs i, h finset.univ w hw hs i (finset.mem_univ _) },
-  { intros h s w hw hs i hi,
-    rw finset.weighted_vsub_indicator_subset _ _ (finset.subset_univ s) at hs,
-    rw set.sum_indicator_subset _ (finset.subset_univ s) at hw,
-    replace h := h ((↑s : set ι).indicator w) hw hs i,
-    simpa [hi] using h }
-end
-
-variables {k}
-
-/-- If a set of points is affinely independent, so is any subset. -/
-lemma affine_independent_subset_of_affine_independent {s t : set P}
-  (ha : affine_independent k (λ x, x : t → P)) (hs : s ⊆ t) :
-  affine_independent k (λ x, x : s → P) :=
-begin
-  let f : s → t := λ x, ⟨x, hs x.property⟩,
-  let fe : s ↪ t := ⟨f, λ x y h, begin
-    rw subtype.ext_iff,
-    rw subtype.mk_eq_mk at h,
-    exact h
-  end⟩,
-  exact affine_independent_embedding_of_affine_independent fe ha
-end
-
-/-- If the range of an injective indexed family of points is affinely
-independent, so is that family. -/
-lemma affine_independent_of_affine_independent_set_of_injective {p : ι → P}
-  (ha : affine_independent k (λ x, x : set.range p → P)) (hi : function.injective p) :
-  affine_independent k p :=
-affine_independent_embedding_of_affine_independent
-  (⟨λ i, ⟨p i, set.mem_range_self _⟩, λ x y h, hi (subtype.mk_eq_mk.1 h)⟩ : ι ↪ set.range p) ha
-
-end affine
-
 section collinear
 
 variables (k : Type*) {V : Type*} {P : Type*} [ring k] [add_comm_group V] [module k V]
@@ -257,6 +173,8 @@ variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
     [normed_add_torsor V P]
 include V
 
+-- mathlib PR #4087.
+
 /-- If there exists a distance that a point has from all vertices of a
 simplex, the orthogonal projection of that point onto the subspace
 spanned by that simplex is its circumcenter.  Version with distance
@@ -330,6 +248,8 @@ def cospherical (s : set P) : Prop :=
 ∃ (centre : P) (radius : ℝ), ∀ p ∈ s, dist p centre = radius
 
 include V
+
+-- mathlib PR #4088.
 
 /-- Suppose that `c₁` is equidistant from `p₁` and `p₂`, and the same
 applies to `c₂`.  Then the vector between `c₁` and `c₂` is orthogonal
@@ -453,6 +373,8 @@ begin
     (mem_top ℝ V _) (mem_top ℝ V _) (mem_top ℝ V _) (mem_top ℝ V _) (mem_top ℝ V _)
     hc hp hp₁c₁ hp₂c₁ hpc₁ hp₁c₂ hp₂c₂ hpc₂
 end
+
+-- mathlib PR #4087.
 
 /-- Suppose all distances from `p₁` and `p₂` to the points of a
 simplex are equal, and that `p₁` and `p₂` lie in the affine span of
@@ -611,6 +533,8 @@ open finset
 
 variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
     [normed_add_torsor V P]
+
+-- mathlib PR #4062.
 
 /-- The weights for the reflection of the circumcenter in an edge of a
 simplex.  This definition is only valid with `i₁ ≠ i₂`. -/
