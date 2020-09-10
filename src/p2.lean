@@ -10,6 +10,79 @@ noncomputable theory
 open_locale big_operators
 open_locale classical
 
+namespace finset
+
+variables (k : Type*) {V : Type*} {P : Type*} [division_ring k] [add_comm_group V] [module k V]
+variables [affine_space V P] {ι : Type*} (s : finset ι) {ι₂ : Type*} (s₂ : finset ι₂)
+
+include V
+
+/-- An indexed family of points that is injective on the given
+`finset` has the same centroid as the image of that `finset`.  This is
+stated in terms of a set equal to the image to provide control of
+definitional equality for the index type used for the centroid of the
+image. -/
+lemma centroid_eq_centroid_image_of_inj_on {p : ι → P} (hi : ∀ i j ∈ s, p i = p j → i = j)
+  {ps : set P} [fintype ps] (hps : ps = p '' ↑s) :
+  s.centroid k p = (univ : finset ps).centroid k (λ x, x) :=
+begin
+  let f : p '' ↑s → ι := λ x, x.property.some,
+  have hf : ∀ x, f x ∈ s ∧ p (f x) = x := λ x, x.property.some_spec,
+  let f' : ps → ι := λ x, f ⟨x, hps ▸ x.property⟩,
+  have hf' : ∀ x, f' x ∈ s ∧ p (f' x) = x := λ x, hf ⟨x, hps ▸ x.property⟩,
+  have hf'i : function.injective f',
+  { intros x y h,
+    rw [subtype.ext_iff, ←(hf' x).2, ←(hf' y).2, h] },
+  let f'e : ps ↪ ι := ⟨f', hf'i⟩,
+  have hu : finset.univ.map f'e = s,
+  { ext x,
+    rw mem_map,
+    split,
+    { rintros ⟨i, _, rfl⟩,
+      exact (hf' i).1 },
+    { intro hx,
+      use [⟨p x, hps.symm ▸ set.mem_image_of_mem _ hx⟩, mem_univ _],
+      refine hi _ _ (hf' _).1 hx _,
+      rw (hf' _).2,
+      refl } },
+  rw [←hu, centroid_map],
+  congr' with x,
+  change p (f' x) = ↑x,
+  rw (hf' x).2
+end
+
+/-- Two indexed families of points that are injective on the given
+`finset`s and with the same points in the image of those `finset`s
+have the same centroid. -/
+lemma centroid_eq_of_inj_on_of_image_eq {p : ι → P} (hi : ∀ i j ∈ s, p i = p j → i = j)
+  {p₂ : ι₂ → P} (hi₂ : ∀ i j ∈ s₂, p₂ i = p₂ j → i = j) (he : p '' ↑s = p₂ '' ↑s₂) :
+  s.centroid k p = s₂.centroid k p₂ :=
+by rw [s.centroid_eq_centroid_image_of_inj_on k hi rfl,
+       s₂.centroid_eq_centroid_image_of_inj_on k hi₂ he]
+
+end finset
+
+namespace affine
+namespace simplex
+
+variables {k : Type*} {V : Type*} {P : Type*} [division_ring k]
+          [add_comm_group V] [module k V] [affine_space V P]
+include V
+
+/-- Two simplices with the same points have the same centroid. -/
+lemma centroid_eq_of_range_eq {n : ℕ} {s₁ s₂ : simplex k P n}
+  (h : set.range s₁.points = set.range s₂.points) :
+  finset.univ.centroid k s₁.points = finset.univ.centroid k s₂.points :=
+begin
+  rw [←set.image_univ, ←set.image_univ, ←finset.coe_univ] at h,
+  exact finset.univ.centroid_eq_of_inj_on_of_image_eq k _
+    (λ _ _ _ _ he, injective_of_affine_independent s₁.independent he)
+    (λ _ _ _ _ he, injective_of_affine_independent s₂.independent he) h
+end
+
+end simplex
+end affine
+
 section collinear
 
 variables (k : Type*) {V : Type*} {P : Type*} [ring k] [add_comm_group V] [module k V]
