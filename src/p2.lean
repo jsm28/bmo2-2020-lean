@@ -298,7 +298,46 @@ lemma orthogonal_projection_eq_circumcenter_of_dist_eq' {n : ℕ} (s : simplex �
   orthogonal_projection (affine_span ℝ (set.range s.points)) p = s.circumcenter :=
 s.orthogonal_projection_eq_circumcenter_of_exists_dist_eq' ⟨r, hr⟩
 
+-- Not yet PRed.
+
+/-- Two simplices with the same points have the same circumcenter. -/
+lemma circumcenter_eq_of_range_eq {n : ℕ} {s₁ s₂ : simplex ℝ P n}
+  (h : set.range s₁.points = set.range s₂.points) : s₁.circumcenter = s₂.circumcenter :=
+begin
+  have hs : s₁.circumcenter ∈ affine_span ℝ (set.range s₂.points) :=
+    h ▸ s₁.circumcenter_mem_affine_span,
+  have hr : ∀ i, dist (s₂.points i) s₁.circumcenter = s₁.circumradius,
+  { intro i,
+    have hi : s₂.points i ∈ set.range s₂.points := set.mem_range_self _,
+    rw [←h, set.mem_range] at hi,
+    rcases hi with ⟨j, hj⟩,
+    rw [←hj, s₁.dist_circumcenter_eq_circumradius j] },
+  exact s₂.eq_circumcenter_of_dist_eq hs hr
+end
+
+/-- Two simplices with the same points have the same Monge point. -/
+lemma monge_point_eq_of_range_eq {n : ℕ} {s₁ s₂ : simplex ℝ P n}
+  (h : set.range s₁.points = set.range s₂.points) : s₁.monge_point = s₂.monge_point :=
+by simp_rw [monge_point_eq_smul_vsub_vadd_circumcenter, centroid_eq_of_range_eq h,
+            circumcenter_eq_of_range_eq h]
+
 end simplex
+
+namespace triangle
+
+open finset simplex
+
+variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
+    [normed_add_torsor V P]
+
+include V
+
+/-- Two triangles with the same points have the same orthocenter. -/
+lemma orthocenter_eq_of_range_eq {t₁ t₂ : triangle ℝ P}
+  (h : set.range t₁.points = set.range t₂.points) : t₁.orthocenter = t₂.orthocenter :=
+monge_point_eq_of_range_eq h
+
+end triangle
 
 end affine
 
@@ -862,7 +901,7 @@ begin
     sorry },
   { rw hs,
     convert ht₀s using 2,
-    sorry }
+    exact triangle.orthocenter_eq_of_range_eq hs }
 end
 
 end euclidean_geometry
