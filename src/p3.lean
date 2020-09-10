@@ -2905,6 +2905,7 @@ theorem p3_result_n1 (n : ℕ) : finset.card (balanced_colourings (n + 1)) =
 begin
   rw [card_split_2_parity, result_0, result_1, result_01,
       mul_comm 2 _, mul_comm 2 _],
+  norm_num,
   ring
 end
 

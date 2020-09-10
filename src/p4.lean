@@ -393,8 +393,8 @@ begin
     unfold p4_term at hmt,
     norm_num at hmt },
   { cases ht with st hst,
-    use st ∪ polynomial.roots ((p4_term_poly (nat.succ t)).fst) ∪
-             polynomial.roots ((p4_term_poly (nat.succ t)).snd),
+    use st ∪ (polynomial.roots ((p4_term_poly (nat.succ t)).fst)).to_finset ∪
+             (polynomial.roots ((p4_term_poly (nat.succ t)).snd)).to_finset,
     rintros k ⟨m, hmlt, hm0⟩,
     by_cases hx : ∃ (q : ℕ), (q ≤ t ∧ p4_term q k = 0),
     { apply finset.mem_union_left,
@@ -425,14 +425,14 @@ begin
           have hd0 : (p4_term_poly (nat.succ t)).snd ≠ 0 := (p4_poly_ne_zero (nat.succ t)).right,
           by_cases hden : polynomial.eval k (p4_term_poly m).snd = 0,
           { apply finset.mem_union_right,
-            rw polynomial.mem_roots hd0,
+            rw [multiset.mem_to_finset, polynomial.mem_roots hd0],
             unfold polynomial.is_root,
             rw ← hmt,
             exact hden },
           { rw [hterm, div_eq_zero_iff] at hm0,
             apply finset.mem_union_left,
             apply finset.mem_union_right,
-            rw polynomial.mem_roots hn0,
+            rw [multiset.mem_to_finset, polynomial.mem_roots hn0],
             unfold polynomial.is_root,
             rw ← hmt,
             exact or.resolve_right hm0 hden } } } } }
