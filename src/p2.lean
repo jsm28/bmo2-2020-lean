@@ -10,15 +10,179 @@ noncomputable theory
 open_locale big_operators
 open_locale classical
 
+section affine
+
+variables (k : Type*) {V : Type*} {P : Type*} [ring k] [add_comm_group V] [module k V]
+          [affine_space V P]
+include V
+
+-- When upstreaming, also changes places using submodule.span_mono
+-- with vsub_set_mono.
+
+/-- `vector_span` is monotone. -/
+lemma vector_span_mono {s₁ s₂ : set P} (h : s₁ ⊆ s₂) : vector_span k s₁ ≤ vector_span k s₂ :=
+submodule.span_mono (vsub_set_mono h)
+
+end affine
+
+namespace affine_subspace
+
+variables {k : Type*} {V : Type*} {P : Type*} [ring k] [add_comm_group V] [module k V]
+          [affine_space V P]
+include V
+
+/-- Two affine subspaces with nonempty intersection are equal if and
+only if their directions are equal. -/
+lemma eq_iff_direction_eq_of_mem {s₁ s₂ : affine_subspace k P} {p : P} (h₁ : p ∈ s₁)
+  (h₂ : p ∈ s₂) : s₁ = s₂ ↔ s₁.direction = s₂.direction :=
+⟨λ h, h ▸ rfl, λ h, ext_of_direction_eq h ⟨p, h₁, h₂⟩⟩
+
+end affine_subspace
+
+section affine_space'
+
+variables (k : Type*) {V : Type*} {P : Type*} [field k] [add_comm_group V] [module k V]
+          [affine_space V P]
+variables {ι : Type*}
+include V
+
+-- When upstreaming these, adjust proofs of corresponding affine_span
+-- lemmas in mathlib.
+
+open finite_dimensional
+
+/-- The `vector_span` of a family indexed by a `fintype` is
+finite-dimensional. -/
+instance finite_dimensional_direction_vector_span_of_fintype [fintype ι] (p : ι → P) :
+  finite_dimensional k (vector_span k (set.range p)) :=
+finite_dimensional_vector_span_of_finite k (set.finite_range _)
+
+/-- The `vector_span` of a subset of a family indexed by a `fintype`
+is finite-dimensional. -/
+instance finite_dimensional_vector_span_image_of_fintype [fintype ι] (p : ι → P)
+  (s : set ι) : finite_dimensional k (vector_span k (p '' s)) :=
+finite_dimensional_vector_span_of_finite k ((set.finite.of_fintype _).image _)
+
+-- When upstreaming, adjust proof of
+-- findim_vector_span_of_affine_independent to use this one.
+
+variables {k}
+
+/-- The `vector_span` of a finite subset of an affinely independent
+family has dimension one less than its cardinality. -/
+lemma findim_vector_span_image_finset_of_affine_independent {p : ι → P}
+  (hi : affine_independent k p) (s : finset ι) {n : ℕ} (hc : finset.card s = n + 1) :
+  findim k (vector_span k (p '' ↑s)) = n :=
+begin
+  have hi' := affine_independent_of_subset_affine_independent
+    (affine_independent_set_of_affine_independent hi) (set.image_subset_range p ↑s),
+  have hc' : fintype.card (p '' ↑s) = n + 1,
+  { rwa [set.card_image_of_injective ↑s (injective_of_affine_independent hi), fintype.card_coe] },
+  have hn : (p '' ↑s).nonempty,
+  { simp [hc, ←finset.card_pos] },
+  rcases hn with ⟨p₁, hp₁⟩,
+  rw affine_independent_set_iff_linear_independent_vsub k hp₁ at hi',
+  have hfr : (p '' ↑s \ {p₁}).finite := ((set.finite_mem_finset _).image _).subset
+    (set.diff_subset _ _),
+  haveI := hfr.fintype,
+  have hf : set.finite ((λ (p : P), p -ᵥ p₁) '' (p '' ↑s \ {p₁})) := hfr.image _,
+  haveI := hf.fintype,
+  have hc : hf.to_finset.card = n,
+  { rw [hf.card_to_finset,
+        set.card_image_of_injective (p '' ↑s \ {p₁}) (vsub_left_injective _)],
+    have hd : insert p₁ (p '' ↑s \ {p₁}) = p '' ↑s,
+    { rw [set.insert_diff_singleton, set.insert_eq_of_mem hp₁] },
+    have hc'' : fintype.card ↥(insert p₁ (p '' ↑s \ {p₁})) = n + 1,
+    { convert hc' },
+    rw set.card_insert (p '' ↑s \ {p₁}) (λ h, ((set.mem_diff p₁).2 h).2 rfl) at hc'',
+    simpa using hc'' },
+  rw [vector_span_eq_span_vsub_set_right_ne k hp₁, findim_span_set_eq_card _ hi', ←hc],
+  congr
+end
+
+end affine_space'
+
+namespace finite_dimensional
+
+variables {K : Type*} {V : Type*} [field K] [add_comm_group V] [vector_space K V]
+
+/-- A submodule contained in a finite-dimensional submodule is
+finite-dimensional. -/
+lemma finite_dimensional_of_le {S₁ S₂ : submodule K V} [finite_dimensional K S₂] (h : S₁ ≤ S₂) :
+  finite_dimensional K S₁ :=
+finite_dimensional_iff_dim_lt_omega.2 (lt_of_le_of_lt (dim_le_of_submodule _ _ h)
+                                                      (dim_lt_omega K S₂))
+
+/-- The inf of two submodules, the first finite-dimensional, is
+finite-dimensional. -/
+instance finite_dimensional_inf_left (S₁ S₂ : submodule K V) [finite_dimensional K S₁] :
+  finite_dimensional K (S₁ ⊓ S₂ : submodule K V) :=
+finite_dimensional_of_le inf_le_left
+
+/-- The inf of two submodules, the second finite-dimensional, is
+finite-dimensional. -/
+instance finite_dimensional_inf_right (S₁ S₂ : submodule K V) [finite_dimensional K S₂] :
+  finite_dimensional K (S₁ ⊓ S₂ : submodule K V) :=
+finite_dimensional_of_le inf_le_right
+
+/-- The sup of two finite-dimensional submodules is
+finite-dimensional. -/
+instance finite_dimensional_sup (S₁ S₂ : submodule K V) [h₁ : finite_dimensional K S₁]
+  [h₂ : finite_dimensional K S₂] : finite_dimensional K (S₁ ⊔ S₂ : submodule K V) :=
+begin
+  rw ←submodule.fg_iff_finite_dimensional at *,
+  exact submodule.fg_sup h₁ h₂
+end
+
+end finite_dimensional
+
 section inner_product
 
 variables {α : Type*} [inner_product_space α]
+
+open finite_dimensional
 
 /-- `submodule.orthogonal` reverses the `≤` ordering of two
 subspaces. -/
 lemma submodule.orthogonal_le {K₁ K₂ : submodule ℝ α} (h : K₁ ≤ K₂) :
   K₂.orthogonal ≤ K₁.orthogonal :=
 (submodule.orthogonal_gc α).monotone_l h
+
+/-- If `K₁` is complete and contained in `K₂`, `K₁` and `K₁.orthogonal ⊓ K₂` span `K₂`. -/
+lemma submodule.sup_orthogonal_inf_of_is_complete {K₁ K₂ : submodule ℝ α} (h : K₁ ≤ K₂)
+  (hc : is_complete (K₁ : set α)) : K₁ ⊔ (K₁.orthogonal ⊓ K₂) = K₂ :=
+begin
+  ext x,
+  rw submodule.mem_sup,
+  rcases exists_norm_eq_infi_of_complete_subspace K₁ hc x with ⟨v, hv, hvm⟩,
+  rw norm_eq_infi_iff_inner_eq_zero K₁ hv at hvm,
+  split,
+  { rintro ⟨y, hy, z, hz, rfl⟩,
+    exact K₂.add_mem (h hy) hz.2 },
+  { exact λ hx, ⟨v, hv, x - v, ⟨(K₁.mem_orthogonal' _).2 hvm, K₂.sub_mem hx (h hv)⟩,
+                 add_sub_cancel'_right _ _⟩ }
+end
+
+-- For upstreaming to mathlib, replace the proof of
+-- submodule.sup_orthogonal_of_is_complete using the above.
+
+/-- Given a finite-dimensional subspace `K₂`, and a subspace `K₁`
+containined in it, the dimensions of `K₁` and the intersection of its
+orthogonal subspace with `K₂` add to that of `K₂`. -/
+lemma submodule.findim_add_inf_findim_orthogonal {K₁ K₂ : submodule ℝ α}
+  [finite_dimensional ℝ K₂] (h : K₁ ≤ K₂) :
+  findim ℝ K₁ + findim ℝ (K₁.orthogonal ⊓ K₂ : submodule ℝ α) = findim ℝ K₂ :=
+begin
+  haveI := finite_dimensional_of_le h,
+  have hd := dim_sup_add_dim_inf_eq K₁ (K₁.orthogonal ⊓ K₂),
+  rw [←findim_eq_dim, ←findim_eq_dim, ←findim_eq_dim,  ←findim_eq_dim, ←inf_assoc,
+      (submodule.orthogonal_disjoint K₁).eq_bot, bot_inf_eq, findim_bot,
+      submodule.sup_orthogonal_inf_of_is_complete h
+        (submodule.complete_of_finite_dimensional _)] at hd,
+  norm_cast at hd,
+  rw add_zero at hd,
+  exact hd.symm
+end
 
 end inner_product
 
@@ -570,6 +734,27 @@ begin
     (submodule.orthogonal_le inf_le_left)
 end
 
+/-- An altitude is finite-dimensional. -/
+instance finite_dimensional_direction_altitude {n : ℕ} (s : simplex ℝ P (n + 1))
+  (i : fin (n + 2)) : finite_dimensional ℝ ((s.altitude i).direction) :=
+begin
+  rw direction_altitude,
+  apply_instance
+end
+
+/-- An altitude is one-dimensional (i.e., a line). -/
+@[simp] lemma findim_direction_altitude {n : ℕ} (s : simplex ℝ P (n + 1)) (i : fin (n + 2)) :
+  findim ℝ ((s.altitude i).direction) = 1 :=
+begin
+  rw direction_altitude,
+  have h := submodule.findim_add_inf_findim_orthogonal
+    (vector_span_mono ℝ (set.image_subset_range s.points ↑(univ.erase i))),
+  have hc : card (univ.erase i) = n + 1, { rw card_erase_of_mem (mem_univ _), simp },
+  rw [findim_vector_span_of_affine_independent s.independent (fintype.card_fin _),
+      findim_vector_span_image_finset_of_affine_independent s.independent _ hc] at h,
+  simpa using h
+end
+
 /-- A line through a vertex is the altitude through that vertex if and
 only if it is orthogonal to the opposite face. -/
 lemma affine_span_insert_singleton_eq_altitude_iff {n : ℕ} (s : simplex ℝ P (n + 1))
@@ -578,8 +763,33 @@ lemma affine_span_insert_singleton_eq_altitude_iff {n : ℕ} (s : simplex ℝ P 
     p ∈ affine_span ℝ (set.range s.points) ∧
     p -ᵥ s.points i ∈ (affine_span ℝ (s.points '' ↑(finset.univ.erase i))).direction.orthogonal) :=
 begin
-  rw [s.altitude_def],
-  sorry
+  rw [eq_iff_direction_eq_of_mem
+        (mem_affine_span ℝ (set.mem_insert_of_mem _ (set.mem_singleton _))) (s.mem_altitude _),
+      ←vsub_right_mem_direction_iff_mem (mem_affine_span ℝ (set.mem_range_self i)) p,
+      direction_affine_span, direction_affine_span, direction_affine_span],
+  split,
+  { intro h,
+    split,
+    { intro heq,
+      rw [heq, set.pair_eq_singleton, vector_span_singleton] at h,
+      have hd : findim ℝ (s.altitude i).direction = 0,
+      { rw [←h, findim_bot] },
+      simpa using hd },
+    { rw [←submodule.mem_inf, inf_comm, ←direction_altitude, ←h],
+      exact vsub_mem_vector_span ℝ (set.mem_insert _ _)
+                                   (set.mem_insert_of_mem _ (set.mem_singleton _)) } },
+  { rintro ⟨hne, h⟩,
+    rw [←submodule.mem_inf, inf_comm, ←direction_altitude] at h,
+    rw [vector_span_eq_span_vsub_set_left_ne ℝ (set.mem_insert _ _),
+        set.insert_diff_of_mem _ (set.mem_singleton _),
+        set.diff_singleton_eq_self (λ h, hne (set.mem_singleton_iff.1 h)), set.image_singleton],
+    refine eq_of_le_of_findim_eq _ _,
+    { rw submodule.span_le,
+      simpa using h },
+    { rw [findim_direction_altitude, findim_span_set_eq_card],
+      { simp },
+      { refine linear_independent_singleton _,
+        simpa using hne } } }
 end
 
 end simplex
