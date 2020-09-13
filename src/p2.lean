@@ -16,8 +16,7 @@ variables (k : Type*) {V : Type*} {P : Type*} [ring k] [add_comm_group V] [modul
           [affine_space V P]
 include V
 
--- When upstreaming, also changes places using submodule.span_mono
--- with vsub_set_mono.
+-- mathlib PR #4127.
 
 /-- `vector_span` is monotone. -/
 lemma vector_span_mono {s₁ s₂ : set P} (h : s₁ ⊆ s₂) : vector_span k s₁ ≤ vector_span k s₂ :=
@@ -37,6 +36,13 @@ lemma eq_iff_direction_eq_of_mem {s₁ s₂ : affine_subspace k P} {p : P} (h₁
   (h₂ : p ∈ s₂) : s₁ = s₂ ↔ s₁.direction = s₂.direction :=
 ⟨λ h, h ▸ rfl, λ h, ext_of_direction_eq h ⟨p, h₁, h₂⟩⟩
 
+/-- If an affine subspace is nonempty and contained in another with
+the same direction, they are equal. -/
+lemma eq_of_direction_eq_of_nonempty_of_le {s₁ s₂ : affine_subspace k P}
+  (hd : s₁.direction = s₂.direction) (hn : (s₁ : set P).nonempty) (hle : s₁ ≤ s₂) :
+  s₁ = s₂ :=
+let ⟨p, hp⟩ := hn in ext_of_direction_eq hd ⟨p, hp, hle hp⟩
+
 end affine_subspace
 
 section affine_space'
@@ -45,9 +51,6 @@ variables (k : Type*) {V : Type*} {P : Type*} [field k] [add_comm_group V] [modu
           [affine_space V P]
 variables {ι : Type*}
 include V
-
--- When upstreaming these, adjust proofs of corresponding affine_span
--- lemmas in mathlib.
 
 open finite_dimensional
 
@@ -63,15 +66,12 @@ instance finite_dimensional_vector_span_image_of_fintype [fintype ι] (p : ι �
   (s : set ι) : finite_dimensional k (vector_span k (p '' s)) :=
 finite_dimensional_vector_span_of_finite k ((set.finite.of_fintype _).image _)
 
--- When upstreaming, adjust proof of
--- findim_vector_span_of_affine_independent to use this one.
-
 variables {k}
 
 /-- The `vector_span` of a finite subset of an affinely independent
 family has dimension one less than its cardinality. -/
 lemma findim_vector_span_image_finset_of_affine_independent {p : ι → P}
-  (hi : affine_independent k p) (s : finset ι) {n : ℕ} (hc : finset.card s = n + 1) :
+  (hi : affine_independent k p) {s : finset ι} {n : ℕ} (hc : finset.card s = n + 1) :
   findim k (vector_span k (p '' ↑s)) = n :=
 begin
   have hi' := affine_independent_of_subset_affine_independent
@@ -100,11 +100,61 @@ begin
   congr
 end
 
+/-- If the `vector_span` of a finite subset of an affinely independent
+family lies in a submodule with dimension one less than its
+cardinality, it equals that submodule. -/
+lemma vector_span_image_finset_eq_of_le_of_affine_independent_of_card_eq_findim_add_one
+  {p : ι → P} (hi : affine_independent k p) {s : finset ι} {sm : submodule k V}
+  [finite_dimensional k sm] (hle : vector_span k (p '' ↑s) ≤ sm)
+  (hc : finset.card s = findim k sm + 1) : vector_span k (p '' ↑s) = sm :=
+eq_of_le_of_findim_eq hle $ findim_vector_span_image_finset_of_affine_independent hi hc
+
+/-- If the `vector_span` of a finite affinely independent
+family lies in a submodule with dimension one less than its
+cardinality, it equals that submodule. -/
+lemma vector_span_eq_of_le_of_affine_independent_of_card_eq_findim_add_one [fintype ι]
+  {p : ι → P} (hi : affine_independent k p) {sm : submodule k V} [finite_dimensional k sm]
+  (hle : vector_span k (set.range p) ≤ sm) (hc : fintype.card ι = findim k sm + 1) :
+  vector_span k (set.range p) = sm :=
+eq_of_le_of_findim_eq hle $ findim_vector_span_of_affine_independent hi hc
+
+open affine_subspace
+
+/-- If the `affine_span` of a finite subset of an affinely independent
+family lies in an affine subspace whose direction has dimension one
+less than its cardinality, it equals that subspace. -/
+lemma affine_span_image_finset_eq_of_le_of_affine_independent_of_card_eq_findim_add_one
+  {p : ι → P} (hi : affine_independent k p) {s : finset ι} {sp : affine_subspace k P}
+  [finite_dimensional k sp.direction] (hle : affine_span k (p '' ↑s) ≤ sp)
+  (hc : finset.card s = findim k sp.direction + 1) : affine_span k (p '' ↑s) = sp :=
+begin
+  have hn : (p '' ↑s).nonempty, { simp [hc, ←finset.card_pos] },
+  refine eq_of_direction_eq_of_nonempty_of_le _ ((affine_span_nonempty k _).2 hn) hle,
+  have hd := direction_le hle,
+  rw direction_affine_span at ⊢ hd,
+  exact vector_span_image_finset_eq_of_le_of_affine_independent_of_card_eq_findim_add_one hi hd hc
+end
+
+/-- If the `affine_span` of a finite affinely independent family lies
+in an affine subspace whose direction has dimension one less than its
+cardinality, it equals that subspace. -/
+lemma affine_span_eq_of_le_of_affine_independent_of_card_eq_findim_add_one [fintype ι]
+  {p : ι → P} (hi : affine_independent k p) {sp : affine_subspace k P}
+  [finite_dimensional k sp.direction] (hle : affine_span k (set.range p) ≤ sp)
+  (hc : fintype.card ι = findim k sp.direction + 1) : affine_span k (set.range p) = sp :=
+begin
+  rw ←finset.card_univ at hc,
+  rw [←set.image_univ, ←finset.coe_univ] at ⊢ hle,
+  exact affine_span_image_finset_eq_of_le_of_affine_independent_of_card_eq_findim_add_one hi hle hc
+end
+
 end affine_space'
 
 namespace finite_dimensional
 
 variables {K : Type*} {V : Type*} [field K] [add_comm_group V] [vector_space K V]
+
+-- mathlib PR #4128.
 
 /-- A submodule contained in a finite-dimensional submodule is
 finite-dimensional. -/
@@ -134,6 +184,19 @@ begin
   exact submodule.fg_sup h₁ h₂
 end
 
+open vector_space
+
+-- Variant of mathlib lemma, with weaker conditions.
+theorem dim_sup_add_dim_inf_eq' (s t : submodule K V) [finite_dimensional K s]
+  [finite_dimensional K t] :
+  findim K ↥(s ⊔ t) + findim K ↥(s ⊓ t) = findim K ↥s + findim K ↥t :=
+begin
+  have key : dim K ↥(s ⊔ t) + dim K ↥(s ⊓ t) = dim K s + dim K t := dim_sup_add_dim_inf_eq s t,
+  repeat { rw ←findim_eq_dim at key },
+  norm_cast at key,
+  exact key
+end
+
 end finite_dimensional
 
 section inner_product
@@ -141,6 +204,8 @@ section inner_product
 variables {α : Type*} [inner_product_space α]
 
 open finite_dimensional
+
+-- Not yet PRed.
 
 /-- `submodule.orthogonal` reverses the `≤` ordering of two
 subspaces. -/
@@ -174,12 +239,10 @@ lemma submodule.findim_add_inf_findim_orthogonal {K₁ K₂ : submodule ℝ α}
   findim ℝ K₁ + findim ℝ (K₁.orthogonal ⊓ K₂ : submodule ℝ α) = findim ℝ K₂ :=
 begin
   haveI := finite_dimensional_of_le h,
-  have hd := dim_sup_add_dim_inf_eq K₁ (K₁.orthogonal ⊓ K₂),
-  rw [←findim_eq_dim, ←findim_eq_dim, ←findim_eq_dim,  ←findim_eq_dim, ←inf_assoc,
-      (submodule.orthogonal_disjoint K₁).eq_bot, bot_inf_eq, findim_bot,
+  have hd := dim_sup_add_dim_inf_eq' K₁ (K₁.orthogonal ⊓ K₂),
+  rw [←inf_assoc, (submodule.orthogonal_disjoint K₁).eq_bot, bot_inf_eq, findim_bot,
       submodule.sup_orthogonal_inf_of_is_complete h
         (submodule.complete_of_finite_dimensional _)] at hd,
-  norm_cast at hd,
   rw add_zero at hd,
   exact hd.symm
 end
