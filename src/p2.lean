@@ -197,6 +197,33 @@ begin
   exact key
 end
 
+open submodule
+
+/-- A finite family of vectors is linearly independent if and only if
+its cardinality equals the dimension of its span. -/
+lemma linear_independent_iff_card_eq_findim_span {ι : Type*} [fintype ι] {b : ι → V} :
+  linear_independent K b ↔ fintype.card ι = findim K (span K (set.range b)) :=
+begin
+  split,
+  { intro h,
+    exact (findim_span_eq_card h).symm },
+  { intro hc,
+    let f := (submodule.subtype (span K (set.range b))),
+    let b' : ι → span K (set.range b) :=
+      λ i, ⟨b i, mem_span.2 (λ p hp, hp (set.mem_range_self _))⟩,
+    have hs : span K (set.range b') = ⊤,
+    { rw eq_top_iff',
+      intro x,
+      have h : span K (f '' (set.range b')) = map f (span K (set.range b')) := span_image f,
+      have hf : f '' (set.range b') = set.range b, { ext x, simp [set.mem_image, set.mem_range] },
+      rw hf at h,
+      have hx : (x : V) ∈ span K (set.range b) := x.property,
+      conv at hx { congr, skip, rw h },
+      simpa [mem_map] using hx },
+    have hi : disjoint (span K (set.range b')) f.ker, by simp,
+    convert (linear_independent_of_span_eq_top_of_card_eq_findim hs hc).image hi }
+end
+
 end finite_dimensional
 
 section inner_product
