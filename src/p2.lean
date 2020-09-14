@@ -150,89 +150,13 @@ end
 
 end affine_space'
 
-namespace finite_dimensional
-
-variables {K : Type*} {V : Type*} [field K] [add_comm_group V] [vector_space K V]
-
--- mathlib PR #4128.
-
-/-- A submodule contained in a finite-dimensional submodule is
-finite-dimensional. -/
-lemma finite_dimensional_of_le {S₁ S₂ : submodule K V} [finite_dimensional K S₂] (h : S₁ ≤ S₂) :
-  finite_dimensional K S₁ :=
-finite_dimensional_iff_dim_lt_omega.2 (lt_of_le_of_lt (dim_le_of_submodule _ _ h)
-                                                      (dim_lt_omega K S₂))
-
-/-- The inf of two submodules, the first finite-dimensional, is
-finite-dimensional. -/
-instance finite_dimensional_inf_left (S₁ S₂ : submodule K V) [finite_dimensional K S₁] :
-  finite_dimensional K (S₁ ⊓ S₂ : submodule K V) :=
-finite_dimensional_of_le inf_le_left
-
-/-- The inf of two submodules, the second finite-dimensional, is
-finite-dimensional. -/
-instance finite_dimensional_inf_right (S₁ S₂ : submodule K V) [finite_dimensional K S₂] :
-  finite_dimensional K (S₁ ⊓ S₂ : submodule K V) :=
-finite_dimensional_of_le inf_le_right
-
-/-- The sup of two finite-dimensional submodules is
-finite-dimensional. -/
-instance finite_dimensional_sup (S₁ S₂ : submodule K V) [h₁ : finite_dimensional K S₁]
-  [h₂ : finite_dimensional K S₂] : finite_dimensional K (S₁ ⊔ S₂ : submodule K V) :=
-begin
-  rw ←submodule.fg_iff_finite_dimensional at *,
-  exact submodule.fg_sup h₁ h₂
-end
-
-open vector_space
-
--- Variant of mathlib lemma, with weaker conditions.
-theorem dim_sup_add_dim_inf_eq' (s t : submodule K V) [finite_dimensional K s]
-  [finite_dimensional K t] :
-  findim K ↥(s ⊔ t) + findim K ↥(s ⊓ t) = findim K ↥s + findim K ↥t :=
-begin
-  have key : dim K ↥(s ⊔ t) + dim K ↥(s ⊓ t) = dim K s + dim K t := dim_sup_add_dim_inf_eq s t,
-  repeat { rw ←findim_eq_dim at key },
-  norm_cast at key,
-  exact key
-end
-
-open submodule
-
-/-- A finite family of vectors is linearly independent if and only if
-its cardinality equals the dimension of its span. -/
-lemma linear_independent_iff_card_eq_findim_span {ι : Type*} [fintype ι] {b : ι → V} :
-  linear_independent K b ↔ fintype.card ι = findim K (span K (set.range b)) :=
-begin
-  split,
-  { intro h,
-    exact (findim_span_eq_card h).symm },
-  { intro hc,
-    let f := (submodule.subtype (span K (set.range b))),
-    let b' : ι → span K (set.range b) :=
-      λ i, ⟨b i, mem_span.2 (λ p hp, hp (set.mem_range_self _))⟩,
-    have hs : span K (set.range b') = ⊤,
-    { rw eq_top_iff',
-      intro x,
-      have h : span K (f '' (set.range b')) = map f (span K (set.range b')) := span_image f,
-      have hf : f '' (set.range b') = set.range b, { ext x, simp [set.mem_image, set.mem_range] },
-      rw hf at h,
-      have hx : (x : V) ∈ span K (set.range b) := x.property,
-      conv at hx { congr, skip, rw h },
-      simpa [mem_map] using hx },
-    have hi : disjoint (span K (set.range b')) f.ker, by simp,
-    convert (linear_independent_of_span_eq_top_of_card_eq_findim hs hc).image hi }
-end
-
-end finite_dimensional
-
 section inner_product
 
 variables {α : Type*} [inner_product_space α]
 
 open finite_dimensional
 
--- Not yet PRed.
+-- mathlib PR #4152.
 
 /-- `submodule.orthogonal` reverses the `≤` ordering of two
 subspaces. -/
@@ -265,8 +189,8 @@ lemma submodule.findim_add_inf_findim_orthogonal {K₁ K₂ : submodule ℝ α}
   [finite_dimensional ℝ K₂] (h : K₁ ≤ K₂) :
   findim ℝ K₁ + findim ℝ (K₁.orthogonal ⊓ K₂ : submodule ℝ α) = findim ℝ K₂ :=
 begin
-  haveI := finite_dimensional_of_le h,
-  have hd := dim_sup_add_dim_inf_eq' K₁ (K₁.orthogonal ⊓ K₂),
+  haveI := submodule.finite_dimensional_of_le h,
+  have hd := submodule.dim_sup_add_dim_inf_eq K₁ (K₁.orthogonal ⊓ K₂),
   rw [←inf_assoc, (submodule.orthogonal_disjoint K₁).eq_bot, bot_inf_eq, findim_bot,
       submodule.sup_orthogonal_inf_of_is_complete h
         (submodule.complete_of_finite_dimensional _)] at hd,
@@ -275,81 +199,6 @@ begin
 end
 
 end inner_product
-
-namespace finset
-
-variables (k : Type*) {V : Type*} {P : Type*} [division_ring k] [add_comm_group V] [module k V]
-variables [affine_space V P] {ι : Type*} (s : finset ι) {ι₂ : Type*} (s₂ : finset ι₂)
-
-include V
-
--- mathlib PR #4116.
-
-/-- An indexed family of points that is injective on the given
-`finset` has the same centroid as the image of that `finset`.  This is
-stated in terms of a set equal to the image to provide control of
-definitional equality for the index type used for the centroid of the
-image. -/
-lemma centroid_eq_centroid_image_of_inj_on {p : ι → P} (hi : ∀ i j ∈ s, p i = p j → i = j)
-  {ps : set P} [fintype ps] (hps : ps = p '' ↑s) :
-  s.centroid k p = (univ : finset ps).centroid k (λ x, x) :=
-begin
-  let f : p '' ↑s → ι := λ x, x.property.some,
-  have hf : ∀ x, f x ∈ s ∧ p (f x) = x := λ x, x.property.some_spec,
-  let f' : ps → ι := λ x, f ⟨x, hps ▸ x.property⟩,
-  have hf' : ∀ x, f' x ∈ s ∧ p (f' x) = x := λ x, hf ⟨x, hps ▸ x.property⟩,
-  have hf'i : function.injective f',
-  { intros x y h,
-    rw [subtype.ext_iff, ←(hf' x).2, ←(hf' y).2, h] },
-  let f'e : ps ↪ ι := ⟨f', hf'i⟩,
-  have hu : finset.univ.map f'e = s,
-  { ext x,
-    rw mem_map,
-    split,
-    { rintros ⟨i, _, rfl⟩,
-      exact (hf' i).1 },
-    { intro hx,
-      use [⟨p x, hps.symm ▸ set.mem_image_of_mem _ hx⟩, mem_univ _],
-      refine hi _ _ (hf' _).1 hx _,
-      rw (hf' _).2,
-      refl } },
-  rw [←hu, centroid_map],
-  congr' with x,
-  change p (f' x) = ↑x,
-  rw (hf' x).2
-end
-
-/-- Two indexed families of points that are injective on the given
-`finset`s and with the same points in the image of those `finset`s
-have the same centroid. -/
-lemma centroid_eq_of_inj_on_of_image_eq {p : ι → P} (hi : ∀ i j ∈ s, p i = p j → i = j)
-  {p₂ : ι₂ → P} (hi₂ : ∀ i j ∈ s₂, p₂ i = p₂ j → i = j) (he : p '' ↑s = p₂ '' ↑s₂) :
-  s.centroid k p = s₂.centroid k p₂ :=
-by rw [s.centroid_eq_centroid_image_of_inj_on k hi rfl,
-       s₂.centroid_eq_centroid_image_of_inj_on k hi₂ he]
-
-end finset
-
-namespace affine
-namespace simplex
-
-variables {k : Type*} {V : Type*} {P : Type*} [division_ring k]
-          [add_comm_group V] [module k V] [affine_space V P]
-include V
-
-/-- Two simplices with the same points have the same centroid. -/
-lemma centroid_eq_of_range_eq {n : ℕ} {s₁ s₂ : simplex k P n}
-  (h : set.range s₁.points = set.range s₂.points) :
-  finset.univ.centroid k s₁.points = finset.univ.centroid k s₂.points :=
-begin
-  rw [←set.image_univ, ←set.image_univ, ←finset.coe_univ] at h,
-  exact finset.univ.centroid_eq_of_inj_on_of_image_eq k _
-    (λ _ _ _ _ he, injective_of_affine_independent s₁.independent he)
-    (λ _ _ _ _ he, injective_of_affine_independent s₂.independent he) h
-end
-
-end simplex
-end affine
 
 section collinear
 
@@ -504,58 +353,6 @@ end collinear_division_ring
 
 -- Geometrical definitions and results that should go in mathlib in
 -- some form (possibly more general).
-
-namespace affine
-namespace simplex
-
-open affine affine_subspace finite_dimensional euclidean_geometry
-
-variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
-    [normed_add_torsor V P]
-include V
-
--- mathlib PR #4116.
-
-/-- Two simplices with the same points have the same circumcenter. -/
-lemma circumcenter_eq_of_range_eq {n : ℕ} {s₁ s₂ : simplex ℝ P n}
-  (h : set.range s₁.points = set.range s₂.points) : s₁.circumcenter = s₂.circumcenter :=
-begin
-  have hs : s₁.circumcenter ∈ affine_span ℝ (set.range s₂.points) :=
-    h ▸ s₁.circumcenter_mem_affine_span,
-  have hr : ∀ i, dist (s₂.points i) s₁.circumcenter = s₁.circumradius,
-  { intro i,
-    have hi : s₂.points i ∈ set.range s₂.points := set.mem_range_self _,
-    rw [←h, set.mem_range] at hi,
-    rcases hi with ⟨j, hj⟩,
-    rw [←hj, s₁.dist_circumcenter_eq_circumradius j] },
-  exact s₂.eq_circumcenter_of_dist_eq hs hr
-end
-
-/-- Two simplices with the same points have the same Monge point. -/
-lemma monge_point_eq_of_range_eq {n : ℕ} {s₁ s₂ : simplex ℝ P n}
-  (h : set.range s₁.points = set.range s₂.points) : s₁.monge_point = s₂.monge_point :=
-by simp_rw [monge_point_eq_smul_vsub_vadd_circumcenter, centroid_eq_of_range_eq h,
-            circumcenter_eq_of_range_eq h]
-
-end simplex
-
-namespace triangle
-
-open finset simplex
-
-variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
-    [normed_add_torsor V P]
-
-include V
-
-/-- Two triangles with the same points have the same orthocenter. -/
-lemma orthocenter_eq_of_range_eq {t₁ t₂ : triangle ℝ P}
-  (h : set.range t₁.points = set.range t₂.points) : t₁.orthocenter = t₂.orthocenter :=
-monge_point_eq_of_range_eq h
-
-end triangle
-
-end affine
 
 namespace euclidean_geometry
 
@@ -932,7 +729,7 @@ begin
     (vector_span_mono ℝ (set.image_subset_range s.points ↑(univ.erase i))),
   have hc : card (univ.erase i) = n + 1, { rw card_erase_of_mem (mem_univ _), simp },
   rw [findim_vector_span_of_affine_independent s.independent (fintype.card_fin _),
-      findim_vector_span_image_finset_of_affine_independent s.independent _ hc] at h,
+      findim_vector_span_image_finset_of_affine_independent s.independent hc] at h,
   simpa using h
 end
 
