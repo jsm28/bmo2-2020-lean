@@ -3,6 +3,7 @@ import geometry.euclidean
 noncomputable theory
 open_locale classical
 open_locale real
+open_locale real_inner_product_space
 
 section isometry
 /-!
@@ -12,12 +13,12 @@ This section develops properties of isometries in Euclidean space,
 showing that they are affine maps that preserve the inner product.
 -/
 
-variables {V1 : Type*} {P1 : Type*} [inner_product_space V1] [metric_space P1]
-    [S1 : normed_add_torsor V1 P1] {V2 : Type*} {P2 : Type*} [inner_product_space V2]
+variables {V1 : Type*} {P1 : Type*} [inner_product_space ℝ V1] [metric_space P1]
+    [S1 : normed_add_torsor V1 P1] {V2 : Type*} {P2 : Type*} [inner_product_space ℝ V2]
     [metric_space P2] [S2 : normed_add_torsor V2 P2]
 
 /-- Whether a map on vectors preserves the inner product. -/
-def preserves_inner (f : V1 → V2) : Prop := ∀ x y, inner (f x) (f y) = inner x y
+def preserves_inner (f : V1 → V2) : Prop := ∀ x y, ⟪(f x), (f y)⟫ = ⟪x, y⟫
 
 /-- A function that preserves the inner product preserves addition. -/
 lemma fn_of_add_eq_add_of_fn_of_preserves_inner {f : V1 → V2}
@@ -27,7 +28,7 @@ begin
   rw [←inner_self_eq_zero, inner_sub_right, inner_sub_left, inner_sub_left, inner_add_right,
       inner_add_right, inner_add_left, inner_add_left, inner_add_left, h, h, h, h, h, h, h, h, h,
       inner_add_right, inner_add_right, inner_add_right, inner_add_left, inner_add_left,
-      inner_comm y x],
+      real_inner_comm y x],
   ring
 end
 
@@ -72,8 +73,8 @@ begin
   unfold preserves_inner,
   intros x y,
   rw [←neg_vector_map_of_point_map_of_add, inner_neg_left,
-      inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two,
-      inner_eq_norm_mul_self_add_norm_mul_self_sub_norm_sub_mul_self_div_two],
+      real_inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two,
+      real_inner_eq_norm_mul_self_add_norm_mul_self_sub_norm_sub_mul_self_div_two],
   unfold vector_map_of_point_map,
   rw [vadd_assoc, neg_add_self, zero_vadd, add_comm, vsub_add_vsub_cancel, ←dist_eq_norm_vsub V2,
       ←dist_eq_norm_vsub V2, ←dist_eq_norm_vsub V2, isometry.dist_eq h, isometry.dist_eq h,

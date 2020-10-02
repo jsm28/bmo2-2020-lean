@@ -9,6 +9,7 @@ import geometry.euclidean
 noncomputable theory
 open_locale big_operators
 open_locale classical
+open_locale real_inner_product_space
 
 section collinear
 
@@ -168,7 +169,7 @@ namespace euclidean_geometry
 
 open affine affine_subspace finite_dimensional euclidean_geometry
 
-variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
+variables {V : Type*} {P : Type*} [inner_product_space ℝ V] [metric_space P]
     [normed_add_torsor V P]
 
 include V
@@ -208,7 +209,7 @@ begin
   simp_rw [←hsd 0, hf0, zero_smul, zero_vadd] at hsd,
   simp_rw [dist_smul_vadd_eq_dist (p 0) c hv0] at hsd,
   have hfn0 : ∀ i, i ≠ 0 → f i ≠ 0 := λ i, (hfi.ne_iff' hf0).2,
-  have hfn0' : ∀ i, i ≠ 0 → f i = (-2) * inner v (p 0 -ᵥ c) / inner v v,
+  have hfn0' : ∀ i, i ≠ 0 → f i = (-2) * ⟪v, (p 0 -ᵥ c)⟫ / ⟪v, v⟫,
   { intros i hi,
     have hsdi := hsd i,
     simpa [hfn0, hi] using hsdi },
@@ -387,7 +388,7 @@ end euclidean_geometry
 
 open affine affine_subspace finite_dimensional euclidean_geometry
 
-variables {V : Type*} {P : Type*} [inner_product_space V] [metric_space P]
+variables {V : Type*} {P : Type*} [inner_product_space ℝ V] [metric_space P]
     [normed_add_torsor V P]
 
 -- Properties of sets of points in the problem.

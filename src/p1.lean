@@ -5,7 +5,7 @@
 -- index the sequence starting at 0 rather than at 1 as in the
 -- original problem.
 
-import data.int.basic
+import data.int.parity
 import tactic.basic
 import tactic.linarith
 import tactic.norm_num
@@ -21,7 +21,6 @@ def p1_seq_next (a : ℤ) : ℤ := a * (a - 1) / 2
 def p1_recurrence (a : ℕ → ℤ) : Prop := ∀ n : ℕ, a (n + 1) = p1_seq_next (a n)
 
 -- Odd numbers.
-def odd (a : ℤ) : Prop := a % 2 = 1
 def all_odd (a : ℕ → ℤ) : Prop := ∀ n : ℕ, odd (a n)
 
 /-- If an integer is `a` mod `b`, there are corresponding cases for its
@@ -127,7 +126,7 @@ end
 -- Base case: if two consecutive terms are odd, the first is 3 mod 4.
 theorem induction_base (a : ℤ) (ha : odd a) (hb : odd (p1_seq_next a)) : a % 2^2 = 3 :=
 begin
-  unfold odd at ha hb,
+  rw [odd_def, not_even_iff] at ha hb,
   rw (show (2^2 : ℤ) = 2 * 2, by norm_num),
   have hcases : a % (2 * 2) = 1 ∨ a % (2 * 2) = 1 + 2,
   { exact mod_mul_2 _ _ _ dec_trivial ha },
@@ -235,6 +234,5 @@ begin
         norm_num, } },
     intro n,
     rw halln n,
-    unfold odd,
-    norm_num, },
+    norm_num },
 end
