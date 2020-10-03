@@ -153,6 +153,21 @@ namespace set
 
 variables {α : Type*}
 
+lemma eq_singleton_iff_unique_mem (s : set α) (a : α) :
+  s = {a} ↔ a ∈ s ∧ ∀ x ∈ s, x = a :=
+begin
+  split,
+  { intro h,
+    simp [h] },
+  { rintro ⟨ha, hx⟩,
+    ext x,
+    split,
+    { exact hx x },
+    { intro h,
+      rw mem_singleton_iff at h,
+      rwa h } }
+end
+
 /-- `s`, coerced to a type, is a subsingleton type if and only if `s`
 is a subsingleton set. -/
 @[simp] lemma subsingleton_coe (s : set α) : subsingleton s ↔ s.subsingleton :=
@@ -334,13 +349,7 @@ begin
         simpa [hr''] using hne },
       rw [hr'', smul_smul, div_mul_cancel _ h0] },
     { push_neg at hz,
-      have hs : s = {p₀},
-      { ext x,
-        split,
-        { exact hz x },
-        { intro hx,
-          rw set.mem_singleton_iff at hx,
-          rwa hx } },
+      have hs : s = {p₀} := (set.eq_singleton_iff_unique_mem _ _).2 ⟨h, hz⟩,
       subst hs,
       use [0, submodule.zero_mem _],
       intros v hv,
