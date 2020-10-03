@@ -11,32 +11,250 @@ open_locale big_operators
 open_locale classical
 open_locale real_inner_product_space
 
-section collinear
+-- For linear_algebra.affine_space.basic.
+
+section affine
 
 variables (k : Type*) {V : Type*} {P : Type*} [ring k] [add_comm_group V] [module k V]
+          [affine_space V P]
+variables {ι : Type*}
+include V
+
+/-- The `vector_span` of an indexed family is the span of the pairwise
+subtractions with a given point on the left, excluding the subtraction
+of that point from itself. -/
+lemma vector_span_range_eq_span_range_vsub_left_ne (p : ι → P) (i₀ : ι) :
+  vector_span k (set.range p) = submodule.span k (set.range (λ (i : {x // x ≠ i₀}), p i₀ -ᵥ p i)) :=
+begin
+  rw [←set.image_univ, vector_span_image_eq_span_vsub_set_left_ne k _ (set.mem_univ i₀)],
+  congr' with v,
+  simp only [set.mem_range, set.mem_image, set.mem_diff, set.mem_singleton_iff, subtype.exists,
+             subtype.coe_mk],
+  split,
+  { rintros ⟨x, ⟨i₁, ⟨⟨hi₁u, hi₁⟩, rfl⟩⟩, hv⟩,
+    exact ⟨i₁, hi₁, hv⟩ },
+  { exact λ ⟨i₁, hi₁, hv⟩, ⟨p i₁, ⟨i₁, ⟨set.mem_univ _, hi₁⟩, rfl⟩, hv⟩ }
+end
+
+/-- The `vector_span` of an indexed family is the span of the pairwise
+subtractions with a given point on the right, excluding the subtraction
+of that point from itself. -/
+lemma vector_span_range_eq_span_range_vsub_right_ne (p : ι → P) (i₀ : ι) :
+  vector_span k (set.range p) = submodule.span k (set.range (λ (i : {x // x ≠ i₀}), p i -ᵥ p i₀)) :=
+begin
+  rw [←set.image_univ, vector_span_image_eq_span_vsub_set_right_ne k _ (set.mem_univ i₀)],
+  congr' with v,
+  simp only [set.mem_range, set.mem_image, set.mem_diff, set.mem_singleton_iff, subtype.exists,
+             subtype.coe_mk],
+  split,
+  { rintros ⟨x, ⟨i₁, ⟨⟨hi₁u, hi₁⟩, rfl⟩⟩, hv⟩,
+    exact ⟨i₁, hi₁, hv⟩ },
+  { exact λ ⟨i₁, hi₁, hv⟩, ⟨p i₁, ⟨i₁, ⟨set.mem_univ _, hi₁⟩, rfl⟩, hv⟩ }
+end
+
+end affine
+
+-- For linear_algebra.affine_space.finite_dimensional.
+
+section affine
+
+variables {k : Type*} {V : Type*} {P : Type*} [field k] [add_comm_group V] [module k V]
+          [affine_space V P]
+variables {ι : Type*}
+include V
+
+open finite_dimensional
+
+variables (k)
+
+/-- The `vector_span` of `n + 1` points in an indexed family has
+dimension at most `n`. -/
+lemma findim_vector_span_image_finset_le (p : ι → P) (s : finset ι) {n : ℕ}
+  (hc : finset.card s = n + 1) : findim k (vector_span k (p '' ↑s)) ≤ n :=
+begin
+  have hn : (p '' ↑s).nonempty,
+  { simp [hc, ←finset.card_pos] },
+  rcases hn with ⟨p₁, hp₁⟩,
+  rw [vector_span_eq_span_vsub_set_right_ne k hp₁],
+  have hfp₁ : (p '' ↑s \ {p₁}).finite :=
+    ((finset.finite_to_set _).image _).subset (set.diff_subset _ _),
+  haveI := hfp₁.fintype,
+  have hf : ((λ p, p -ᵥ p₁) '' (p '' ↑s \ {p₁})).finite := hfp₁.image _,
+  haveI := hf.fintype,
+  convert le_trans (findim_span_le_card ((λ p, p -ᵥ p₁) '' (p '' ↑s \ {p₁}))) _,
+  have hm : p₁ ∉ p '' ↑s \ {p₁}, by simp,
+  haveI := set.fintype_insert' (p '' ↑s \ {p₁}) hm,
+  rw [set.to_finset_card, set.card_image_of_injective (p '' ↑s \ {p₁}) (vsub_left_injective p₁),
+      ←add_le_add_iff_right 1, ←set.card_fintype_insert' _ hm],
+  have h : fintype.card (↑(s.image p) : set P) ≤ n + 1,
+  { rw [fintype.card_coe, ←hc],
+    exact finset.card_image_le },
+  convert h,
+  simp [hp₁]
+end
+
+/-- The `vector_span` of an indexed family of `n + 1` points has
+dimension at most `n`. -/
+lemma findim_vector_span_range_le [fintype ι] (p : ι → P) {n : ℕ}
+  (hc : fintype.card ι = n + 1) : findim k (vector_span k (set.range p)) ≤ n :=
+begin
+  rw [←set.image_univ, ←finset.coe_univ],
+  rw ←finset.card_univ at hc,
+  exact findim_vector_span_image_finset_le _ _ _ hc
+end
+
+/-- `n + 1` points are affinely independent if and only if their
+`vector_span` has dimension `n`. -/
+lemma affine_independent_iff_findim_vector_span_eq [fintype ι] (p : ι → P) {n : ℕ}
+  (hc : fintype.card ι = n + 1) :
+  affine_independent k p ↔ findim k (vector_span k (set.range p)) = n :=
+begin
+  have hn : nonempty ι, by simp [←fintype.card_pos_iff, hc],
+  cases hn with i₁,
+  rw [affine_independent_iff_linear_independent_vsub _ _ i₁,
+      linear_independent_iff_card_eq_findim_span, eq_comm,
+      vector_span_range_eq_span_range_vsub_right_ne k p i₁],
+  congr',
+  rw ←finset.card_univ at hc,
+  rw fintype.subtype_card,
+  simp [finset.filter_ne', finset.card_erase_of_mem, hc]
+end
+
+/-- `n + 1` points are affinely independent if and only if their
+`vector_span` has dimension at least `n`. -/
+lemma affine_independent_iff_le_findim_vector_span [fintype ι] (p : ι → P) {n : ℕ}
+  (hc : fintype.card ι = n + 1) :
+  affine_independent k p ↔ n ≤ findim k (vector_span k (set.range p)) :=
+begin
+  rw affine_independent_iff_findim_vector_span_eq k p hc,
+  split,
+  { rintro rfl,
+    refl },
+  { exact λ hle, le_antisymm (findim_vector_span_range_le k p hc) hle }
+end
+
+/-- `n + 2` points are affinely independent if and only if their
+`vector_span` does not have dimension at most `n`. -/
+lemma affine_independent_iff_not_findim_vector_span_le [fintype ι] (p : ι → P) {n : ℕ}
+  (hc : fintype.card ι = n + 2) :
+  affine_independent k p ↔ ¬ findim k (vector_span k (set.range p)) ≤ n :=
+by rw [affine_independent_iff_le_findim_vector_span k p hc, ←nat.lt_iff_add_one_le, lt_iff_not_ge]
+
+/-- `n + 2` points have a `vector_span` with dimension at most `n` if
+and only if they are not affinely independent. -/
+lemma findim_vector_span_le_iff_not_affine_independent [fintype ι] (p : ι → P) {n : ℕ}
+  (hc : fintype.card ι = n + 2) :
+  findim k (vector_span k (set.range p)) ≤ n ↔ ¬ affine_independent k p :=
+(not_iff_comm.1 (affine_independent_iff_not_findim_vector_span_le k p hc).symm).symm
+
+end affine
+
+namespace set
+
+variables {α : Type*}
+
+/-- `s`, coerced to a type, is a subsingleton type if and only if `s`
+is a subsingleton set. -/
+@[simp] lemma subsingleton_coe (s : set α) : subsingleton s ↔ s.subsingleton :=
+begin
+  split,
+  { refine λ h, (λ a ha b hb, _),
+    rw set.set_coe_eq_subtype at h,
+    haveI := h,
+    exact subtype.ext_iff.1 (subsingleton.elim ⟨a, ha⟩ ⟨b, hb⟩) },
+  { exact λ h, subsingleton.intro (λ a b, subtype.ext (h a.property b.property)) }
+end
+
+end set
+
+section dim_one
+
+variables (K : Type*) (V : Type*) [field K] [add_comm_group V] [vector_space K V]
+
+/-- A vector space has dimension at most `1` if and only if there is a
+single vector of which all vectors are multiples. -/
+lemma dim_le_one_iff : vector_space.dim K V ≤ 1 ↔ ∃ v₀ : V, ∀ v, ∃ r : K, r • v₀ = v :=
+begin
+  obtain ⟨b, h⟩ := exists_is_basis K V,
+  split,
+  { intro hd,
+    rw [←is_basis.mk_eq_dim'' h, cardinal.le_one_iff_subsingleton, set.subsingleton_coe] at hd,
+    rcases set.eq_empty_or_nonempty b with rfl | ⟨⟨v₀, hv₀⟩⟩,
+    { use 0,
+      have h' : ∀ v : V, v = 0, { simpa [submodule.eq_bot_iff] using h.2.symm },
+      intro v,
+      simp [h' v] },
+    { use v₀,
+      have h' : submodule.span K {v₀} = ⊤, { simpa [hd.eq_singleton_of_mem hv₀] using h.2 },
+      intro v,
+      have hv : v ∈ (⊤ : submodule K V) := submodule.mem_top,
+      rwa [←h', submodule.mem_span_singleton] at hv } },
+  { rintros ⟨v₀, hv₀⟩,
+    have h : submodule.span K ({v₀} : set V) = ⊤,
+    { ext, simp [submodule.mem_span_singleton, hv₀] },
+    rw [←dim_top, ←h],
+    convert dim_span_le _,
+    simp }
+end
+
+/-- A submodule has dimension at most `1` if and only if there is a
+single vector of which all vectors are multiples. -/
+lemma dim_submodule_le_one_iff (s : submodule K V) :
+  vector_space.dim K s ≤ 1 ↔ ∃ v₀ ∈ s, ∀ v ∈ s, ∃ r : K, r • v₀ = v :=
+begin
+  rw dim_le_one_iff,
+  split,
+  { rintro ⟨⟨v₀, hv₀⟩, h⟩,
+    use [v₀, hv₀],
+    intros v hv,
+    obtain ⟨r, hr⟩ := h ⟨v, hv⟩,
+    use r,
+    simp_rw [subtype.ext_iff, submodule.coe_smul, submodule.coe_mk] at hr,
+    exact hr },
+  { rintro ⟨v₀, hv₀, h⟩,
+    use ⟨v₀, hv₀⟩,
+    rintro ⟨v, hv⟩,
+    obtain ⟨r, hr⟩ := h v hv,
+    use r,
+    simp_rw [subtype.ext_iff, submodule.coe_smul, submodule.coe_mk],
+    exact hr }
+end
+
+end dim_one
+
+section collinear
+
+variables (k : Type*) {V : Type*} {P : Type*} [field k] [add_comm_group V] [module k V]
 variables [affine_space V P]
 include V
 
--- TODO: would be better (avoid a long special-case proof for `fin 3`)
--- to prove affine independent of n+1 points iff findim = n, not
--- affine independent iff findim < n, then deduce these existence
--- forms as equivalent to findim <= 1.
+open vector_space finite_dimensional
 
-/-- A set of points is collinear if they can all be expressed as
-multiples of the same vector, added to the same base point. -/
-def collinear (s : set P) : Prop := ∃ (p₀ : P) (v : V), ∀ p ∈ s, ∃ r : k, p = r • v +ᵥ p₀
+/-- A set of points is collinear if their `vector_span` has dimension
+at most `1`. -/
+def collinear (s : set P) : Prop := dim k (vector_span k s) ≤ 1
 
 /-- The definition of `collinear`. -/
-lemma collinear_def (s : set P) :
-  collinear k s ↔ ∃ (p₀ : P) (v : V), ∀ p ∈ s, ∃ r : k, p = r • v +ᵥ p₀ :=
+lemma collinear_iff_dim_le_one (s : set P) : collinear k s ↔ dim k (vector_span k s) ≤ 1 :=
 iff.rfl
+
+/-- A set of points, whose `vector_span` is finite-dimensional, is
+collinear if and only if their `vector_span` has dimension at most
+`1`. -/
+lemma collinear_iff_findim_le_one (s : set P) [finite_dimensional k (vector_span k s)] :
+  collinear k s ↔ findim k (vector_span k s) ≤ 1 :=
+begin
+  have h := collinear_iff_dim_le_one k s,
+  rw ←findim_eq_dim at h,
+  exact_mod_cast h
+end
 
 variables (P)
 
 /-- The empty set is collinear. -/
 lemma collinear_empty : collinear k (∅ : set P) :=
 begin
-  use add_torsor.nonempty.some,
+  rw [collinear_iff_dim_le_one, vector_span_empty],
   simp
 end
 
@@ -45,13 +263,116 @@ variables {P}
 /-- A single point is collinear. -/
 lemma collinear_singleton (p : P) : collinear k ({p} : set P) :=
 begin
-  use [p, 0],
+  rw [collinear_iff_dim_le_one, vector_span_singleton],
   simp
+end
+
+-- TODO: split out more lemmas.  E.g. mem_span_of_mem /
+-- smul_mem_span_of_mem / span_singleton_smul_eq etc.
+
+/-- Given a point `p₀` in a set of points, that set is collinear if and
+only if the points can all be expressed as multiples of the same
+vector, added to `p₀`. -/
+lemma collinear_iff_of_mem {s : set P} {p₀ : P} (h : p₀ ∈ s) :
+  collinear k s ↔ ∃ v : V, ∀ p ∈ s, ∃ r : k, p = r • v +ᵥ p₀ :=
+begin
+  rw [collinear_iff_dim_le_one, dim_submodule_le_one_iff],
+  split,
+  { rintro ⟨v₀, hv₀, hv⟩,
+    use v₀,
+    intros p hp,
+    obtain ⟨r, hr⟩ := hv (p -ᵥ p₀) (vsub_mem_vector_span k hp h),
+    use r,
+    rw eq_vadd_iff_vsub_eq,
+    exact hr.symm },
+  { rintro ⟨v, hp₀v⟩,
+    by_cases hz : ∃ p₁ ∈ s, p₁ ≠ p₀,
+    { rcases hz with ⟨p₁, hp₁, hne⟩,
+      use [p₁ -ᵥ p₀, vsub_mem_vector_span k hp₁ h],
+      intros v₀ hv₀,
+      have hp₀v' : ∀ p ∈ s, ∃ r : k, p -ᵥ p₀ = r • v,
+      { intros p hp,
+        rcases hp₀v p hp with ⟨r, hr⟩,
+        use r,
+        rw ←eq_vadd_iff_vsub_eq,
+        exact hr },
+      have hs : vector_span k s = submodule.span k {v},
+      { rw vector_span_eq_span_vsub_set_right k h,
+        refine le_antisymm _ _,
+        { rw submodule.span_le,
+          intros v₁ hv₁,
+          rw set.mem_image at hv₁,
+          rcases hv₁ with ⟨p, hp, rfl⟩,
+          rcases hp₀v' p hp with ⟨r, hr⟩,
+          rw [hr, submodule.mem_coe, submodule.mem_span_singleton],
+          use r },
+        { have he : submodule.span k ({v} : set V) = submodule.span k {p₁ -ᵥ p₀},
+          { rcases hp₀v' p₁ hp₁ with ⟨r, hr⟩,
+            ext x,
+            simp_rw submodule.mem_span_singleton,
+            split,
+            { rintro ⟨r', rfl⟩,
+              use r' / r,
+              have h0 : r ≠ 0,
+              { rintro rfl,
+                rw [zero_smul, @vsub_eq_zero_iff_eq V] at hr,
+                simpa [hr] using hne },
+              rw [hr, smul_smul, div_mul_cancel _ h0] },
+            { rintro ⟨r', rfl⟩,
+              use r' * r,
+              rw [←smul_smul, hr] } },
+          rw he,
+          refine submodule.span_mono _,
+          simp [hp₁] } },
+      rw [hs, submodule.mem_span_singleton] at hv₀,
+      rcases hv₀ with ⟨r', rfl⟩,
+      rcases hp₀v' p₁ hp₁ with ⟨r'', hr''⟩,
+      use r' / r'',
+      have h0 : r'' ≠ 0,
+      { rintro rfl,
+        rw [zero_smul, @vsub_eq_zero_iff_eq V] at hr'',
+        simpa [hr''] using hne },
+      rw [hr'', smul_smul, div_mul_cancel _ h0] },
+    { push_neg at hz,
+      have hs : s = {p₀},
+      { ext x,
+        split,
+        { exact hz x },
+        { intro hx,
+          rw set.mem_singleton_iff at hx,
+          rwa hx } },
+      subst hs,
+      use [0, submodule.zero_mem _],
+      intros v hv,
+      use 0,
+      symmetry,
+      simpa using hv } }
+end
+
+/-- A set of points is collinear if and only if they can all be
+expressed as multiples of the same vector, added to the same base
+point. -/
+lemma collinear_iff_exists_forall_eq_smul_vadd (s : set P) :
+  collinear k s ↔ ∃ (p₀ : P) (v : V), ∀ p ∈ s, ∃ r : k, p = r • v +ᵥ p₀ :=
+begin
+  rcases set.eq_empty_or_nonempty s with rfl | ⟨⟨p₁, hp₁⟩⟩,
+  { simp [collinear_empty] },
+  { rw collinear_iff_of_mem k hp₁,
+    split,
+    { exact λ h, ⟨p₁, h⟩ },
+    { rintros ⟨p, v, hv⟩,
+      use v,
+      intros p₂ hp₂,
+      rcases hv p₂ hp₂ with ⟨r, rfl⟩,
+      rcases hv p₁ hp₁ with ⟨r₁, rfl⟩,
+      use r - r₁,
+      simp [vadd_assoc, ←add_smul] } }
 end
 
 /-- Two points are collinear. -/
 lemma collinear_insert_singleton (p₁ p₂ : P) : collinear k ({p₁, p₂} : set P) :=
 begin
+  rw collinear_iff_exists_forall_eq_smul_vadd,
   use [p₁, p₂ -ᵥ p₁],
   intros p hp,
   rw [set.mem_insert_iff, set.mem_singleton_iff] at hp,
@@ -62,105 +383,21 @@ begin
     simp [hp] }
 end
 
-/-- Given a point `p₀` in a set of points, that set is collinear if and
-only if the points can all be expressed as multiples of the same
-vector, added to `p₀`. -/
-lemma collinear_iff_of_mem {s : set P} {p₀ : P} (h : p₀ ∈ s) :
-  collinear k s ↔ ∃ v : V, ∀ p ∈ s, ∃ r : k, p = r • v +ᵥ p₀ :=
-begin
-  split,
-  { rintros ⟨p, v, hv⟩,
-    use v,
-    intros p₁ hp₁,
-    rcases hv p₁ hp₁ with ⟨r, rfl⟩,
-    rcases hv p₀ h with ⟨r₀, rfl⟩,
-    use r - r₀,
-    simp [vadd_assoc, ←add_smul] },
-  { exact λ h, ⟨p₀, h⟩ }
-end
-
-end collinear
-
-section collinear_division_ring
-
-variables (k : Type*) {V : Type*} {P : Type*} [division_ring k] [add_comm_group V] [module k V]
-variables [affine_space V P]
-include V
-
 /-- Three points are affinely independent if and only if they are not
 collinear. -/
 lemma affine_independent_iff_not_collinear (p : fin 3 → P) :
   affine_independent k p ↔ ¬ collinear k (set.range p) :=
-begin
-  split,
-  { intros ha hc,
-    rw collinear_iff_of_mem k (set.mem_range_self (0 : fin 3)) at hc,
-    rcases hc with ⟨v, hv⟩,
-    rcases hv (p 1) (set.mem_range_self 1) with ⟨r₁, hr₁⟩,
-    rcases hv (p 2) (set.mem_range_self 2) with ⟨r₂, hr₂⟩,
-    by_cases h : (r₁ = 0 ∨ r₂ = 0),
-    { cases h,
-      { rw [h, zero_smul, zero_vadd] at hr₁,
-        exact (dec_trivial : (1 : fin 3) ≠ 0) (injective_of_affine_independent ha hr₁) },
-      { rw [h, zero_smul, zero_vadd] at hr₂,
-        exact (dec_trivial : (2 : fin 3) ≠ 0) (injective_of_affine_independent ha hr₂) } },
-    { push_neg at h,
-      let w : fin 3 → k := ![r₁⁻¹ - r₂⁻¹, -r₁⁻¹, r₂⁻¹],
-      have hu : (finset.univ : finset (fin 3)) = {0, 1, 2}, by dec_trivial,
-      have hw : ∑ i, w i = 0,
-      { simp_rw [w, hu],
-        rw [finset.sum_insert (dec_trivial : 0 ∉ ({1, 2} : finset (fin 3))),
-            finset.sum_insert (dec_trivial : 1 ∉ ({2} : finset (fin 3))), finset.sum_singleton],
-        change r₁⁻¹ - r₂⁻¹ + (-r₁⁻¹ + r₂⁻¹) = 0,
-        abel },
-      have hp : finset.univ.weighted_vsub p w = (0 : V),
-      { rw [finset.univ.weighted_vsub_eq_weighted_vsub_of_point_of_sum_eq_zero w p hw (p 0),
-            finset.weighted_vsub_of_point_apply],
-        simp_rw [w, hu],
-        rw [finset.sum_insert (dec_trivial : 0 ∉ ({1, 2} : finset (fin 3))),
-            finset.sum_insert (dec_trivial : 1 ∉ ({2} : finset (fin 3))), finset.sum_singleton],
-        change (r₁⁻¹ - r₂⁻¹) • (p 0 -ᵥ p 0) + (-r₁⁻¹ • (p 1 -ᵥ p 0) + r₂⁻¹ • (p 2 -ᵥ p 0)) =
-          (0 : V),
-        simp [hr₁, hr₂, smul_smul, h] },
-      exact h.2 (inv_eq_zero.1 (ha finset.univ w hw hp 2 (finset.mem_univ _))) } },
-  { contrapose!,
-    intro hna,
-    rw affine_independent_iff_of_fintype at hna,
-    push_neg at hna,
-    rcases hna with ⟨w, hw, hs, i₁, hi₁⟩,
-    obtain ⟨i₂, h₂₁, hi₂⟩ : ∃ i₂, i₂ ≠ i₁ ∧ w i₂ ≠ 0,
-    { by_contradiction h,
-      push_neg at h,
-      rw finset.sum_eq_single i₁ (λ i _, h i) (λ hnu, false.elim (hnu (finset.mem_univ _))) at hw,
-      exact hi₁ hw },
-    obtain ⟨i₃, h₁₃, h₂₃, hu, hu', h₁, h₂⟩ :
-      ∃ i₃ : fin 3, i₁ ≠ i₃ ∧ i₂ ≠ i₃ ∧ finset.univ = ({i₁, i₂, i₃} : finset (fin 3)) ∧
-        (∀ i, i = i₁ ∨ i = i₂ ∨ i = i₃) ∧ i₁ ∉ ({i₂, i₃} : finset (fin 3)) ∧
-        i₂ ∉ ({i₃} : finset (fin 3)),
-    { clear hi₁ hi₂, dec_trivial! },
-    rw [finset.univ.weighted_vsub_eq_weighted_vsub_of_point_of_sum_eq_zero w p hw (p i₃),
-        finset.weighted_vsub_of_point_apply, hu, finset.sum_insert h₁, finset.sum_insert h₂,
-        finset.sum_singleton, vsub_self, smul_zero, add_zero] at hs,
-    use [p i₃, p i₁ -ᵥ p i₃],
-    rw set.forall_range_iff,
-    intro i,
-    replace hu' := hu' i,
-    repeat { cases hu' },
-    { use 1, simp },
-    { use -(w i₂)⁻¹ * w i₁,
-      rw add_eq_zero_iff_eq_neg at hs,
-      rw [←smul_smul, hs],
-      simp [hi₂, smul_smul] },
-    { use 0, simp } }
-end
+by rw [collinear_iff_findim_le_one,
+       affine_independent_iff_not_findim_vector_span_le k p (fintype.card_fin 3)]
 
 /-- Three points are collinear if and only if they are not affinely
 independent. -/
 lemma collinear_iff_not_affine_independent (p : fin 3 → P) :
   collinear k (set.range p) ↔ ¬ affine_independent k p :=
-(not_iff_comm.1 (affine_independent_iff_not_collinear k p).symm).symm
+by rw [collinear_iff_findim_le_one,
+       findim_vector_span_le_iff_not_affine_independent k p (fintype.card_fin 3)]
 
-end collinear_division_ring
+end collinear
 
 -- Geometrical definitions and results that should go in mathlib in
 -- some form (possibly more general).
