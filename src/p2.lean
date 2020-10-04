@@ -213,7 +213,7 @@ begin
 end
 
 /-- A submodule has dimension at most `1` if and only if there is a
-single vector of which all vectors are multiples. -/
+single vector in the submodule of which all vectors are multiples. -/
 lemma dim_submodule_le_one_iff (s : submodule K V) :
   vector_space.dim K s ≤ 1 ↔ ∃ v₀ ∈ s, ∀ v ∈ s, ∃ r : K, r • v₀ = v :=
 begin
@@ -233,6 +233,33 @@ begin
     use r,
     simp_rw [subtype.ext_iff, submodule.coe_smul, submodule.coe_mk],
     exact hr }
+end
+
+/-- A submodule has dimension at most `1` if and only if there is a
+single vector, not necessarily in the submodule, of which all vectors
+are multiples. -/
+lemma dim_submodule_le_one_iff' (s : submodule K V) :
+  vector_space.dim K s ≤ 1 ↔ ∃ v₀ : V, ∀ v ∈ s, ∃ r : K, r • v₀ = v :=
+begin
+  rw dim_submodule_le_one_iff,
+  split,
+  { rintros ⟨v₀, hv₀, h⟩,
+    exact ⟨v₀, h⟩ },
+  { rintros ⟨v₀, h⟩,
+    by_cases hw : ∃ w : V, w ∈ s ∧ w ≠ 0,
+    { rcases hw with ⟨w, hw, hw0⟩,
+      use [w, hw],
+      intros v hv,
+      rcases h v hv with ⟨r, rfl⟩,
+      rcases h w hw with ⟨r', rfl⟩,
+      use r / r',
+      have h0 : r' ≠ 0,
+      { rintro rfl,
+        simpa using hw0 },
+      simp [smul_smul, h0] },
+    { push_neg at hw,
+      rw ←submodule.eq_bot_iff at hw,
+      simp [hw] } }
 end
 
 end dim_one
@@ -308,9 +335,9 @@ vector, added to `p₀`. -/
 lemma collinear_iff_of_mem {s : set P} {p₀ : P} (h : p₀ ∈ s) :
   collinear k s ↔ ∃ v : V, ∀ p ∈ s, ∃ r : k, p = r • v +ᵥ p₀ :=
 begin
-  rw [collinear_iff_dim_le_one, dim_submodule_le_one_iff],
+  rw [collinear_iff_dim_le_one, dim_submodule_le_one_iff'],
   split,
-  { rintro ⟨v₀, hv₀, hv⟩,
+  { rintro ⟨v₀, hv⟩,
     use v₀,
     intros p hp,
     obtain ⟨r, hr⟩ := hv (p -ᵥ p₀) (vsub_mem_vector_span k hp h),
@@ -318,54 +345,19 @@ begin
     rw eq_vadd_iff_vsub_eq,
     exact hr.symm },
   { rintro ⟨v, hp₀v⟩,
-    by_cases hz : ∃ p₁ ∈ s, p₁ ≠ p₀,
-    { rcases hz with ⟨p₁, hp₁, hne⟩,
-      use [p₁ -ᵥ p₀, vsub_mem_vector_span k hp₁ h],
-      intros v₀ hv₀,
-      have hp₀v' : ∀ p ∈ s, ∃ r : k, p -ᵥ p₀ = r • v,
-      { intros p hp,
-        rcases hp₀v p hp with ⟨r, hr⟩,
-        use r,
-        rw ←eq_vadd_iff_vsub_eq,
-        exact hr },
-      have hs : vector_span k s = submodule.span k {v},
-      { rw vector_span_eq_span_vsub_set_right k h,
-        refine le_antisymm _ _,
-        { rw submodule.span_le,
-          intros v₁ hv₁,
-          rw set.mem_image at hv₁,
-          rcases hv₁ with ⟨p, hp, rfl⟩,
-          rcases hp₀v' p hp with ⟨r, hr⟩,
-          rw [hr, submodule.mem_coe, submodule.mem_span_singleton],
-          use r },
-        { have he : submodule.span k ({v} : set V) = submodule.span k {p₁ -ᵥ p₀},
-          { rcases hp₀v' p₁ hp₁ with ⟨r, hr⟩,
-            rw hr,
-            have h0 : r ≠ 0,
-            { rintro rfl,
-              rw [zero_smul, @vsub_eq_zero_iff_eq V] at hr,
-              simpa [hr] using hne },
-            exact (submodule.span_singleton_smul_eq v h0).symm },
-          rw he,
-          refine submodule.span_mono _,
-          simp [hp₁] } },
-      rw [hs, submodule.mem_span_singleton] at hv₀,
-      rcases hv₀ with ⟨r', rfl⟩,
-      rcases hp₀v' p₁ hp₁ with ⟨r'', hr''⟩,
-      use r' / r'',
-      have h0 : r'' ≠ 0,
-      { rintro rfl,
-        rw [zero_smul, @vsub_eq_zero_iff_eq V] at hr'',
-        simpa [hr''] using hne },
-      rw [hr'', smul_smul, div_mul_cancel _ h0] },
-    { push_neg at hz,
-      have hs : s = {p₀} := (set.eq_singleton_iff_unique_mem _ _).2 ⟨h, hz⟩,
-      subst hs,
-      use [0, submodule.zero_mem _],
-      intros v hv,
-      use 0,
-      symmetry,
-      simpa using hv } }
+    use v,
+    intros w hw,
+    have hs : vector_span k s ≤ submodule.span k ({v} : set V),
+    { rw [vector_span_eq_span_vsub_set_right k h, submodule.span_le, set.subset_def],
+      intros x hx,
+      rw [submodule.mem_coe, submodule.mem_span_singleton],
+      rw set.mem_image at hx,
+      rcases hx with ⟨p, hp, rfl⟩,
+      rcases hp₀v p hp with ⟨r, rfl⟩,
+      use r,
+      simp },
+    have hw' := submodule.le_def'.1 hs w hw,
+    rwa submodule.mem_span_singleton at hw' }
 end
 
 /-- A set of points is collinear if and only if they can all be
