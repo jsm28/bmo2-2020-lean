@@ -237,6 +237,26 @@ end
 
 end dim_one
 
+namespace submodule
+
+variables {R : Type*} {M : Type*} [semiring R] [add_comm_group M] [semimodule R M]
+
+lemma span_singleton_smul_le (r : R) (x : M) : span R ({r • x} : set M) ≤ span R {x} :=
+begin
+  rw [span_le, set.singleton_subset_iff, mem_coe],
+  exact smul_mem _ _ (mem_span_singleton_self _)
+end
+
+lemma span_singleton_smul_eq {K E : Type*} [division_ring K] [add_comm_group E] [module K E]
+  {r : K} (x : E) (hr : r ≠ 0) : span K ({r • x} : set E) = span K {x} :=
+begin
+  refine le_antisymm (span_singleton_smul_le r x) _,
+  convert span_singleton_smul_le r⁻¹ (r • x),
+  simp [smul_smul, hr]
+end
+
+end submodule
+
 section collinear
 
 variables (k : Type*) {V : Type*} {P : Type*} [field k] [add_comm_group V] [module k V]
@@ -282,9 +302,6 @@ begin
   simp
 end
 
--- TODO: split out more lemmas.  E.g. mem_span_of_mem /
--- smul_mem_span_of_mem / span_singleton_smul_eq etc.
-
 /-- Given a point `p₀` in a set of points, that set is collinear if and
 only if the points can all be expressed as multiples of the same
 vector, added to `p₀`. -/
@@ -323,19 +340,12 @@ begin
           use r },
         { have he : submodule.span k ({v} : set V) = submodule.span k {p₁ -ᵥ p₀},
           { rcases hp₀v' p₁ hp₁ with ⟨r, hr⟩,
-            ext x,
-            simp_rw submodule.mem_span_singleton,
-            split,
-            { rintro ⟨r', rfl⟩,
-              use r' / r,
-              have h0 : r ≠ 0,
-              { rintro rfl,
-                rw [zero_smul, @vsub_eq_zero_iff_eq V] at hr,
-                simpa [hr] using hne },
-              rw [hr, smul_smul, div_mul_cancel _ h0] },
-            { rintro ⟨r', rfl⟩,
-              use r' * r,
-              rw [←smul_smul, hr] } },
+            rw hr,
+            have h0 : r ≠ 0,
+            { rintro rfl,
+              rw [zero_smul, @vsub_eq_zero_iff_eq V] at hr,
+              simpa [hr] using hne },
+            exact (submodule.span_singleton_smul_eq v h0).symm },
           rw he,
           refine submodule.span_mono _,
           simp [hp₁] } },
