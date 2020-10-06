@@ -126,7 +126,7 @@ end
 -- Base case: if two consecutive terms are odd, the first is 3 mod 4.
 theorem induction_base (a : ℤ) (ha : odd a) (hb : odd (p1_seq_next a)) : a % 2^2 = 3 :=
 begin
-  rw [odd_def, not_even_iff] at ha hb,
+  rw [odd_iff] at ha hb,
   rw (show (2^2 : ℤ) = 2 * 2, by norm_num),
   have hcases : a % (2 * 2) = 1 ∨ a % (2 * 2) = 1 + 2,
   { exact mod_mul_2 _ _ _ dec_trivial ha },
