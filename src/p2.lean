@@ -41,21 +41,6 @@ at_least_four_points s ∧ no_three_points_collinear s ∧ same_circumradius s
 def p2_answer_desc (s : set P) : Prop :=
 at_least_four_points s ∧ (cospherical s ∨ orthocentric_system s)
 
-omit V
-
--- This was not needed as of mathlib commit
--- e21675586b974322f8221ee42b384a6932d75440 (although even with that
--- commit, simp didn't prove this reduced lemma, only the larger
--- result required after `fin_cases`), but as of mathlib commit
--- eaaac992d0a564071242d08fadffeee3043f91d7 it was needed for simp to
--- reduce extraction of elements of `fin 3`-indexed families
--- automatically.
-
-@[simp] lemma p2_fin3_3 {α : Type*} (a b c : α) : ![a, b, c] 2 = c :=
-rfl
-
-include V
-
 -- Given three points in a set with no three collinear, pairwise
 -- unequal, they are affinely independent.
 theorem p2_affine_independent_of_ne {s : set P} (hn3 : no_three_points_collinear s)
