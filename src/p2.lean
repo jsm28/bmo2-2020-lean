@@ -176,9 +176,9 @@ begin
     refl },
   -- So the circumcentres of t1 and t2 are in that span.
   have hc0s : t0.circumcenter ∈ affine_span ℝ (insert (t0.points i3) (set.range t12.points)),
-  { simp [h123] },
+  { simp [h123, -matrix.range_cons] },
   have hc1s : t1.circumcenter ∈ affine_span ℝ (insert (t0.points i3) (set.range t12.points)),
-  { simp [h123] },
+  { simp [h123, -matrix.range_cons] },
   -- All points of t12 have distance from the circumcentres of t0 and
   -- t1 equal to the circumradius of t1.
   have hr0 : ∀ i, dist (t12.points i) t0.circumcenter = t0.circumradius,
