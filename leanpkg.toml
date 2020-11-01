@@ -1,8 +1,8 @@
 [package]
 name = "bmo2-2020-lean"
 version = "0.1"
-lean_version = "leanprover-community/lean:3.21.0"
+lean_version = "leanprover-community/lean:3.23.0"
 path = "src"
 
 [dependencies]
-mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "cae77dc794ad18c1bc6ed361b7902aa9b1fb2fda"}
+mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "4aa087aa4b424a64a4673cee7fbf670aac04470a"}
