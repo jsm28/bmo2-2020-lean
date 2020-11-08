@@ -412,7 +412,7 @@ theorem rows_alternate_or_not (n : ℕ) :
   balanced_colourings_r n ∪ balanced_colourings_no_r n = balanced_colourings (n + 1) :=
 begin
   unfold balanced_colourings_r balanced_colourings_no_r,
-  convert filter_union_filter_neg_eq (balanced_colourings (n + 1))
+  convert filter_union_filter_neg_eq _ (balanced_colourings (n + 1))
 end
 
 -- These have empty intersection.
@@ -420,7 +420,7 @@ theorem rows_alternate_xor_not (n : ℕ) :
   balanced_colourings_r n ∩ balanced_colourings_no_r n = ∅ :=
 begin
   unfold balanced_colourings_r balanced_colourings_no_r,
-  convert filter_inter_filter_neg_eq (balanced_colourings (n + 1))
+  convert filter_inter_filter_neg_eq _ (balanced_colourings (n + 1))
 end
 
 -- Thus the cardinality of the set of balanced colourings.
@@ -453,14 +453,14 @@ theorem r_cols_alternate_or_not (n : ℕ) :
   balanced_colourings_r_c n ∪ balanced_colourings_r_no_c n = balanced_colourings_r n :=
 begin
   unfold balanced_colourings_r_c balanced_colourings_r_no_c,
-  convert filter_union_filter_neg_eq (balanced_colourings_r n)
+  convert filter_union_filter_neg_eq _ (balanced_colourings_r n)
 end
 
 theorem r_cols_alternate_xor_not (n : ℕ) :
   balanced_colourings_r_c n ∩ balanced_colourings_r_no_c n = ∅ :=
 begin
   unfold balanced_colourings_r_c balanced_colourings_r_no_c,
-  convert filter_inter_filter_neg_eq (balanced_colourings_r n)
+  convert filter_inter_filter_neg_eq _ (balanced_colourings_r n)
 end
 
 theorem card_split_r_c (n : ℕ) :
@@ -477,14 +477,14 @@ theorem no_r_cols_alternate_or_not (n : ℕ) :
   balanced_colourings_no_r_c n ∪ balanced_colourings_no_r_no_c n = balanced_colourings_no_r n :=
 begin
   unfold balanced_colourings_no_r_c balanced_colourings_no_r_no_c,
-  convert filter_union_filter_neg_eq (balanced_colourings_no_r n)
+  convert filter_union_filter_neg_eq _ (balanced_colourings_no_r n)
 end
 
 theorem no_r_cols_alternate_xor_not (n : ℕ) :
   balanced_colourings_no_r_c n ∩ balanced_colourings_no_r_no_c n = ∅ :=
 begin
   unfold balanced_colourings_no_r_c balanced_colourings_no_r_no_c,
-  convert filter_inter_filter_neg_eq (balanced_colourings_no_r n)
+  convert filter_inter_filter_neg_eq _ (balanced_colourings_no_r n)
 end
 
 theorem card_split_no_r_c (n : ℕ) :
@@ -2506,7 +2506,7 @@ finset.univ.filter row_cols_alternate
 
 theorem row_alt_colourings_union (n : ℕ) :
   row_alt_colourings n = row_alt_colourings_0 n ∪ row_alt_colourings_1 n :=
-filter_or _
+filter_or _ _ _
 
 theorem row_alt_colourings_inter (n : ℕ) :
   row_alt_colourings_01 n = row_alt_colourings_0 n ∩ row_alt_colourings_1 n :=
@@ -2643,7 +2643,7 @@ begin
             (0 < x ∧ (((2 * x - 1 - parity : ℕ) : fin (n + 1)) ∈ c ↔
                ¬ ((2 * x - parity : ℕ) : fin (n + 1)) ∈ c)))),
     erw mem_powerset,
-    use filter_subset _,
+    use filter_subset _ _,
     have hn : ∀ k : ℕ, k < n + 1 →
       ((k : fin (n + 1)) ∈
         map_to_alt_colouring (n + 1) parity ((Ico 0 ((n + parity) / 2 + 1)).filter
