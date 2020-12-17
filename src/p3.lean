@@ -1615,10 +1615,7 @@ begin
   unfold sub_balanced,
   rw imbalance_eq _ _ _ _ ha hb,
   rw sub_black_even_rows _ _ _ _ _ ha hb,
-  norm_cast,
-  ring,
-  rw [mul_assoc, sub_self],
-  norm_num
+  simp [mul_assoc]
 end
 
 -- The imbalance of an odd subgrid of a row.

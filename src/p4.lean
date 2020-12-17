@@ -4,8 +4,8 @@
 -- rather than at 1 as in the original problem.
 
 import data.polynomial
-import data.real.basic
 import data.real.cardinality
+import data.real.sqrt
 import tactic.basic
 import tactic.linarith
 import tactic.ring_exp
@@ -214,7 +214,8 @@ begin
     { unfold p4_term,
       unfold p4_seq_next,
       apply continuous_at.div,
-      { apply continuous_at.add,
+      { simp_rw sub_eq_add_neg,
+        apply continuous_at.add,
         { apply continuous_at.mul,
           { exact hm (nat.succ m) (by refl), },
           { exact hm (nat.succ m) (by refl), } },
