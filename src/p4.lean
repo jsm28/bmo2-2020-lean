@@ -38,7 +38,7 @@ begin
   unfold p4_seq_next at hz,
   have hzz : (y * y - 1) / x * x ≠ 0 := mul_ne_zero hz hx,
   rw [div_mul_cancel _ hx] at hzz,
-  field_simp [hx, hy, hzz],
+  field_simp,
   ring,
 end
 
@@ -81,7 +81,7 @@ theorem invar_rearranged (x y : ℝ) (hx : x ≠ 0) (hy : y ≠ 0) :
    (-((p4_invar x y) / 4)) * ((x + y) * (x + y)) = 1 :=
 begin
   unfold p4_invar,
-  field_simp [hx, hy, mul_ne_zero hx hy, (show (4 : ℝ) ≠ 0, by norm_num)],
+  field_simp,
   ring,
 end
 
@@ -197,7 +197,7 @@ begin
       have hm1 : (↑m : ℝ) + 1 ≠ 0,
       { norm_cast,
         exact dec_trivial },
-      field_simp [hm1],
+      field_simp,
       ring } }
 end
 
@@ -354,7 +354,7 @@ begin
       { intro hz,
         rw [hz, div_zero] at ht2,
         exact hm (nat.succ t) (nat.lt_succ_self _) ht2 },
-      field_simp [ht1a, ht1b, ht2a, ht2b] } }
+      field_simp } }
 end
 
 -- The numerator and denominator polynomials are not identically zero.
