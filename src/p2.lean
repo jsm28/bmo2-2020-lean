@@ -194,10 +194,11 @@ begin
   -- So the circumcentres are the same or reflections of each other.
   cases eq_or_eq_reflection_of_dist_eq hc1s hc0s hr1 hr0,
   { exact false.elim (ht1cc h) },
-  { have hr : t0.points '' ↑({i1, i2} : finset (fin 3)) = set.range t12.points,
+  { have hr : affine_span ℝ (t0.points '' ↑({i1, i2} : finset (fin 3))) =
+      affine_span ℝ (set.range t12.points),
     { rw [←set.image_univ, hu2],
       simp [t12, set.image_insert_eq] },
-    rw [hr, ←h],
+    rw [eq_reflection_of_eq_subspace hr, ←h],
     change dist (t1.points 2) _ = _,
     simp [ht1cr] }
 end
@@ -245,7 +246,12 @@ begin
               reflection (affine_span ℝ (t0.points '' ↑({i1, i3} : finset (fin 3))))
                          t0.circumcenter,
   { intro h,
-    rw [reflection_eq_iff_orthogonal_projection_eq, t0.orthogonal_projection_circumcenter hc12,
+    have hf12 : affine_span ℝ (t0.points '' ↑({i1, i2} : finset (fin 3))) =
+      affine_span ℝ (set.range (t0.face hc12).points), { simp },
+    have hf13 : affine_span ℝ (t0.points '' ↑({i1, i3} : finset (fin 3))) =
+      affine_span ℝ (set.range (t0.face hc13).points), { simp },
+    rw [eq_reflection_of_eq_subspace hf12, eq_reflection_of_eq_subspace hf13,
+        reflection_eq_iff_orthogonal_projection_eq, t0.orthogonal_projection_circumcenter hc12,
         t0.orthogonal_projection_circumcenter hc13, (t0.face hc12).circumcenter_eq_centroid,
         (t0.face hc13).circumcenter_eq_centroid, t0.face_centroid_eq_iff] at h,
     exact h1213 h },
