@@ -2716,7 +2716,7 @@ begin
               add_comm 1 _, ←add_assoc, ht4],
           by_cases halt : (t : fin (n + 1)) ∈ c ↔ ¬ ((t + 1 : ℕ) : fin (n + 1)) ∈ c,
           { simp [halt] },
-          { simp [halt, -nat.cast_succ],
+          { simp [halt, -nat.cast_succ, -nat.cast_add],
             tauto } } } },
     ext a,
     rw ←fin.coe_coe_eq_self a,
