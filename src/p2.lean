@@ -373,7 +373,6 @@ begin
     right,
     use t0,
     push_neg at hc,
-    simp_rw ←ne.def at hc,
     simp_rw ←hr t0 ht0s at hr,
     rcases hc with ⟨p, hps, hpr⟩,
     have hpo := p2_eq_orthocentre hd2 hn3 ht0s hr hps hpr,

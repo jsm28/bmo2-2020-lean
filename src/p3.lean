@@ -412,7 +412,8 @@ theorem rows_alternate_or_not (n : ℕ) :
   balanced_colourings_r n ∪ balanced_colourings_no_r n = balanced_colourings (n + 1) :=
 begin
   unfold balanced_colourings_r balanced_colourings_no_r,
-  convert filter_union_filter_neg_eq _ (balanced_colourings (n + 1))
+  convert filter_union_filter_neg_eq _ (balanced_colourings (n + 1)),
+  exact classical.dec_pred _
 end
 
 -- These have empty intersection.
@@ -453,7 +454,8 @@ theorem r_cols_alternate_or_not (n : ℕ) :
   balanced_colourings_r_c n ∪ balanced_colourings_r_no_c n = balanced_colourings_r n :=
 begin
   unfold balanced_colourings_r_c balanced_colourings_r_no_c,
-  convert filter_union_filter_neg_eq _ (balanced_colourings_r n)
+  convert filter_union_filter_neg_eq _ (balanced_colourings_r n),
+  exact classical.dec_pred _
 end
 
 theorem r_cols_alternate_xor_not (n : ℕ) :
@@ -477,7 +479,8 @@ theorem no_r_cols_alternate_or_not (n : ℕ) :
   balanced_colourings_no_r_c n ∪ balanced_colourings_no_r_no_c n = balanced_colourings_no_r n :=
 begin
   unfold balanced_colourings_no_r_c balanced_colourings_no_r_no_c,
-  convert filter_union_filter_neg_eq _ (balanced_colourings_no_r n)
+  convert filter_union_filter_neg_eq _ (balanced_colourings_no_r n),
+  exact classical.dec_pred _
 end
 
 theorem no_r_cols_alternate_xor_not (n : ℕ) :
