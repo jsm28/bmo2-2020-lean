@@ -124,7 +124,7 @@ variables [finite_dimensional ℝ V]
 -- point in that set that is not on the circumcircle of the triangle
 -- must have distance to the reflection of the circumcentre in a side
 -- equal to the circumradius.
-theorem p2_dist_reflection_circumcentre {s : set P} (hd2 : findim ℝ V = 2)
+theorem p2_dist_reflection_circumcentre {s : set P} (hd2 : finrank ℝ V = 2)
     (hn3 : no_three_points_collinear s) {t0 : triangle ℝ P} {p : P}
     (ht0s : set.range t0.points ⊆ s)
     (hr : ∀ (t : triangle ℝ P), set.range t.points ⊆ s → t.circumradius = t0.circumradius)
@@ -167,7 +167,7 @@ begin
     simp },
   have h123 : affine_span ℝ (insert (t0.points i3) (set.range t12.points)) = ⊤,
   { have ht0span : affine_span ℝ (set.range t0.points) = ⊤,
-    { refine affine_span_eq_top_of_affine_independent_of_card_eq_findim_add_one t0.independent _,
+    { refine affine_span_eq_top_of_affine_independent_of_card_eq_finrank_add_one t0.independent _,
       simp [hd2] },
     rw ←ht0span,
     congr,
@@ -206,7 +206,7 @@ end
 -- Given a triangle in a set with the properties of the problem, any
 -- point in that set that is not on the circumcircle of the triangle
 -- must be its orthocentre.
-theorem p2_eq_orthocentre {s : set P} (hd2 : findim ℝ V = 2) (hn3 : no_three_points_collinear s)
+theorem p2_eq_orthocentre {s : set P} (hd2 : finrank ℝ V = 2) (hn3 : no_three_points_collinear s)
     {t0 : triangle ℝ P} {p : P} (ht0s : set.range t0.points ⊆ s)
     (hr : ∀ (t : triangle ℝ P), set.range t.points ⊆ s → t.circumradius = t0.circumradius)
     (hp : p ∈ s) (hpn : dist p t0.circumcenter ≠ t0.circumradius) :
@@ -257,7 +257,7 @@ begin
     exact h1213 h },
   -- Thus p is either vertex i1 or the orthocentre.
   have hpeq :=
-    eq_of_dist_eq_of_dist_eq_of_findim_eq_two hd2 hrne hi1o hi12 ho2 hp12 hi13 ho3 hp13,
+    eq_of_dist_eq_of_dist_eq_of_finrank_eq_two hd2 hrne hi1o hi12 ho2 hp12 hi13 ho3 hp13,
   cases hpeq,
   { rw [hpeq, t0.dist_circumcenter_eq_circumradius] at hpn,
     exact false.elim (hpn rfl) },
@@ -267,7 +267,7 @@ end
 -- Given p on the circumcircle of t0, not a vertex, not the
 -- orthocentre, the orthocentre not on the circumcircle; derive a
 -- contradiction.
-theorem p2_orthocentre_extra {s : set P} (hd2 : findim ℝ V = 2)
+theorem p2_orthocentre_extra {s : set P} (hd2 : finrank ℝ V = 2)
     (hn3 : no_three_points_collinear s) {t0 : triangle ℝ P} (ht0s : set.range t0.points ⊆ s)
     (hr : ∀ (t : triangle ℝ P), set.range t.points ⊆ s → t.circumradius = t0.circumradius)
     (hos : t0.orthocenter ∈ s) (hor : dist t0.orthocenter t0.circumcenter ≠ t0.circumradius)
@@ -305,13 +305,13 @@ begin
     have ht2s : set.range t2.points ⊆ s :=
       p2_triangle_of_ne_range_subset hn3 (h0s 0) (h0s 1) hp h01 (h0np 0) (h0np 1),
     have ht0span : affine_span ℝ (set.range t0.points) = ⊤,
-    { refine affine_span_eq_top_of_affine_independent_of_card_eq_findim_add_one t0.independent _,
+    { refine affine_span_eq_top_of_affine_independent_of_card_eq_finrank_add_one t0.independent _,
       simp [hd2] },
     have ht1span : affine_span ℝ (set.range t1.points) = ⊤,
-    { refine affine_span_eq_top_of_affine_independent_of_card_eq_findim_add_one t1.independent _,
+    { refine affine_span_eq_top_of_affine_independent_of_card_eq_finrank_add_one t1.independent _,
       simp [hd2] },
     have ht2span : affine_span ℝ (set.range t2.points) = ⊤,
-    { refine affine_span_eq_top_of_affine_independent_of_card_eq_findim_add_one t2.independent _,
+    { refine affine_span_eq_top_of_affine_independent_of_card_eq_finrank_add_one t2.independent _,
       simp [hd2] },
     have ht02cc : t0.circumcenter = t2.circumcenter,
     { have h : ∀ (i : fin 3), dist (t2.points i) t0.circumcenter = t0.circumradius,
@@ -357,7 +357,7 @@ end
 
 -- The main part of the solution: a set with the given property is as
 -- described.
-theorem p2_result_main {s : set P} (hd2 : findim ℝ V = 2) (h4 : at_least_four_points s)
+theorem p2_result_main {s : set P} (hd2 : finrank ℝ V = 2) (h4 : at_least_four_points s)
     (hn3 : no_three_points_collinear s) {r : ℝ}
     (hr : ∀ (t : triangle ℝ P), set.range t.points ⊆ s → simplex.circumradius t = r) :
   cospherical s ∨ orthocentric_system s :=
@@ -398,7 +398,7 @@ begin
 end
 
 -- The result of the problem.
-theorem p2_result (s : set P) (hd2 : findim ℝ V = 2) :
+theorem p2_result (s : set P) (hd2 : finrank ℝ V = 2) :
   p2_problem_desc s ↔ p2_answer_desc s :=
 begin
   unfold p2_problem_desc p2_answer_desc,

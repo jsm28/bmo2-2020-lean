@@ -63,7 +63,7 @@ lemma neg_vector_map_of_point_map_of_add (f : P1 → P2) (p : P1) (v : V1) :
   -vector_map_of_point_map V1 V2 f (v +ᵥ p) (-v) = vector_map_of_point_map V1 V2 f p v :=
 begin
   unfold vector_map_of_point_map,
-  rw [vadd_assoc, neg_add_self, zero_vadd, neg_vsub_eq_vsub_rev]
+  rw [←add_vadd, neg_add_self, zero_vadd, neg_vsub_eq_vsub_rev]
 end
 
 /-- An isometry preserves the inner product. -/
@@ -76,7 +76,7 @@ begin
       real_inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two,
       real_inner_eq_norm_mul_self_add_norm_mul_self_sub_norm_sub_mul_self_div_two],
   unfold vector_map_of_point_map,
-  rw [vadd_assoc, neg_add_self, zero_vadd, add_comm, vsub_add_vsub_cancel, ←dist_eq_norm_vsub V2,
+  rw [←add_vadd, neg_add_self, zero_vadd, add_comm, vsub_add_vsub_cancel, ←dist_eq_norm_vsub V2,
       ←dist_eq_norm_vsub V2, ←dist_eq_norm_vsub V2, isometry.dist_eq h, isometry.dist_eq h,
       isometry.dist_eq h, dist_eq_norm_vsub V1 _ p, dist_eq_norm_vsub V1 _ (x +ᵥ p),
       dist_eq_norm_vsub V1 _ (x +ᵥ p), vadd_vsub, vsub_vadd_eq_vsub_sub, vsub_vadd_eq_vsub_sub,

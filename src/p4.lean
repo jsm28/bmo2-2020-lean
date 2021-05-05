@@ -89,7 +89,7 @@ end
 theorem square_bounds_1 (a b x y : ℝ) (ha : 0 < a) (hb : 0 < b)
   (hs : a * (x * x) + b * (y * y) = 1) : abs x ≤ sqrt (1 / a) :=
 begin
-  apply le_sqrt_of_sqr_le,
+  apply le_sqrt_of_sq_le,
   rw [(show abs x ^ 2 = abs x * abs x, by ring), abs_mul_abs_self],
   have hb2 : 0 ≤ b * (y * y) := mul_nonneg (le_of_lt hb) (mul_self_nonneg y),
   have hs2 : a * (x * x) ≤ 1, { linarith },

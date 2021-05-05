@@ -579,7 +579,7 @@ begin
   norm_cast,
   rw ←nat.le_div_iff_mul_le _ _ (dec_trivial : 2 > 0),
   norm_num,
-  rw sub_eq_zero_iff_eq,
+  rw sub_eq_zero,
   norm_cast
 end
 
@@ -2022,9 +2022,9 @@ begin
   by_cases h : (((a : ℕ) + 2 * k2 : ℕ) : fin (n + 1)) ∈ c,
   { rw if_pos h,
     push_cast,
-    ring },
+    ring_nf },
   { rw if_neg h,
-    ring }
+    ring_nf }
 end
 
 -- The number of black cells in an odd number of columns of a row,
@@ -2067,9 +2067,9 @@ begin
   by_cases h : a ∈ c,
   { rw if_pos h,
     push_cast,
-    ring },
+    ring_nf },
   { rw if_neg h,
-    ring }
+    ring_nf }
 end
 
 -- The columns of a row always alternate at the given parity.
@@ -2205,10 +2205,10 @@ begin
   by_cases h : a ∈ c,
   { rw if_pos h,
     push_cast,
-    ring },
+    ring_nf },
   { rw if_neg h,
     push_cast,
-    ring }
+    ring_nf }
 end
 
 -- Thus, not row_balanced in that case.
@@ -2568,7 +2568,7 @@ theorem card_row_alt_r_no_c_eq (n : ℕ) :
 begin
   rw [row_alt_colourings_r_no_c_eq_sdiff, card_sdiff (row_alt_colourings_01_subset n),
       card_row_alt_eq, nat.sub_sub],
-  ring
+  ring_nf
 end
 
 -- Thus the cardinality of the set of balanced colourings, in two
@@ -2583,7 +2583,7 @@ theorem card_split_2_parity (n : ℕ) :
 begin
   rw [card_split_2_alt, card_row_alt_r_c_eq, card_row_alt_r_no_c_eq, nat.mul_sub_left_distrib,
       nat.left_distrib, add_comm, ←mul_assoc],
-  ring
+  ring_nf
 end
 
 -- Define a mapping from finset ℕ to infinite sequences of whether a
@@ -2780,8 +2780,8 @@ begin
           ←hb1, h1p2, zero_add] at ha,
       by_cases hax : a ∈ x; by_cases hay : a ∈ y; simp [hax, hay, h1p] at ha; tauto },
     { have hage : n + 1 ≤ 2 * b + (1 - parity) + 1, { linarith },
-      erw mem_powerset at hx,
-      erw mem_powerset at hy,
+      rw [map_to_alt_colouring_domain, mem_coe, mem_powerset] at hx,
+      rw [map_to_alt_colouring_domain, mem_coe, mem_powerset] at hy,
       have hnx : ¬ a ∈ x,
       { intro hax,
         have hax2 := mem_of_subset hx hax,
@@ -2905,7 +2905,7 @@ begin
   rw [card_split_2_parity, result_0, result_1, result_01,
       mul_comm 2 _, mul_comm 2 _],
   norm_num,
-  ring
+  ring_nf
 end
 
 -- The result of the problem, for 2019.
