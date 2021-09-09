@@ -141,7 +141,7 @@ begin
   -- of t0, together with p.
   have h0s : ∀ i : fin 3, t0.points i ∈ s,
   { rwa set.range_subset_iff at ht0s },
-  have h12 := (injective_of_affine_independent t0.independent).ne hi12,
+  have h12 := t0.independent.injective.ne hi12,
   have hnp : ∀ i : fin 3, t0.points i ≠ p,
   { intros i he,
     rw ←he at hpn,
@@ -167,7 +167,7 @@ begin
     simp },
   have h123 : affine_span ℝ (insert (t0.points i3) (set.range t12.points)) = ⊤,
   { have ht0span : affine_span ℝ (set.range t0.points) = ⊤,
-    { refine affine_span_eq_top_of_affine_independent_of_card_eq_finrank_add_one t0.independent _,
+    { refine t0.independent.affine_span_eq_top_of_card_eq_finrank_add_one _,
       simp [hd2] },
     rw ←ht0span,
     congr,
@@ -213,8 +213,7 @@ theorem p2_eq_orthocentre {s : set P} (hd2 : finrank ℝ V = 2) (hn3 : no_three_
   p = t0.orthocenter :=
 begin
   -- First find a vertex not equal to the orthocentre.
-  obtain ⟨i1 : fin 3, hi1o⟩ :=
-    (injective_of_affine_independent t0.independent).exists_ne t0.orthocenter,
+  obtain ⟨i1 : fin 3, hi1o⟩ := t0.independent.injective.exists_ne t0.orthocenter,
   obtain ⟨i2, i3, h12, h23, h13, hc12, hc13, h1213⟩ :
     ∃ i2 i3, i1 ≠ i2 ∧ i2 ≠ i3 ∧ i1 ≠ i3 ∧ finset.card ({i1, i2} : finset (fin 3)) = 2 ∧
       finset.card ({i1, i3} : finset (fin 3)) = 2 ∧ ({i1, i2} : finset (fin 3)) ≠ {i1, i3},
@@ -291,7 +290,7 @@ begin
     exact ⟨i, h⟩ },
   have h01 : t0.points 0 ≠ t0.points 1,
   { intro h,
-    have hi := injective_of_affine_independent t0.independent h,
+    have hi := t0.independent.injective h,
     exact fin.ne_of_vne dec_trivial hi },
   let t1 : triangle ℝ P := p2_triangle_of_ne hn3 (h0s 0) (h0s 1) hos h01 (h0no 0) (h0no 1),
   have ht1s : set.range t1.points ⊆ s :=
@@ -305,13 +304,13 @@ begin
     have ht2s : set.range t2.points ⊆ s :=
       p2_triangle_of_ne_range_subset hn3 (h0s 0) (h0s 1) hp h01 (h0np 0) (h0np 1),
     have ht0span : affine_span ℝ (set.range t0.points) = ⊤,
-    { refine affine_span_eq_top_of_affine_independent_of_card_eq_finrank_add_one t0.independent _,
+    { refine t0.independent.affine_span_eq_top_of_card_eq_finrank_add_one _,
       simp [hd2] },
     have ht1span : affine_span ℝ (set.range t1.points) = ⊤,
-    { refine affine_span_eq_top_of_affine_independent_of_card_eq_finrank_add_one t1.independent _,
+    { refine t1.independent.affine_span_eq_top_of_card_eq_finrank_add_one _,
       simp [hd2] },
     have ht2span : affine_span ℝ (set.range t2.points) = ⊤,
-    { refine affine_span_eq_top_of_affine_independent_of_card_eq_finrank_add_one t2.independent _,
+    { refine t2.independent.affine_span_eq_top_of_card_eq_finrank_add_one _,
       simp [hd2] },
     have ht02cc : t0.circumcenter = t2.circumcenter,
     { have h : ∀ (i : fin 3), dist (t2.points i) t0.circumcenter = t0.circumradius,
