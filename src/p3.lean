@@ -421,7 +421,8 @@ theorem rows_alternate_xor_not (n : ℕ) :
   balanced_colourings_r n ∩ balanced_colourings_no_r n = ∅ :=
 begin
   unfold balanced_colourings_r balanced_colourings_no_r,
-  convert filter_inter_filter_neg_eq _ (balanced_colourings (n + 1))
+  convert filter_inter_filter_neg_eq _ (balanced_colourings (n + 1)),
+  exact classical.dec_pred _
 end
 
 -- Thus the cardinality of the set of balanced colourings.
@@ -462,7 +463,8 @@ theorem r_cols_alternate_xor_not (n : ℕ) :
   balanced_colourings_r_c n ∩ balanced_colourings_r_no_c n = ∅ :=
 begin
   unfold balanced_colourings_r_c balanced_colourings_r_no_c,
-  convert filter_inter_filter_neg_eq _ (balanced_colourings_r n)
+  convert filter_inter_filter_neg_eq _ (balanced_colourings_r n),
+  exact classical.dec_pred _
 end
 
 theorem card_split_r_c (n : ℕ) :
@@ -487,7 +489,8 @@ theorem no_r_cols_alternate_xor_not (n : ℕ) :
   balanced_colourings_no_r_c n ∩ balanced_colourings_no_r_no_c n = ∅ :=
 begin
   unfold balanced_colourings_no_r_c balanced_colourings_no_r_no_c,
-  convert filter_inter_filter_neg_eq _ (balanced_colourings_no_r n)
+  convert filter_inter_filter_neg_eq _ (balanced_colourings_no_r n),
+  exact classical.dec_pred _
 end
 
 theorem card_split_no_r_c (n : ℕ) :
