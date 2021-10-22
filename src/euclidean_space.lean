@@ -45,8 +45,7 @@ begin
 end
 
 /-- A function that preserves the inner product is a linear map. -/
-def linear_map_of_preserves_inner {f : V1 → V2} (h : preserves_inner f) :
-  linear_map ℝ V1 V2 :=
+def linear_map_of_preserves_inner {f : V1 → V2} (h : preserves_inner f) : V1 →ₗ[ℝ] V2 :=
 { to_fun := f,
   map_add' := fn_of_add_eq_add_of_fn_of_preserves_inner h,
   map_smul' := fn_of_smul_eq_smul_of_fn_of_preserves_inner h }
@@ -114,7 +113,7 @@ vector_map_of_point_map V1 V2 f (classical.choice S1.nonempty)
 
 /-- The linear map on vectors corresponding to a map from P1 to P2,
 for an isometry. -/
-def linear_map_of_isometry {f : P1 → P2} (h : isometry f) : linear_map ℝ V1 V2 :=
+def linear_map_of_isometry {f : P1 → P2} (h : isometry f) : V1 →ₗ[ℝ] V2 :=
 linear_map_of_preserves_inner (preserves_inner_of_isometry V1 V2 h (classical.choice S1.nonempty))
 
 /-- An isometry is an affine map. -/
