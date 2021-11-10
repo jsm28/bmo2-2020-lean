@@ -95,7 +95,7 @@ begin
     rw h4,
     simp },
   haveI : fintype s' := hf.fintype,
-  rw [cardinal.fintype_card, ←finset.card_univ] at h4,
+  rw [cardinal.mk_fintype, ←finset.card_univ] at h4,
   norm_cast at h4,
   obtain ⟨p1', hp1'⟩ : (finset.univ : finset s').nonempty,
   { simp [←finset.card_pos, h4] },
