@@ -2585,7 +2585,7 @@ theorem card_split_2_parity (n : ℕ) :
 begin
   rw [card_split_2_alt, card_row_alt_r_c_eq, card_row_alt_r_no_c_eq, nat.mul_sub_left_distrib,
       nat.left_distrib, add_comm, ←mul_assoc],
-  ring_nf
+  congr
 end
 
 -- Define a mapping from finset ℕ to infinite sequences of whether a
