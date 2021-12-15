@@ -756,7 +756,7 @@ begin
   conv_lhs { congr, congr, rw cell_eq_eq },
   rw filter_eq,
   by_cases a ∈ c,
-  all_goals { finish }
+  all_goals { simp [h] }
 end
 
 -- Two rows alternate in position b if and only if they alternate in
