@@ -250,7 +250,8 @@ begin
     have hf13 : affine_span ℝ (t0.points '' ↑({i1, i3} : finset (fin 3))) =
       affine_span ℝ (set.range (t0.face hc13).points), { simp },
     rw [eq_reflection_of_eq_subspace hf12, eq_reflection_of_eq_subspace hf13,
-        reflection_eq_iff_orthogonal_projection_eq, t0.orthogonal_projection_circumcenter hc12,
+        reflection_eq_iff_orthogonal_projection_eq, ←affine.simplex.orthogonal_projection_span,
+        ←affine.simplex.orthogonal_projection_span, t0.orthogonal_projection_circumcenter hc12,
         t0.orthogonal_projection_circumcenter hc13, (t0.face hc12).circumcenter_eq_centroid,
         (t0.face hc13).circumcenter_eq_centroid, t0.face_centroid_eq_iff] at h,
     exact h1213 h },
