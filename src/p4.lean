@@ -3,6 +3,7 @@
 -- Choices made for formalization: we index the sequence starting at 0
 -- rather than at 1 as in the original problem.
 
+import analysis.normed.normed_field
 import data.polynomial
 import data.real.cardinality
 import data.real.sqrt
