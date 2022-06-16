@@ -91,7 +91,7 @@ begin
   rw cardinal.le_mk_iff_exists_subset at h4,
   rcases h4 with ⟨s', hs', h4⟩,
   have hf : s'.finite,
-  { refine cardinal.lt_omega_iff_finite.1 _,
+  { refine cardinal.lt_aleph_0_iff_finite.1 _,
     rw h4,
     simp },
   haveI : fintype s' := hf.fintype,

@@ -3,7 +3,7 @@
 -- Choices made for formalization: we index the sequence starting at 0
 -- rather than at 1 as in the original problem.
 
-import analysis.normed.normed_field
+import analysis.normed.field.basic
 import data.polynomial
 import data.real.cardinality
 import data.real.sqrt
@@ -410,7 +410,7 @@ begin
         { exact hmlet },
         { exact hm0 } },
       { have hmt : m = nat.succ t,
-        { rw [←lt_iff_not_ge', ←nat.succ_le_iff] at hmlet,
+        { rw [←lt_iff_not_le, ←nat.succ_le_iff] at hmlet,
           linarith },
         have hterm : p4_term m k = polynomial.eval k (p4_term_poly m).fst /
           polynomial.eval k (p4_term_poly m).snd,
@@ -498,7 +498,7 @@ classical.some_spec p4_countable_zero
 lemma not_countable_Ioo_real {k1 k2 : ℝ} (h : k1 < k2) :
   ¬ set.countable (set.Ioo k1 k2) :=
 begin
-  rw [←cardinal.mk_set_le_omega, not_le, cardinal.mk_Ioo_real h],
+  rw [←cardinal.mk_set_le_aleph_0, not_le, cardinal.mk_Ioo_real h],
   exact cardinal.cantor _
 end
 
