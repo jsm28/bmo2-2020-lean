@@ -1880,7 +1880,7 @@ begin
     have hx4 := hx hx3,
     have hax := halt x hx2,
     conv { congr, congr, congr, rw [nat.succ_eq_add_one, ←add_assoc] },
-    rw [←nat.even_iff, nat.even_succ, nat.even_iff],
+    rw [←nat.even_iff, nat.even_add_one, nat.even_iff],
     tauto }
 end
 
@@ -2870,10 +2870,10 @@ begin
         use mem_univ _,
         rw fin.coe_coe_of_lt (show (a : ℕ) + 1 < n + 1, by linarith only [ha]) at h,
         by_cases hpar : i % 2 = 0,
-        { rw [hpar, ←nat.even_iff, nat.even_succ, not_not, nat.even_iff] at h,
+        { rw [hpar, ←nat.even_iff, nat.even_add_one, not_not, nat.even_iff] at h,
           rw [hpar, h] },
         { rw [←nat.even_iff, nat.not_even_iff] at hpar,
-          rw [hpar, ←nat.not_even_iff, not_not, nat.even_succ, nat.not_even_iff] at h,
+          rw [hpar, ←nat.not_even_iff, not_not, nat.even_add_one, nat.not_even_iff] at h,
           rw [hpar, h] } } } },
   { intros i j hi hj heq,
     rw ext_iff at heq,
