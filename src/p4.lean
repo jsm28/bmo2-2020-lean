@@ -498,7 +498,7 @@ classical.some_spec p4_countable_zero
 lemma not_countable_Ioo_real {k1 k2 : ℝ} (h : k1 < k2) :
   ¬ set.countable (set.Ioo k1 k2) :=
 begin
-  rw [←cardinal.mk_set_le_aleph_0, not_le, cardinal.mk_Ioo_real h],
+  rw [←cardinal.le_aleph_0_iff_set_countable, not_le, cardinal.mk_Ioo_real h],
   exact cardinal.cantor _
 end
 

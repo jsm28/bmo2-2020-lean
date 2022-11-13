@@ -421,7 +421,7 @@ theorem rows_alternate_xor_not (n : ℕ) :
   balanced_colourings_r n ∩ balanced_colourings_no_r n = ∅ :=
 begin
   unfold balanced_colourings_r balanced_colourings_no_r,
-  convert filter_inter_filter_neg_eq _ (balanced_colourings (n + 1)),
+  convert filter_inter_filter_neg_eq _ (balanced_colourings (n + 1)) (balanced_colourings (n + 1)),
   exact classical.dec_pred _
 end
 
@@ -463,7 +463,7 @@ theorem r_cols_alternate_xor_not (n : ℕ) :
   balanced_colourings_r_c n ∩ balanced_colourings_r_no_c n = ∅ :=
 begin
   unfold balanced_colourings_r_c balanced_colourings_r_no_c,
-  convert filter_inter_filter_neg_eq _ (balanced_colourings_r n),
+  convert filter_inter_filter_neg_eq _ (balanced_colourings_r n) (balanced_colourings_r n),
   exact classical.dec_pred _
 end
 
@@ -489,7 +489,7 @@ theorem no_r_cols_alternate_xor_not (n : ℕ) :
   balanced_colourings_no_r_c n ∩ balanced_colourings_no_r_no_c n = ∅ :=
 begin
   unfold balanced_colourings_no_r_c balanced_colourings_no_r_no_c,
-  convert filter_inter_filter_neg_eq _ (balanced_colourings_no_r n),
+  convert filter_inter_filter_neg_eq _ (balanced_colourings_no_r n) (balanced_colourings_no_r n),
   exact classical.dec_pred _
 end
 
@@ -2714,8 +2714,7 @@ begin
               add_comm 1 _, ←add_assoc, ht4],
           by_cases halt : (t : fin (n + 1)) ∈ c ↔ ¬ ((t + 1 : ℕ) : fin (n + 1)) ∈ c,
           { simp [halt] },
-          { simp [halt, -nat.cast_succ, -nat.cast_add, not_iff_not.1 (not_iff.1 halt)],
-            norm_cast } } } },
+          { simp [halt, -nat.cast_succ, -nat.cast_add, not_iff_not.1 (not_iff.1 halt)] } } } },
     ext a,
     rw ←fin.coe_coe_eq_self a,
     exact hn a a.is_lt }
