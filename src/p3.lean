@@ -2714,7 +2714,8 @@ begin
               add_comm 1 _, ←add_assoc, ht4],
           by_cases halt : (t : fin (n + 1)) ∈ c ↔ ¬ ((t + 1 : ℕ) : fin (n + 1)) ∈ c,
           { simp [halt] },
-          { simp [halt, -nat.cast_succ, -nat.cast_add, not_iff_not.1 (not_iff.1 halt)] } } } },
+          { simp [halt, -nat.cast_succ, -nat.cast_add, not_iff_not.1 (not_iff.1 halt)],
+            norm_cast } } } },
     ext a,
     rw ←fin.coe_coe_eq_self a,
     exact hn a a.is_lt }
