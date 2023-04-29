@@ -3,15 +3,15 @@
 -- Choices made for formalization: the original problem refers to
 -- "collections", which we take as meaning sets.
 
-import geometry.euclidean
+import geometry.euclidean.monge_point
 
 noncomputable theory
 open_locale classical
 
 open affine affine_subspace finite_dimensional euclidean_geometry
 
-variables {V : Type*} {P : Type*} [inner_product_space ℝ V] [metric_space P]
-    [normed_add_torsor V P]
+variables {V : Type*} {P : Type*} [normed_add_comm_group V] [inner_product_space ℝ V]
+    [metric_space P] [normed_add_torsor V P]
 
 -- Properties of sets of points in the problem.
 
@@ -176,9 +176,9 @@ begin
     refl },
   -- So the circumcentres of t1 and t2 are in that span.
   have hc0s : t0.circumcenter ∈ affine_span ℝ (insert (t0.points i3) (set.range t12.points)),
-  { simp [h123, -matrix.range_cons] },
+  { rw h123, exact affine_subspace.mem_top _ _ _ },
   have hc1s : t1.circumcenter ∈ affine_span ℝ (insert (t0.points i3) (set.range t12.points)),
-  { simp [h123, -matrix.range_cons] },
+  { rw h123, exact affine_subspace.mem_top _ _ _ },
   -- All points of t12 have distance from the circumcentres of t0 and
   -- t1 equal to the circumradius of t1.
   have hr0 : ∀ i, dist (t12.points i) t0.circumcenter = t0.circumradius,

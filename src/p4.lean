@@ -4,7 +4,7 @@
 -- rather than at 1 as in the original problem.
 
 import analysis.normed.field.basic
-import data.polynomial
+import data.polynomial.ring_division
 import data.real.cardinality
 import data.real.sqrt
 import tactic.basic

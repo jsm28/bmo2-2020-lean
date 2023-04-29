@@ -212,7 +212,7 @@ begin
   { rw hk,
     push_cast,
     norm_num,
-    exact three_mod_all_powers a hodd hrec (2 + nat_abs (a 0 + -3)) (by linarith) 0 },
+    exact three_mod_all_powers a hodd hrec (2 + nat_abs (a 0 + -3)) (by simp) 0 },
   rw ←nat_abs_of_nat k at hltk,
   exact eq_of_mod_eq_of_nat_abs_sub_lt_nat_abs hmod (by linarith)
 end

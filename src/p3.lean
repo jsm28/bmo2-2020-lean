@@ -1,6 +1,5 @@
 -- BMO2 2020 problem 3.
 
-import data.finset
 import data.fintype.basic
 import data.nat.parity
 import logic.function.basic
