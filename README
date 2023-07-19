@@ -1,5 +1,6 @@
-Beginner experiments in formalisation of solutions to mathematical
-olympiad problems, using problems from the second round of the British
-Mathematical Olympiad 2019/20.  Intended as a learning exercise to see
-what such formalisation is like in practice, not as good examples of
-Lean code!
+Beginner experiments in (Lean 3) formalisation of solutions to
+mathematical olympiad problems, using problems from the second round
+of the British Mathematical Olympiad 2019/20.  Intended as a learning
+exercise to see what such formalisation is like in practice, not as
+good examples of Lean code!  No longer maintained and not expected to
+be converted to Lean 4.
